@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^3.9.0",
+    "dotenv": "^16.0.1",
+    "ethers": "^5.6.9",
+    "graphql": "^16.5.0",
+    "mongodb": "^4.7.0",
+    "siwe": "^1.1.6"
+  }
+}
