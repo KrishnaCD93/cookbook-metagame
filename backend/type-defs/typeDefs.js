@@ -2,24 +2,30 @@ const { gql } = require('apollo-server');
 
 const typeDefs = gql`
   type Recipe {
-    recipeCid: String!
-    imageCids: [String]
+    id: ID
+    recipeCid: String
     cookbookAddress: String
     tokenNumber: Int
     name: String!
+    imageCid: String
     description: String
-    ingredients: [Ingredient]
-    steps: [Step]
+    ingredientIDs: [ID]!
+    stepIDs: [ID]!
     metaQualityTags: [String]
-    tasteProfile: TasteProfile
+    tasteProfileID: [ID]!
     equipment: [String]
     userID: [User]!
+    signature: String!
+    createdAt: String
+    updatedAt: String
   }
   type Ingredient {
+    id: ID
     name: String!
     quantity: String
     nutrition: Nutrition
     comments: String
+    imageCid: String
   }
   type Nutrition {
     calories: Int
@@ -28,15 +34,16 @@ const typeDefs = gql`
     carbs: Int
   }
   type Step {
-    type: StepType!
-    step: String!
+    id: ID
+    name: String!
+    action: String!
+    trigger: String
     comments: String
-  }
-  enum StepType {
-    ACTION
-    TRIGGER
+    actionImageCid: String
+    triggerImageCid: String
   }
   type TasteProfile {
+    id: ID
     salt: Int!
     sweet: Int!
     sour: Int!
@@ -44,22 +51,28 @@ const typeDefs = gql`
     spice: Int!
   }
   type ChefsMeta {
-    recipeCid: String!
+    id: ID
+    recipeID: ID
+    recipeCid: String
     specialtyTags: [String]
     comments: [String]
+    signature: String!
   }
   type Cookbook {
     address: String!
-    recipeCids: [String]!
+    recipeID: ID
+    recipeCids: [String]
     name: String!
     description: String
-    chefsMeta: [ChefsMeta]
+    chefsMetaIDs: [ID]
     tags: [String]
-    tasteProfile: TasteProfile
-    userID: [User]!
+    tasteProfileIDs: [ID]
+    user: [User]!
+    signature: String
   }
   type User {
     address: String!
+    signature: String
     name: String
     image: String
     email: String
@@ -74,56 +87,73 @@ const typeDefs = gql`
     user(address: String!): User
   }
   type Mutation {
-    addRecipe(
-      recipeCid: String!
+    addIngredients(
+      names: [String]!
+      quantities: [String]!
+      nutritions: [Int]
+      comments: [String]
       imageCids: [String]
-      recipeName: String!
-      cookbookAddress: String
-      tokenNumber: Int
-      userID: String!
-      ingredientIDs: [String]
-      stepIDs: [String]
-      metaQualityTags: [String]
-      equipment: [String]
-    ): RecipeResponse!
-    deleteRecipe(
-      recipeCid: String!
-    ): RecipeResponse!
-    updateRecipe(
-      recipeCid: String!
-      newRecipeCid: String!
-      imageCids: [String]
-      recipeName: String!
-      cookbookToken: String
-      userID: String!
-    ): RecipeResponse!
-    addIngredient(
-      recipeCid: String!
-      name: String!
-      quantity: String
-      comments: String
     ): IngredientResponse!
-    addStep(
-      recipeCid: String!
-      type: StepType!
-      info: String
-      comments: String
+    addSteps(
+      actions: [String]!
+      triggers: [String]
+      actionImageCids: [String]
+      triggerImageCids: [String]
+      comments: [String]
     ): StepResponse!
     addTasteProfile(
-      recipeCid: String!
-      salt: Int
-      sweet: Int
-      sour: Int
-      bitter: Int
-      spice: Int
+      recipeID: ID
+      recipeCid: String
+      salt: Int!
+      sweet: Int!
+      sour: Int!
+      bitter: Int!
+      spice: Int!
     ): TasteProfileResponse!
+    addRecipe(
+      recipeCid: String
+      cookbookAddress: String
+      tokenNumber: Int
+      name: String!
+      imageCid: [String]
+      description: String
+      ingredientIDs: [ID]!
+      stepIDs: [ID]!
+      metaQualityTags: [String]
+      tasteProfile: [Int]!
+      equipment: [String]
+      userID: String!
+      signature: String!
+    ): RecipeResponse!
+    deleteRecipe(
+      id: ID!
+      signature: String!
+    ): RecipeResponse!
+    updateRecipe(
+      id: ID!
+      recipeCid: String
+      newRecipeCid: String
+      name: String
+      imageCid: String
+      description: String
+      ingredientIDs: [ID]
+      stepIDs: [ID]
+      metaQualityTags: [String]
+      tasteProfile: [Int]
+      equipment: String
+      cookbookToken: String
+      userID: String!
+      signature: String!
+    ): RecipeResponse!
     addChefsMeta(
       recipeCid: String!
       specialtyTags: [String]
       comments: [String]
+      signature: String!
     ): ChefsMetaResponse!
     deleteChefsMeta(
       recipeCid: String!
+      signature: String!
     ): ChefsMetaResponse!
     updateChefsMeta(
       recipeCid: String!
@@ -136,27 +166,33 @@ const typeDefs = gql`
       name: String!
       description: String
       userID: String!
+      signature: String!
     ): CookbookResponse!
     deleteCookbook(
       address: String!
+      signature: String!
     ): CookbookResponse!
     updateCookbook(
       address: String!
+      signature: String!
       recipeCids: [String]!
       name: String!
       description: String
     ): CookbookResponse!
     addUser(
       address: String!
+      signature: String!
       name: String
       image: String
       email: String
     ): UserResponse!
     deleteUser(
       address: String!
+      signature: String!
     ): UserResponse!
     updateUser(
       address: String!
+      signature: String!
       name: String
       image: String
       email: String
@@ -165,27 +201,27 @@ const typeDefs = gql`
   type RecipeResponse {
     success: Boolean!
     message: String
-    recipes: [Recipe]
+    recipe: Recipe
   }
   type IngredientResponse {
     success: Boolean!
     message: String
-    ingredients: [Ingredient]
+    ingredientIDs: [ID]
   }
   type StepResponse {
     success: Boolean!
     message: String
-    steps: [Step]
+    stepIDs: [ID]
   }
   type TasteProfileResponse {
     success: Boolean!
     message: String
-    tasteProfile: TasteProfile
+    tasteProfileID: ID
   }
   type ChefsMetaResponse {
     success: Boolean!
     message: String
-    chefsMeta: ChefsMeta
+    chefsMetaID: ID
   }
   type CookbookResponse {
     success: Boolean!

@@ -22,7 +22,7 @@ import { publicProvider } from 'wagmi/providers/public';
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
 const { chains, provider } = configureChains(
-  [chain.mainnet, chain.polygon, chain.optimism, chain.arbitrum],
+  [chain.polygon],
   [
     alchemyProvider({ alchemyId: process.env.ALCHEMY_ID }),
     publicProvider()
@@ -42,7 +42,7 @@ const wagmiClient = createClient({
 
 const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
-  uri: 'https://localhost:4000/'
+  uri: 'http://localhost:4000/'
 });
 
 const container = document.getElementById('root');

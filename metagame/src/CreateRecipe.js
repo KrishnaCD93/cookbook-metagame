@@ -5,21 +5,89 @@ import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react'
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
-
-import { useSignMessage } from 'wagmi'
-import { verifyMessage } from 'ethers/lib/utils'
+import useFleekStorage from "./hooks/useFleekStorage";
+import useMongoUpload from "./hooks/useMongoUpload";
 
 // Create recipe page with recipe name, description, ingredients, steps, metaquality tags, and recipe image
-const CreateRecipe = ({ isOpen, onClose }) => {
+const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
+  const [fleekStorageUploadRecipeImage] = useFleekStorage();
+  const [uploadRecipe] = useMongoUpload();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
 
   const onSubmit = async (data) => {
+    console.log(data);
     try {
       setUploading(true)
-      console.log(data)
-      const formData = new FormData(data);
+      const signature = await signMessageWithEthereum()
+      data.signature = signature;
+      data.userID = accountInfo;
+      const ingredients = [];
+      const steps = [];
+      let imageCid;
+      if (data.recipeImage[0]) {
+        const imageInfo = {};
+        imageInfo.name = data.name + 'Image';
+        imageInfo.type = 'recipeImage';
+        imageInfo.recipe = data.name;
+        const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, data.recipeImage[0], accountInfo);
+        imageCid = imageUpload.hash;
+      }
+      console.log(data.recipeImage[0], imageCid);
+      data.ingredients.forEach(async ingredient => {
+        if (!ingredient.name) return;
+        let ingData = {};
+        ingData.name = ingredient.name;
+        ingData.quantity = ingredient.quantity;
+        ingData.comments = ingredient.comments;
+        if (ingredient.image[0]) {
+          const imageInfo = {};
+          imageInfo.name = ingredient.name;
+          imageInfo.type = 'ingredient';
+          imageInfo.recipe = data.name;
+          const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, ingredient.image[0], accountInfo);
+          ingData.imageCid = imageUpload.hash
+        }
+        ingredients.push(ingData);
+        console.log(ingredients);
+      })
+      data.steps.forEach(async (step, index) => {
+        if (!step.action) return;
+        const stepData = {};
+        const stepActionImageData = {};
+        const stepTriggerImageData = {};
+        stepData.action = step.action;
+        stepData.trigger = step.trigger;
+        stepData.comments = step.comments;
+        if (step.actionImage[0]) {
+          stepActionImageData.type = `step-${index+1}-actionImage`;
+          stepActionImageData.name = 'actionImage';
+          stepActionImageData.recipe = data.name;
+          const imageUpload = await fleekStorageUploadRecipeImage(stepActionImageData, step.actionImage[0], accountInfo);
+          stepData.actionImageCid = imageUpload.hash
+        }
+        if (step.triggerImage[0]) {
+          stepTriggerImageData.type = `step-${index+1}-triggerImage`;
+          stepTriggerImageData.name = 'triggerImage';
+          stepTriggerImageData.recipe = data.name;
+          const imageUpload = await fleekStorageUploadRecipeImage(stepTriggerImageData, step.triggerImage[0], accountInfo);
+          stepData.triggerImageCid = imageUpload.hash
+        }
+        steps.push(stepData);
+        console.log(steps);
+      })
+      const recipe = {
+        name: data.name,
+        imageCid: imageCid,
+        description: data.description,
+        metaqualityTags: data.metaqualityTags,
+        recipeImage: data.recipeImage,
+        signature: data.signature,
+        userID: data.userID
+      }
+      const uploadedRecipe = await uploadRecipe(recipe, ingredients, steps, data.tasteProfile)
+      console.log(uploadedRecipe);
       setUploading(false);
       toast({
         title: 'Recipe uploaded successfully',
@@ -54,10 +122,10 @@ const CreateRecipe = ({ isOpen, onClose }) => {
               <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
                 <Tabs>
                   <TabList>
-                    <Tab>Recipe {errors && errors.name ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Ingredients {errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Steps {errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Meta Quality Tags</Tab>
+                    <Tab>Recipe{errors && errors.name ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Meta Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel>
@@ -452,11 +520,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How salty is this recipe? 0 = not salty, 5 = very salty">
         <Input py={2} px={2} placeholder="...salt rating, eg. 1" variant={'flushed'} isInvalid={false} type='number'
-          {...register('saltRating', {min: 0, max: 5})} />
+          {...register('tasteProfile.saltRating', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.saltRating && errors.saltRating.message && (
+      {errors.tasteProfile && errors.tasteProfile.saltRating && errors.tasteProfile.saltRating.message && (
       <FormErrorMessage>
-        {errors.saltRating && errors.saltRating.message}
+        {errors.tasteProfile.saltRating && errors.tasteProfile.saltRating.message}
       </FormErrorMessage>)}
       </>
     )
@@ -466,11 +534,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How sweet is this recipe? 0 = not sweet, 5 = very sweet">
         <Input py={2} px={2} placeholder="...sweet rating, eg. 2" variant={'flushed'} isInvalid={false} type='number'
-          {...register('sweetRating', {min: 0, max: 5})} />
+          {...register('tasteProfile.sweetRating', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.sweetRating && errors.sweetRating.message && (
+      {errors.tasteProfile && errors.tasteProfile.sweetRating && errors.tasteProfile.sweetRating.message && (
       <FormErrorMessage>
-        {errors.sweetRating && errors.sweetRating.message}
+        {errors.tasteProfile.sweetRating && errors.tasteProfile.sweetRating.message}
       </FormErrorMessage>)}
       </>
     )
@@ -480,11 +548,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How sour is this recipe? 0 = not sour, 5 = very sour">
         <Input py={2} px={2} placeholder="...sour rating, eg. 3" variant={'flushed'} isInvalid={false} type='number'
-          {...register('sourRating', {min: 0, max: 5})} />
+          {...register('tasteProfile.sourRating', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.sourRating && errors.sourRating.message && (
+      {errors.tasteProfile && errors.tasteProfile.sourRating && errors.tasteProfile.sourRating.message && (
       <FormErrorMessage>
-        {errors.sourRating && errors.sourRating.message}
+        {errors.tasteProfile.sourRating && errors.tasteProfile.sourRating.message}
       </FormErrorMessage>)}
       </>
     )
@@ -494,11 +562,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How bitter is this recipe? 0 = not bitter, 5 = very bitter">
         <Input py={2} px={2} placeholder="...bitter rating, eg. 4" variant={'flushed'} isInvalid={false} type='number'
-          {...register('bitterRating', {min: 0, max: 5})} />
+          {...register('tasteProfile.bitterRating', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.bitterRating && errors.bitterRating.message && (
+      {errors.tasteProfile && errors.tasteProfile.bitterRating && errors.tasteProfile.bitterRating.message && (
       <FormErrorMessage>
-        {errors.bitterRating && errors.bitterRating.message}
+        {errors.tasteProfile.bitterRating && errors.tasteProfile.bitterRating.message}
       </FormErrorMessage>)}
       </>
     )
@@ -508,11 +576,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How spicy is this recipe? 0 = not spicy, 5 = very spicy">
         <Input py={2} px={2} placeholder="...spicy rating, eg. 5" variant={'flushed'} isInvalid={false} type='number'
-          {...register('spicyRating', {min: 0, max: 5})} />
+          {...register('tasteProfile.spicyRating', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.spicyRating && errors.spicyRating.message && (
+      {errors.tasteProfile && errors.tasteProfile.spicyRating && errors.tasteProfile.spicyRating.message && (
       <FormErrorMessage>
-        {errors.spicyRating && errors.spicyRating.message}
+        {errors.tasteProfile.spicyRating && errors.tasteProfile.spicyRating.message}
       </FormErrorMessage>)}
       </>
     )

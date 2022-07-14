@@ -5,90 +5,182 @@ const mongoPassword = process.env.MONGO_DB_PASSWORD;
 const mongoURI = `mongodb+srv://cookbook:${mongoPassword}@cluster0.2k2xd.mongodb.net/?retryWrites=true&w=majority`
 const mongoClient = new MongoClient(mongoURI);
 const db = mongoClient.db('cookbookSocial');
+const recipeCollection = db.collection('recipes');
+const ingredientCollection = db.collection('ingredients');
+const stepCollection = db.collection('steps');
+const tasteProfileCollection = db.collection('tasteProfiles');
+const chefsMetaCollection = db.collection('chefsMeta');
+const cookbookCollection = db.collection('cookbooks');
+const userCollection = db.collection('users');
+const { SiweMessage } = require('siwe');
 
 const resolvers = {
   Query: {
     recipes: async () => {
       await mongoClient.connect();
-      const recipes = await db.collection('recipes').find({}).toArray();
+      const recipes = await recipeCollection.find({}).toArray();
       await mongoClient.close();
       return recipes;
     },
     recipesByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const userRecipes = await db.collection('recipes').find({ userID: args.userID }).toArray();
+      const userRecipes = await recipeCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
       return userRecipes;
     },
     chefsMetaByRecipeCid: async (_, args, context, info) => {
       await mongoClient.connect();
-      const chefsMeta = await db.collection('chefsMeta').find({ recipeCid: args.recipeCid }).toArray();
+      const chefsMeta = await chefsMetaCollection.find({ recipeCid: args.recipeCid }).toArray();
       await mongoClient.close();
       return chefsMeta;
     },
     cookbooks: async () => {
       await mongoClient.connect();
-      const cookbooks = await db.collection('cookbooks').find({}).toArray();
+      const cookbooks = await cookbookCollection.find({}).toArray();
       await mongoClient.close();
       return cookbooks;
     },
     cookbookByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const cookbook = await db.collection('cookbooks').find({ userID: args.userID }).toArray();
+      const cookbook = await cookbookCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
       return cookbook;
     },
     user: async (_, args, context, info) => {
       if (!context.user) return null;
       await mongoClient.connect();
-      const user = await db.collection('users').findOne({ address: args.address });
+      const user = await userCollection.findOne({ address: args.address });
       await mongoClient.close();
       return user;
     }
   },
   Mutation: {
-    addRecipe: async (_, args, context, info) => {
-      if (!context.user) throw new AuthenticationError('You must be logged in to add a recipe.');
-      let added = false;
-      let recipeList;
-      const recipeCollection = db.collection('recipes');
-      const newRecipe = {
-        recipeCid: args.recipeCid,
-        imageCids: args.imageCids,
-        recipeName: args.recipeName,
-        description: args.description,
-        ingredients: ingredients,
-        steps: steps,
-        metaQualityTags: args.metaQualityTags,
-        equipment: args.equipment,
-        userID: args.userID
-      };
+    addIngredients: async (_, args, context, info) => {
+      const { names, quantities, nutritions, comments, imageCids } = args;
+      const newIngredients = [];
+      names.forEach((name, index) => {
+        const ingredient = {};
+        ingredient.name = name;
+        ingredient.quantity = quantities[index];
+        if (nutritions && nutritions[index]) ingredient.nutritions = nutritions[index];
+        if (comments && comments[index]) ingredient.comments = comments[index];
+        if (imageCids && imageCids[index]) ingredient.imageCid = imageCids[index];
+        newIngredients.push(ingredient);
+      });
+      let addedIngredients;
       try {
         await mongoClient.connect();
-        await recipeCollection.insertOne(newRecipe);
-        recipeList = await recipeCollection.find({}).toArray();
-        added = true
+        addedIngredients = await ingredientCollection.insertMany(newIngredients);
       } catch (error) {
-        added = false
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        const ingredientsIds = [];
+        for (const property in addedIngredients.insertedIds) {
+          ingredientsIds.push(addedIngredients.insertedIds[property]);
+        }
+        return {
+          success: addedIngredients.acknowledged,
+          message: addedIngredients.acknowledged ? 'Ingredient added successfully' : 'Ingredient not added',
+          ingredientIDs: ingredientsIds
+        }
+      }
+    },
+    addSteps: async (_, args, context, info) => {
+      const { actions, triggers, actionImageCids, triggerImageCids, comments } = args;
+      const newSteps = [];
+      actions.forEach((action, index) => {
+        const step = {};
+        step.action = action;
+        if (triggers && triggers[index]) step.trigger = triggers[index];
+        if (actionImageCids && actionImageCids[index]) step.actionImageCid = actionImageCids[index];
+        if (triggerImageCids && triggerImageCids[index]) step.triggerImageCid = triggerImageCids[index];
+        if (comments && comments[index]) step.comments = comments[index];
+        newSteps.push(step);
+      });
+      let addedSteps;
+      try {
+        await mongoClient.connect();
+        addedSteps = await stepCollection.insertMany(newSteps);
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        const stepIds = [];
+        for (const property in addedSteps.insertedIds) {
+          stepIds.push(addedSteps.insertedIds[property]);
+        }
+        return {
+          success: addedSteps.acknowledged,
+          message: addedSteps.acknowledged ? 'Step added successfully' : 'Step not added',
+          stepIDs: stepIds
+        }
+      }
+    },
+    addTasteProfile: async (_, args, context, info) => {
+      const { recipeID, salt, sweet, sour, bitter, spice } = args;
+      const newTasteProfile = {};
+      if (recipeID) newTasteProfile.recipeID = recipeID;
+      newTasteProfile.salt = salt;
+      newTasteProfile.sweet = sweet;
+      newTasteProfile.sour = sour;
+      newTasteProfile.bitter = bitter;
+      newTasteProfile.spice = spice;
+      let addedTasteProfile;
+      try {
+        await mongoClient.connect();
+        const addedTasteProfile = await tasteProfileCollection.insertOne(newTasteProfile);
+      } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: added ? true : false,
-          message: added ? 'Recipe added successfully' : 'Error adding recipe',
-          recipeList
+          success: addedTasteProfile.acknowledged,
+          message: added ? 'Taste profile added successfully' : 'Taste profile not added',
+          tasteProfileID: addedTasteProfile.insertedId
+        }
+      }
+    },
+    addRecipe: async (_, args, context, info) => {
+      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to add a recipe.');
+      let addedRecipe;
+      try {
+        await mongoClient.connect();
+        const newRecipe = {};
+        newRecipe.recipeCid = args.recipeCid;
+        newRecipe.imageCid = args.imageCid;
+        newRecipe.name = args.name;
+        newRecipe.imageCid = args.imageCid;
+        newRecipe.description = args.description;
+        newRecipe.ingredientIDs = args.ingredientIds;
+        newRecipe.stepIDs = args.stepIds;
+        newRecipe.metaQualityTags = args.metaQualityTags;
+        newRecipe.tasteProfileID = tasteProfileId;
+        newRecipe.equipment = args.equipment;
+        newRecipe.userID = args.userId;
+        newRecipe.signature = args.signature;
+        addedRecipe = await recipeCollection.insertOne(newRecipe);
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        newRecipe.id = addedRecipe.insertedId;
+        return {
+          success: addedRecipe.acknowledged,
+          message: addedRecipe.acknowledged ? 'Recipe added successfully' : 'Error adding recipe',
+          newRecipe
         };
       }
     },
     deleteRecipe: async (_, args, context, info) => {
-      if (!context.user) throw new AuthenticationError('You must be logged in to delete a recipe.');
+      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to delete a recipe.');
       let deleted = false;
       let recipes = [];
-      if (db.collection('recipes').find(recipe => recipe.recipeCid === args.recipeCid)) {
+      if (recipeCollection.find(recipe => recipe.id === args.recipeID)) {
         try {
           await mongoClient.connect();
-          await db.collection('recipes').deleteOne({ recipeCid: args.recipeCid });
-          let newRecipeList = await db.collection('recipes').find({}).toArray();
+          await recipeCollection.deleteOne({ id: args.recipeID });
+          let newRecipeList = await recipeCollection.find({}).toArray();
           recipes.push(newRecipeList);
           deleted = true;
         } catch (error) {
@@ -111,26 +203,27 @@ const resolvers = {
       }
     },
     updateRecipe: async (_, args, context, info) => {
-      if (!context.user) throw new AuthenticationError('You must be logged in to update a recipe.');
+      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to update a recipe.');
       let updated = false;
       let newRecipeList = [];
       let recipeToUpdate = {}
-      if (db.collection('recipes').find(recipe => recipe.recipeCid === args.newRecipeCid)) {
+      if (recipeCollection.find(recipe => recipe.id === args.recipeID)) {
         recipeToUpdate.recipeCid = args.newRecipeCid;
         if (args.imageCids) recipeToUpdate.imageCids = args.imageCids;
         if (args.cookbookAddress) recipeToUpdate.cookbookAddress = args.cookbookAddress;
         if (args.tokenNumber) recipeToUpdate.tokenNumber = args.tokenNumber;
-        if (args.recipeName) recipeToUpdate.recipeName = args.recipeName;
+        if (args.name) recipeToUpdate.name = args.name;
+        if (args.image) recipeToUpdate.image = args.image;
         if (args.description) recipeToUpdate.description = args.description;
-        if (args.ingredients) recipeToUpdate.ingredients = args.ingredients;
-        if (args.steps) recipeToUpdate.steps = args.steps;
+        if (args.ingredientIDs) recipeToUpdate.ingredientIDs = args.ingredientIDs;
+        if (args.stepIDs) recipeToUpdate.stepIDs = args.stepIDs;
         if (args.metaQualityTags) recipeToUpdate.metaQualityTags = args.metaQualityTags;
         if (args.equipment) recipeToUpdate.equipment = args.equipment;
         if (args.userID) recipeToUpdate.userID = args.userID;
         try {
           await mongoClient.connect();
-          await db.collection('recipes').updateOne({ recipeCid: args.recipeCid }, { $set: recipeToUpdate });
-          newRecipeList = await db.collection('recipes').find({}).toArray();
+          await recipeCollection.updateOne({ recipeCid: args.recipeCid }, { $set: recipeToUpdate });
+          newRecipeList = await recipeCollection.find({}).toArray();
           updated = true;
         } catch (error) {
           updated = false;
@@ -155,14 +248,14 @@ const resolvers = {
       let added = false;
       let chefsMetaList = [];
       const newSpecial = {
-        recipeCid: args.recipeCid,
+        recipeID: args.recipeID,
         specialtyTags: args.specialtyTags,
         comments: args.comments
       };
       try {
         await mongoClient.connect();
         await db.collection('chefsMeta').insertOne(newSpecial);
-        chefsMetaList = await db.collection('chefsMeta').find({recipeCid: args.recipeCid}).toArray();
+        chefsMetaList = await db.collection('chefsMeta').find({recipeID: args.recipeID}).toArray();
         added = true;
       } catch (error) {
         added = false;
@@ -180,16 +273,16 @@ const resolvers = {
       let updated = false;
       let newChefsMetaList = [];
       let chefsMetaToUpdate = {}
-      if (db.collection('chefsMeta').find(chefsMeta => chefsMeta.recipeCid === args.recipeCid)) {
-        chefsMetaToUpdate.recipeCid = args.recipeCid;
+      if (db.collection('chefsMeta').find(chefsMeta => chefsMeta.recipeID === args.recipeID)) {
+        chefsMetaToUpdate.recipeID = args.recipeID;
         if (args.specialtyTags) chefsMetaToUpdate.specialtyTags.push(args.specialtyTags);
           else chefsMetaToUpdate.specialtyTags = args.specialtyTags;
         if (args.comments) chefsMetaToUpdate.comments = args.comments.push(args.comments);
           else chefsMetaToUpdate.comments = args.comments;
         try {
           await mongoClient.connect();
-          await db.collection('chefsMeta').updateOne({ recipeCid: args.recipeCid }, { $set: chefsMetaToUpdate });
-          newChefsMetaList = await db.collection('chefsMeta').find({recipeCid: args.recipeCid}).toArray();
+          await db.collection('chefsMeta').updateOne({ recipeID: args.recipeID }, { $set: chefsMetaToUpdate });
+          newChefsMetaList = await db.collection('chefsMeta').find({recipeID: args.recipeID}).toArray();
           updated = true;
         } catch (error) {
           updated = false;
@@ -328,6 +421,37 @@ const resolvers = {
           success: false,
           message: 'Cookbook does not exist',
           cookbookList
+        }
+      }
+    },
+    addUser: async (_, args, context, info) => {
+      const { message, signature } = args
+      const siweMessage = new SiweMessage(message)
+      let added = false;
+      let userList = [];
+      const newUser = {
+        address: message.address,
+        signature: '',
+        name: message.name,
+        email: message.email,
+        image: message.image,
+      };
+      try {
+        const signed = await siweMessage.validate(signature)
+        newUser.signature = signed
+        await mongoClient.connect();
+        await db.collection('users').insertOne(newUser);
+        userList = await db.collection('users').find({}).toArray();
+        added = true;
+      } catch (error) {
+        added = false;
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return {
+          success: added ? true : false,
+          message: added ? 'User added successfully' : 'Error adding user',
+          userList
         }
       }
     }

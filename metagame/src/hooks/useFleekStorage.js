@@ -72,18 +72,16 @@ const useFleekStorage = () => {
   }
 
   // Upload images in the recipe to the fleek storage's recipe bucket
-  // @param imageInfo: { imageName, type } - carries the image placement info and location in recipe
+  // @param imageInfo: { name, type, recipe } - name: name of the image, type: type of the image, recipe: recipe name
   // @param image - the image to upload
-  // @param recipeName - the name of the recipe
   // @param userId - user account data
-  // @param cookbookId - the id of the cookbook token
-  async function fleekStorageUploadRecipeImage(imageInfo, image, recipeName, userId, cookbookId){
-    console.log('uploading image')
-    let data = image
+  async function fleekStorageUploadRecipeImage(imageInfo, image, userId) {
+    console.log('uploading image');
+    let data = image;
     let input = {
       apiKey: fleekStorageKey,
       apiSecret: fleekStorageSecret,
-      key: `${userId}/${cookbookId}/${recipeName}/images/${imageInfo.type}/${imageInfo.name}`,
+      key: `${userId}/images/${imageInfo.type}/${imageInfo.name}`,
       ContentType: data.type,
       data: data,
     }
