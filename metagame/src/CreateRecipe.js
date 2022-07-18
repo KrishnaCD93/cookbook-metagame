@@ -6,12 +6,12 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useFleekStorage from "./hooks/useFleekStorage";
-import useMongoUpload from "./hooks/useMongoUpload";
+import useApolloHooks from "./hooks/useApolloHooks";
 
 // Create recipe page with recipe name, description, ingredients, steps, metaquality tags, and recipe image
 const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
   const [fleekStorageUploadRecipeImage] = useFleekStorage();
-  const [uploadRecipe] = useMongoUpload();
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe] = useApolloHooks();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
@@ -20,81 +20,141 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
     console.log(data);
     try {
       setUploading(true)
-      const signature = await signMessageWithEthereum()
-      data.signature = signature;
-      data.userID = accountInfo;
-      const ingredients = [];
-      const steps = [];
+      if (accountInfo) {
+        data.signature = await signMessageWithEthereum();
+        data.userID = accountInfo;
+      }
       let imageCid;
       if (data.recipeImage[0]) {
         const imageInfo = {};
-        imageInfo.name = data.name + 'Image';
+        imageInfo.name = data.name + '-Image';
         imageInfo.type = 'recipeImage';
         imageInfo.recipe = data.name;
         const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, data.recipeImage[0], accountInfo);
         imageCid = imageUpload.hash;
+      } else {
+        imageCid = '';
       }
       console.log(data.recipeImage[0], imageCid);
-      data.ingredients.forEach(async ingredient => {
-        if (!ingredient.name) return;
-        let ingData = {};
-        ingData.name = ingredient.name;
-        ingData.quantity = ingredient.quantity;
-        ingData.comments = ingredient.comments;
-        if (ingredient.image[0]) {
-          const imageInfo = {};
-          imageInfo.name = ingredient.name;
-          imageInfo.type = 'ingredient';
-          imageInfo.recipe = data.name;
-          const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, ingredient.image[0], accountInfo);
-          ingData.imageCid = imageUpload.hash
-        }
-        ingredients.push(ingData);
-        console.log(ingredients);
-      })
-      data.steps.forEach(async (step, index) => {
-        if (!step.action) return;
-        const stepData = {};
+      async function addIngredients() {
+        const names = [];
+        const quantities = [];
+        const comments = [];
+        const imageCids = [];
+        data.ingredients.forEach(async (ingredient, index) => {
+          if (!ingredient.name) return;
+          names[index] = ingredient.name;
+          quantities[index] = ingredient.quantity;
+          comments[index] = ingredient.comments;
+          if (ingredient.image[0]) {
+            const imageInfo = {};
+            imageInfo.name = ingredient.name;
+            imageInfo.type = 'ingredient';
+            imageInfo.recipe = data.name;
+            const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, ingredient.image[0], accountInfo);
+            imageCids[index] = imageUpload.hash
+          } else if (!ingredient.image[0]) {
+            imageCids[index] = ''
+          }
+        })
+        const ingredientList = { names, quantities, comments, imageCids };
+        const addedIngredients = await uploadIngredients(ingredientList);
+        console.log(addedIngredients);
+        const ingredientIds = addedIngredients.ingredientIDs;
+        return ingredientIds;
+      }
+      async function addSteps() {
+        const actions = [];
+        const triggers = [];
+        const actionImageCids = [];
+        const triggerImageCids = [];
+        const comments = [];
         const stepActionImageData = {};
         const stepTriggerImageData = {};
-        stepData.action = step.action;
-        stepData.trigger = step.trigger;
-        stepData.comments = step.comments;
-        if (step.actionImage[0]) {
-          stepActionImageData.type = `step-${index+1}-actionImage`;
-          stepActionImageData.name = 'actionImage';
-          stepActionImageData.recipe = data.name;
-          const imageUpload = await fleekStorageUploadRecipeImage(stepActionImageData, step.actionImage[0], accountInfo);
-          stepData.actionImageCid = imageUpload.hash
-        }
-        if (step.triggerImage[0]) {
-          stepTriggerImageData.type = `step-${index+1}-triggerImage`;
-          stepTriggerImageData.name = 'triggerImage';
-          stepTriggerImageData.recipe = data.name;
-          const imageUpload = await fleekStorageUploadRecipeImage(stepTriggerImageData, step.triggerImage[0], accountInfo);
-          stepData.triggerImageCid = imageUpload.hash
-        }
-        steps.push(stepData);
-        console.log(steps);
-      })
-      const recipe = {
-        name: data.name,
-        imageCid: imageCid,
-        description: data.description,
-        metaqualityTags: data.metaqualityTags,
-        recipeImage: data.recipeImage,
-        signature: data.signature,
-        userID: data.userID
+        data.steps.forEach(async (step, index) => {
+          if (!step.action) return;
+          actions[index] = step.action;
+          triggers[index] = step.trigger;
+          comments[index] = step.comments;
+          if (step.actionImage[0]) {
+            stepActionImageData.type = `step-${index+1}-actionImage`;
+            stepActionImageData.name = 'actionImage';
+            stepActionImageData.recipe = data.name;
+            const imageUpload = await fleekStorageUploadRecipeImage(stepActionImageData, step.actionImage[0], accountInfo);
+            actionImageCids[index] = imageUpload.hash
+          } else if (!step.actionImage[0]) {
+            actionImageCids[index] = ''
+          }
+          if (step.triggerImage[0]) {
+            stepTriggerImageData.type = `step-${index+1}-triggerImage`;
+            stepTriggerImageData.name = 'triggerImage';
+            stepTriggerImageData.recipe = data.name;
+            const imageUpload = await fleekStorageUploadRecipeImage(stepTriggerImageData, step.triggerImage[0], accountInfo);
+            triggerImageCids[index] = imageUpload.hash
+          } else if (!step.triggerImage[0]) {
+            triggerImageCids[index] = ''
+          }
+        })
+        const stepList = { actions, triggers, actionImageCids, triggerImageCids, comments };
+        const addedSteps = await uploadSteps(stepList);
+        console.log(addedSteps);
+        const stepIds = addedSteps.stepIDs;
+        return stepIds;
       }
-      const uploadedRecipe = await uploadRecipe(recipe, ingredients, steps, data.tasteProfile)
-      console.log(uploadedRecipe);
+      async function addTasteProfile() {
+        const tasteProfile = {
+          salt: data.tasteProfile.salt,
+          sweet: data.tasteProfile.sweet,
+          sour: data.tasteProfile.sour,
+          bitter: data.tasteProfile.bitter,
+          spice: data.tasteProfile.spice,
+          userID: accountInfo
+        }
+        const addedTasteProfile = await uploadTasteProfile(tasteProfile);
+        console.log(addedTasteProfile);
+        const tasteProfileId = addedTasteProfile.tasteProfileID;
+        return tasteProfileId;
+      }
+      async function addRecipe(ingredientIds, stepIds, tasteProfileId) {
+        const recipe = {
+          name: data.name,
+          imageCid: imageCid,
+          description: data.description,
+          ingredientIDs: ingredientIds,
+          stepIDs: stepIds,
+          tasteProfileID: tasteProfileId,
+          metaQualityTags: data.metaQualityTags,
+          equipment: data.equipment,
+          userID: data.userID,
+          signature: data.signature,
+          createdAt: new Date().toISOString()
+        }
+        const uploadedRecipe = await uploadRecipe(recipe);
+        console.log(uploadedRecipe);
+        const recipeId = uploadedRecipe.recipeID;
+        return recipeId;
+      }
+      const ingredientIds = await addIngredients();
+      const stepIds = await addSteps();
+      const tasteProfileId = await addTasteProfile();
+      const recipeId = await addRecipe(ingredientIds, stepIds, tasteProfileId);
+      console.log(recipeId);
       setUploading(false);
-      toast({
-        title: 'Recipe uploaded successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      })
+      if (recipeId) {
+        toast({
+          title: 'Recipe uploaded successfully',
+          status: 'success',
+          duration: 9000,
+          isClosable: true,
+        })
+      } else {
+        toast({
+          title: 'Recipe upload failed',
+          status: 'error',
+          duration: 9000,
+          isClosable: true,
+        })
+      }
     } catch (error) {
       console.log('error: ', error)
     }
@@ -147,14 +207,14 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
                       </FormLabel>
                     </TabPanel>
                     <TabPanel>
-                      <FormLabel htmlFor="metaQualityTags">
-                        <GetMetaQualityTags />
-                      </FormLabel>
                       <FormLabel htmlFor="tasteProfile">
                         <GetTasteProfile />
                       </FormLabel>
                       <FormLabel htmlFor="equipment">
                         <GetEquipment />
+                      <FormLabel htmlFor="metaQualityTags">
+                        <GetMetaQualityTags />
+                      </FormLabel>
                       </FormLabel>
                     </TabPanel>
                   </TabPanels>
@@ -314,7 +374,7 @@ const GetIngredients = () => {
     return (
       <Tooltip label="How does this ingredient affect the taste of the recipe?">
         <Textarea py={2} px={2} placeholder="...comments, eg. I use organic free roam eggs" variant={'flushed'} isInvalid={false}
-        {...register(`ingredients[${index}].ingredientComments`)} />
+        {...register(`ingredients[${index}].comments`)} />
       </Tooltip>
     )
   }
@@ -403,12 +463,12 @@ const GetSteps = () => {
       <>
       <Tooltip label="How does the action(s) taken in this step affect the taste?">
         <Textarea py={2} px={2} placeholder="...comments, eg. replace pepper with red chilli powder to make it spicy" variant={'flushed'} isInvalid={false}
-          {...register(`steps[${index}].stepComments`, {
+          {...register(`steps[${index}].comments`, {
           maxLength: {value: 280, message: 'Meta must be less than 280 characters'}})} />
       </Tooltip>
-      {errors.steps && errors.steps[index] && errors.steps[index].stepComments && (
+      {errors.steps && errors.steps[index] && errors.steps[index].comments && (
       <FormErrorMessage>
-        {errors.steps[index].stepComments && errors.steps[index].stepComments.message}
+        {errors.steps[index].comments && errors.steps[index].comments.message}
       </FormErrorMessage>)}
       </>
     )
@@ -487,44 +547,20 @@ return (
 )
 }
 
-// Function to get the metaquality tags of the recipe
-function GetMetaQualityTags() {
-  const { register } = useFormContext();
-
-  // Function to get the tag of the metaquality
-  function GetTags() {
-    return (
-      <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
-        <Textarea py={2} px={2} placeholder="...tags, eg. high protien, breakfast food" variant={'flushed'} isInvalid={false}
-          {...register('metaQualityTags')} />
-      </Tooltip>
-    )
-  }
-  
-  return (
-    <Container p={2} m={2} centerContent>
-      <VStack spacing={2}>
-        <Text as='u' align='center' fontSize={'large'}>Metaquality Tags</Text>
-        <GetTags />
-      </VStack>
-    </Container>
-  )
-}
-
 // Function to get the taste profile for the recipe
 function GetTasteProfile() {
   const { register, errors } = useFormContext();
-
+  
   function GetSaltRating() {
     return (
       <>
       <Tooltip label="How salty is this recipe? 0 = not salty, 5 = very salty">
         <Input py={2} px={2} placeholder="...salt rating, eg. 1" variant={'flushed'} isInvalid={false} type='number'
-          {...register('tasteProfile.saltRating', {required: 'Add a taste rating', min: 0, max: 5})} />
+          {...register('tasteProfile.salt', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.saltRating && errors.tasteProfile.saltRating.message && (
-      <FormErrorMessage>
-        {errors.tasteProfile.saltRating && errors.tasteProfile.saltRating.message}
+      {errors.tasteProfile && errors.tasteProfile.salt && errors.tasteProfile.salt.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.salt && errors.tasteProfile.salt.message}
       </FormErrorMessage>)}
       </>
     )
@@ -534,11 +570,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How sweet is this recipe? 0 = not sweet, 5 = very sweet">
         <Input py={2} px={2} placeholder="...sweet rating, eg. 2" variant={'flushed'} isInvalid={false} type='number'
-          {...register('tasteProfile.sweetRating', {required: 'Add a taste rating', min: 0, max: 5})} />
+          {...register('tasteProfile.sweet', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.sweetRating && errors.tasteProfile.sweetRating.message && (
-      <FormErrorMessage>
-        {errors.tasteProfile.sweetRating && errors.tasteProfile.sweetRating.message}
+      {errors.tasteProfile && errors.tasteProfile.sweet && errors.tasteProfile.sweet.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.sweet && errors.tasteProfile.sweet.message}
       </FormErrorMessage>)}
       </>
     )
@@ -548,11 +584,11 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How sour is this recipe? 0 = not sour, 5 = very sour">
         <Input py={2} px={2} placeholder="...sour rating, eg. 3" variant={'flushed'} isInvalid={false} type='number'
-          {...register('tasteProfile.sourRating', {required: 'Add a taste rating', min: 0, max: 5})} />
+          {...register('tasteProfile.sour', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.sourRating && errors.tasteProfile.sourRating.message && (
-      <FormErrorMessage>
-        {errors.tasteProfile.sourRating && errors.tasteProfile.sourRating.message}
+      {errors.tasteProfile && errors.tasteProfile.sour && errors.tasteProfile.sour.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.sour && errors.tasteProfile.sour.message}
       </FormErrorMessage>)}
       </>
     )
@@ -562,25 +598,25 @@ function GetTasteProfile() {
       <>
       <Tooltip label="How bitter is this recipe? 0 = not bitter, 5 = very bitter">
         <Input py={2} px={2} placeholder="...bitter rating, eg. 4" variant={'flushed'} isInvalid={false} type='number'
-          {...register('tasteProfile.bitterRating', {required: 'Add a taste rating', min: 0, max: 5})} />
+          {...register('tasteProfile.bitter', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.bitterRating && errors.tasteProfile.bitterRating.message && (
-      <FormErrorMessage>
-        {errors.tasteProfile.bitterRating && errors.tasteProfile.bitterRating.message}
+      {errors.tasteProfile && errors.tasteProfile.bitter && errors.tasteProfile.bitter.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.bitter && errors.tasteProfile.bitter.message}
       </FormErrorMessage>)}
       </>
     )
   }
-  function GetSpicyRating() {
+  function GetSpiceRating() {
     return (
       <>
       <Tooltip label="How spicy is this recipe? 0 = not spicy, 5 = very spicy">
-        <Input py={2} px={2} placeholder="...spicy rating, eg. 5" variant={'flushed'} isInvalid={false} type='number'
-          {...register('tasteProfile.spicyRating', {required: 'Add a taste rating', min: 0, max: 5})} />
+        <Input py={2} px={2} placeholder="...spice rating, eg. 5" variant={'flushed'} isInvalid={false} type='number'
+          {...register('tasteProfile.spice', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.spicyRating && errors.tasteProfile.spicyRating.message && (
-      <FormErrorMessage>
-        {errors.tasteProfile.spicyRating && errors.tasteProfile.spicyRating.message}
+      {errors.tasteProfile && errors.tasteProfile.spice && errors.tasteProfile.spice.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.spice && errors.tasteProfile.spice.message}
       </FormErrorMessage>)}
       </>
     )
@@ -602,7 +638,7 @@ function GetTasteProfile() {
         <GetBitterRating />
       </WrapItem>
       <WrapItem>
-        <GetSpicyRating />
+        <GetSpiceRating />
       </WrapItem>
     </Wrap>
     </Container>
@@ -627,10 +663,34 @@ function GetEquipment() {
             _hover={{
               background: useColorModeValue('gray.100', 'gray.700')
             }}
-          />
+            />
         </Tooltip>
         <Input py={2} px={2} as={EditableTextarea} isInvalid={false} {...register('equipment')} />
       </Editable>
+    </Container>
+  )
+}
+
+// Function to get the metaquality tags of the recipe
+function GetMetaQualityTags() {
+  const { register } = useFormContext();
+
+  // Function to get the tag of the metaquality
+  function GetTags() {
+    return (
+      <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
+        <Textarea py={2} px={2} placeholder="...tags, eg. high protien, breakfast food" variant={'flushed'} isInvalid={false}
+          {...register('metaQualityTags')} />
+      </Tooltip>
+    )
+  }
+  
+  return (
+    <Container p={2} m={2} centerContent>
+      <VStack spacing={2}>
+        <Text as='u' align='center' fontSize={'large'}>Metaquality Tags</Text>
+        <GetTags />
+      </VStack>
     </Container>
   )
 }

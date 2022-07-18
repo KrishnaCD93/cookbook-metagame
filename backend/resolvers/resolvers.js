@@ -28,6 +28,42 @@ const resolvers = {
       await mongoClient.close();
       return userRecipes;
     },
+    ingredients: async () => {
+      await mongoClient.connect();
+      const ingredients = await ingredientCollection.find({}).toArray();
+      await mongoClient.close();
+      return ingredients;
+    },
+    ingredientsByUserID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const userIngredients = await ingredientCollection.find({ userID: args.userID }).toArray();
+      await mongoClient.close();
+      return userIngredients;
+    },
+    steps: async () => {
+      await mongoClient.connect();
+      const steps = await stepCollection.find({}).toArray();
+      await mongoClient.close();
+      return steps;
+    },
+    stepsByUserID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const userSteps = await stepCollection.find({ userID: args.userID }).toArray();
+      await mongoClient.close();
+      return userSteps;
+    },
+    tasteProfiles: async () => {
+      await mongoClient.connect();
+      const tasteProfiles = await tasteProfileCollection.find({}).toArray();
+      await mongoClient.close();
+      return tasteProfiles;
+    },
+    tasteProfilesByUserID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const userTasteProfiles = await tasteProfileCollection.find({ userID: args.userID }).toArray();
+      await mongoClient.close();
+      return userTasteProfiles;
+    },
     chefsMetaByRecipeCid: async (_, args, context, info) => {
       await mongoClient.connect();
       const chefsMeta = await chefsMetaCollection.find({ recipeCid: args.recipeCid }).toArray();
@@ -56,12 +92,14 @@ const resolvers = {
   },
   Mutation: {
     addIngredients: async (_, args, context, info) => {
-      const { names, quantities, nutritions, comments, imageCids } = args;
+      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const { names, quantities, nutritions, comments, imageCids, userID } = args;
       const newIngredients = [];
       names.forEach((name, index) => {
         const ingredient = {};
         ingredient.name = name;
         ingredient.quantity = quantities[index];
+        ingredient.userID = userID;
         if (nutritions && nutritions[index]) ingredient.nutritions = nutritions[index];
         if (comments && comments[index]) ingredient.comments = comments[index];
         if (imageCids && imageCids[index]) ingredient.imageCid = imageCids[index];
@@ -87,11 +125,13 @@ const resolvers = {
       }
     },
     addSteps: async (_, args, context, info) => {
-      const { actions, triggers, actionImageCids, triggerImageCids, comments } = args;
+      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const { actions, triggers, actionImageCids, triggerImageCids, comments, userID } = args;
       const newSteps = [];
       actions.forEach((action, index) => {
         const step = {};
         step.action = action;
+        step.userID = userID;
         if (triggers && triggers[index]) step.trigger = triggers[index];
         if (actionImageCids && actionImageCids[index]) step.actionImageCid = actionImageCids[index];
         if (triggerImageCids && triggerImageCids[index]) step.triggerImageCid = triggerImageCids[index];
@@ -118,57 +158,59 @@ const resolvers = {
       }
     },
     addTasteProfile: async (_, args, context, info) => {
-      const { recipeID, salt, sweet, sour, bitter, spice } = args;
-      const newTasteProfile = {};
-      if (recipeID) newTasteProfile.recipeID = recipeID;
-      newTasteProfile.salt = salt;
-      newTasteProfile.sweet = sweet;
-      newTasteProfile.sour = sour;
-      newTasteProfile.bitter = bitter;
-      newTasteProfile.spice = spice;
+      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const { salt, sweet, sour, bitter, spice, userID } = args;
+      const newTasteProfile = {
+        salt: salt,
+        sweet: sweet,
+        sour: sour,
+        bitter: bitter,
+        spice: spice,
+        userID: userID,
+      };
       let addedTasteProfile;
       try {
         await mongoClient.connect();
-        const addedTasteProfile = await tasteProfileCollection.insertOne(newTasteProfile);
+        addedTasteProfile = await tasteProfileCollection.insertOne(newTasteProfile);
       } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
           success: addedTasteProfile.acknowledged,
-          message: added ? 'Taste profile added successfully' : 'Taste profile not added',
+          message: addedTasteProfile.acknowledged ? 'Taste profile added successfully' : 'Taste profile not added',
           tasteProfileID: addedTasteProfile.insertedId
         }
       }
     },
     addRecipe: async (_, args, context, info) => {
-      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to add a recipe.');
+      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, metaQualityTags, equipment, userID, signature, createdAt } = args;
       let addedRecipe;
+      const newRecipe = {
+        name: name,
+        imageCid: imageCid,
+        description: description,
+        ingredientIDs: ingredientIDs,
+        stepIDs: stepIDs,
+        metaQualityTags: metaQualityTags,
+        tasteProfileID: tasteProfileID,
+        equipment: equipment,
+        userID: userID,
+        signature: signature,
+        createdAt: createdAt
+      };
       try {
         await mongoClient.connect();
-        const newRecipe = {};
-        newRecipe.recipeCid = args.recipeCid;
-        newRecipe.imageCid = args.imageCid;
-        newRecipe.name = args.name;
-        newRecipe.imageCid = args.imageCid;
-        newRecipe.description = args.description;
-        newRecipe.ingredientIDs = args.ingredientIds;
-        newRecipe.stepIDs = args.stepIds;
-        newRecipe.metaQualityTags = args.metaQualityTags;
-        newRecipe.tasteProfileID = tasteProfileId;
-        newRecipe.equipment = args.equipment;
-        newRecipe.userID = args.userId;
-        newRecipe.signature = args.signature;
         addedRecipe = await recipeCollection.insertOne(newRecipe);
       } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
-        newRecipe.id = addedRecipe.insertedId;
         return {
           success: addedRecipe.acknowledged,
           message: addedRecipe.acknowledged ? 'Recipe added successfully' : 'Error adding recipe',
-          newRecipe
+          recipeID: addedRecipe.insertedId
         };
       }
     },

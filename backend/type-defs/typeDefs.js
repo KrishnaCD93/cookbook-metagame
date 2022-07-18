@@ -2,7 +2,7 @@ const { gql } = require('apollo-server');
 
 const typeDefs = gql`
   type Recipe {
-    id: ID
+    _id: ID
     recipeCid: String
     cookbookAddress: String
     tokenNumber: Int
@@ -11,21 +11,22 @@ const typeDefs = gql`
     description: String
     ingredientIDs: [ID]!
     stepIDs: [ID]!
-    metaQualityTags: [String]
-    tasteProfileID: [ID]!
-    equipment: [String]
-    userID: [User]!
-    signature: String!
+    tasteProfileID: ID!
+    metaQualityTags: String
+    equipment: String
+    userID: String
+    signature: String
     createdAt: String
     updatedAt: String
   }
   type Ingredient {
-    id: ID
+    _id: ID
     name: String!
     quantity: String
     nutrition: Nutrition
     comments: String
     imageCid: String
+    userID: String
   }
   type Nutrition {
     calories: Int
@@ -34,24 +35,26 @@ const typeDefs = gql`
     carbs: Int
   }
   type Step {
-    id: ID
+    _id: ID
     name: String!
     action: String!
     trigger: String
     comments: String
     actionImageCid: String
     triggerImageCid: String
+    userID: String
   }
   type TasteProfile {
-    id: ID
+    _id: ID
     salt: Int!
     sweet: Int!
     sour: Int!
     bitter: Int!
     spice: Int!
+    userID: String
   }
   type ChefsMeta {
-    id: ID
+    _id: ID
     recipeID: ID
     recipeCid: String
     specialtyTags: [String]
@@ -68,11 +71,11 @@ const typeDefs = gql`
     tags: [String]
     tasteProfileIDs: [ID]
     user: [User]!
-    signature: String
+    signature: String!
   }
   type User {
     address: String!
-    signature: String
+    signature: String!
     name: String
     image: String
     email: String
@@ -81,6 +84,12 @@ const typeDefs = gql`
   type Query {
     recipes: [Recipe]
     recipesByUserID(userID: String!): [Recipe]
+    ingredients: [Ingredient]
+    ingredientsByUserID(userID: String!): [Ingredient]
+    steps: [Step]
+    stepsByUserID(userID: String!): [Step]
+    tasteProfiles: [TasteProfile]
+    tasteProfilesByUserID(userID: String!): [TasteProfile]
     chefsMetaByRecipeCid(recipeCid: String!): ChefsMeta
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
@@ -93,6 +102,8 @@ const typeDefs = gql`
       nutritions: [Int]
       comments: [String]
       imageCids: [String]
+      userID: String
+      signature: String
     ): IngredientResponse!
     addSteps(
       actions: [String]!
@@ -100,30 +111,34 @@ const typeDefs = gql`
       actionImageCids: [String]
       triggerImageCids: [String]
       comments: [String]
+      userID: String
+      signature: String
     ): StepResponse!
     addTasteProfile(
-      recipeID: ID
       recipeCid: String
       salt: Int!
       sweet: Int!
       sour: Int!
       bitter: Int!
       spice: Int!
+      userID: ID
+      signature: String
     ): TasteProfileResponse!
     addRecipe(
       recipeCid: String
       cookbookAddress: String
       tokenNumber: Int
       name: String!
-      imageCid: [String]
+      imageCid: String
       description: String
       ingredientIDs: [ID]!
       stepIDs: [ID]!
-      metaQualityTags: [String]
-      tasteProfile: [Int]!
-      equipment: [String]
-      userID: String!
-      signature: String!
+      metaQualityTags: String
+      tasteProfileID: ID!
+      equipment: String
+      userID: String
+      signature: String
+      createdAt: String
     ): RecipeResponse!
     deleteRecipe(
       id: ID!
@@ -139,7 +154,7 @@ const typeDefs = gql`
       ingredientIDs: [ID]
       stepIDs: [ID]
       metaQualityTags: [String]
-      tasteProfile: [Int]
+      tasteProfileID: ID
       equipment: String
       cookbookToken: String
       userID: String!
@@ -201,7 +216,7 @@ const typeDefs = gql`
   type RecipeResponse {
     success: Boolean!
     message: String
-    recipe: Recipe
+    recipeID: ID
   }
   type IngredientResponse {
     success: Boolean!
@@ -226,7 +241,7 @@ const typeDefs = gql`
   type CookbookResponse {
     success: Boolean!
     message: String
-    cookbook: Cookbook
+    cookbookID: ID
   }
   type UserResponse {
     success: Boolean!
