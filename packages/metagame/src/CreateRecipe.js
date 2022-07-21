@@ -370,7 +370,7 @@ const GetIngredients = () => {
   function GetIngredientComments({ index }) {
     return (
       <Tooltip label="How does this ingredient affect the taste of the recipe?">
-        <Textarea py={2} px={2} placeholder="...comments, eg. I use organic free roam eggs" variant={'flushed'} isInvalid={false}
+        <Textarea py={2} px={2} placeholder="...comments, eg. Organic free roam eggs" variant={'flushed'} isInvalid={false}
         {...register(`ingredients[${index}].comments`)} />
       </Tooltip>
     )
