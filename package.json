@@ -1,0 +1,23 @@
+{
+  "name": "@project/monorepo",
+  "version": "1.0.0",
+  "description": "A Cookbook.Social website",
+  "repository": "https://github.com/KrishnaCD93/cookbook-metagame.git",
+  "author": "KrishnaCD93 <krishna.duvvuri93@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "metagame:build": "yarn workspace @project/metagame build",
+    "metagame:eject": "yarn workspace @project/metagame eject",
+    "metagame:ipfs": "yarn workspace @project/metagame ipfs",
+    "metagame:start": "yarn workspace @project/metagame start",
+    "metagame:test": "yarn workspace @project/metagame test",
+    "backend:build": "yarn workspace @project/backend build",
+    "backend:dev": "yarn workspace @project/backend dev",
+    "backend:start": "yarn workspace @project/backend start",
+    "backend:test": "yarn workspace @project/backend test"
+  },
+  "workspaces": {
+    "packages": ["packages/*"]
+  }
+}

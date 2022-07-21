@@ -1,5 +1,5 @@
 {
-  "name": "metagame",
+  "name": "@project/metagame",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
