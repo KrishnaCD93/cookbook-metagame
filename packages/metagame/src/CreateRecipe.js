@@ -147,14 +147,15 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       setUploading(false);
       if (recipeId) {
         toast({
-          title: 'Recipe uploaded successfully',
+          title: 'Recipe uploaded successfully!',
           status: 'success',
           duration: 9000,
           isClosable: true,
         })
+        onClose();
       } else {
         toast({
-          title: 'Recipe upload failed',
+          title: 'Recipe upload failed, please try again.',
           status: 'error',
           duration: 9000,
           isClosable: true,
@@ -168,7 +169,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
   return (
     <>
     <CSSReset />
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Create Recipe</ModalHeader>

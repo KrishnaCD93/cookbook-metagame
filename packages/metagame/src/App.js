@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Text,
-  VStack,
-  Grid,
-  useDisclosure,
-  Button,
-  Flex,
-} from '@chakra-ui/react';
+import { Box, Text, VStack, Grid, useDisclosure, Button, Flex, Spacer } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import CreateRecipe from './CreateRecipe';
@@ -72,6 +64,7 @@ function App() {
             signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
           <CreateCookbook isOpen={cookbookIsOpen} onClose={cookbookOnClose} signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
         </VStack>
+        <Spacer />
         <ShowRecipes accountInfo={accountInfo} />
       </Grid>
     </Box>

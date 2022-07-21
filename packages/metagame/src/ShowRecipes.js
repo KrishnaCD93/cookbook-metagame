@@ -97,7 +97,7 @@ const ShowRecipes = ({ accountInfo }) => {
     {accountInfo ?
     <> 
       <Text fontSize="large">Recipes</Text>
-      <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))">
+      <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
               <RecipeCard recipe={recipe} />
@@ -147,7 +147,7 @@ const RecipeCard = ({ recipe }) => {
   
   return (
     <>
-    <Box onClick={() => showRecipe(recipe)}>
+    <Box boxShadow='lg' borderRadius={4} onClick={() => showRecipe(recipe)}>
       <VStack spacing={4} align="center">
         {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} />}
         <Text fontSize="large">{recipe.name}</Text>
@@ -156,7 +156,7 @@ const RecipeCard = ({ recipe }) => {
           <Badge key={index} color='teal' variant='subtle'>{tag}</Badge>
         ))}
         {recipe.signature && <Badge color='teal' variant='subtle'>Signed</Badge>}
-        <Button w='100%'>View Recipe</Button>
+        <Button variant='ghost' w='100%'>View Recipe</Button>
       </VStack>
     </Box>
     {recipeData && ingredients && steps && tasteProfile && 
