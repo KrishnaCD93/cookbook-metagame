@@ -12,6 +12,7 @@ import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import CreateRecipe from './CreateRecipe';
 import CreateCookbook from './CreateCookbook';
+import ShowRecipes from './ShowRecipes';
 
 import { ethers } from 'ethers';
 import { SiweMessage } from 'siwe';
@@ -71,6 +72,7 @@ function App() {
             signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
           <CreateCookbook isOpen={cookbookIsOpen} onClose={cookbookOnClose} signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
         </VStack>
+        <ShowRecipes accountInfo={accountInfo} />
       </Grid>
     </Box>
   );

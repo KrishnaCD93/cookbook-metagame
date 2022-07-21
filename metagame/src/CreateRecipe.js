@@ -1,4 +1,4 @@
-import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody } from "@chakra-ui/react";
+import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody } from "@chakra-ui/react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
@@ -6,12 +6,12 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useFleekStorage from "./hooks/useFleekStorage";
-import useApolloHooks from "./hooks/useApolloHooks";
+import useApolloMutations from "./hooks/useApolloMutations";
 
 // Create recipe page with recipe name, description, ingredients, steps, metaquality tags, and recipe image
 const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
   const [fleekStorageUploadRecipeImage] = useFleekStorage();
-  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe] = useApolloHooks();
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe] = useApolloMutations();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
@@ -19,10 +19,12 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
   const onSubmit = async (data) => {
     console.log(data);
     try {
+      let userID = '';
+      let signature = '';
       setUploading(true)
       if (accountInfo) {
-        data.signature = await signMessageWithEthereum();
-        data.userID = accountInfo;
+        userID = accountInfo;
+        signature = await signMessageWithEthereum();
       }
       let imageCid;
       if (data.recipeImage[0]) {
@@ -32,7 +34,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         imageInfo.recipe = data.name;
         const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, data.recipeImage[0], accountInfo);
         imageCid = imageUpload.hash;
-      } else {
+      } else if (!data.recipeImage[0]) {
         imageCid = '';
       }
       console.log(data.recipeImage[0], imageCid);
@@ -57,13 +59,14 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
             imageCids[index] = ''
           }
         })
-        const ingredientList = { names, quantities, comments, imageCids };
+        const ingredientList = { names, quantities, comments, imageCids, userID };
         const addedIngredients = await uploadIngredients(ingredientList);
         console.log(addedIngredients);
         const ingredientIds = addedIngredients.ingredientIDs;
         return ingredientIds;
       }
       async function addSteps() {
+        const stepNames = [];
         const actions = [];
         const triggers = [];
         const actionImageCids = [];
@@ -73,6 +76,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         const stepTriggerImageData = {};
         data.steps.forEach(async (step, index) => {
           if (!step.action) return;
+          stepNames[index] = step.stepName;
           actions[index] = step.action;
           triggers[index] = step.trigger;
           comments[index] = step.comments;
@@ -95,7 +99,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
             triggerImageCids[index] = ''
           }
         })
-        const stepList = { actions, triggers, actionImageCids, triggerImageCids, comments };
+        const stepList = { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID };
         const addedSteps = await uploadSteps(stepList);
         console.log(addedSteps);
         const stepIds = addedSteps.stepIDs;
@@ -108,7 +112,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           sour: data.tasteProfile.sour,
           bitter: data.tasteProfile.bitter,
           spice: data.tasteProfile.spice,
-          userID: accountInfo
+          umami: data.tasteProfile.umami,
+          userID: userID
         }
         const addedTasteProfile = await uploadTasteProfile(tasteProfile);
         console.log(addedTasteProfile);
@@ -125,8 +130,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           tasteProfileID: tasteProfileId,
           metaQualityTags: data.metaQualityTags,
           equipment: data.equipment,
-          userID: data.userID,
-          signature: data.signature,
+          userID: userID,
+          signature: signature,
           createdAt: new Date().toISOString()
         }
         const uploadedRecipe = await uploadRecipe(recipe);
@@ -158,14 +163,6 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
     } catch (error) {
       console.log('error: ', error)
     }
-  }
-
-  if (isSubmitting) {
-    console.log('Submitting...')
-  }
-
-  if (errors) {
-    console.log('errors: ', errors)
   }
 
   return (
@@ -429,6 +426,23 @@ const GetSteps = () => {
   const { register, errors } = useFormContext();
   const [numSteps, setNumSteps] = useState(1);
 
+  // Function to get the name of the step
+  function GetStepName({ index }) {
+    return (
+      <>
+      <Tooltip label="Step title">
+        <Input py={2} px={2} placeholder="...title, eg. prepare egg mix" variant={'flushed'} isInvalid={false}
+        {...register(`steps[${index}].stepName`)} />
+      </Tooltip>
+      {errors.steps && errors.steps[index] && errors.steps[index].name && (
+        <FormErrorMessage>
+          {errors.steps[index].name && errors.steps[index].name.message}
+        </FormErrorMessage>
+      )}
+      </>
+    )
+  }
+
   // Function to get the action of each step in the recipe
   function GetAction({ index }) {
     return (
@@ -517,7 +531,10 @@ return (
   {Array.from({ length: numSteps }, (_, index) => (
     <WrapItem key={index} border='1px' borderRadius={2}>
       <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
-        <Text fontSize={'large'}>Step {index + 1}</Text>
+        <Text as='u' align='center' fontSize={'large'}>Step {index + 1}</Text>
+        <Box border='1px' borderRadius={2}>
+          <GetStepName index={index} />
+        </Box>
         <Box border='1px' borderRadius={2}>
           <Box>
             <GetAction index={index} />
@@ -621,26 +638,43 @@ function GetTasteProfile() {
       </>
     )
   }
+  function GetUmamiRating() {
+    return (
+      <>
+      <Tooltip label="How umami is this recipe? 0 = not umami, 5 = very umami">
+        <Input py={2} px={2} placeholder="...umami rating, eg. 0" variant={'flushed'} isInvalid={false} type='number'
+          {...register('tasteProfile.umami', {min: 0, max: 5})} />
+      </Tooltip>
+      {errors.tasteProfile && errors.tasteProfile.umami && errors.tasteProfile.umami.message && (
+        <FormErrorMessage>
+        {errors.tasteProfile.umami && errors.tasteProfile.umami.message}
+      </FormErrorMessage>)}
+      </>
+    )
+  }
   return (
     <Container centerContent>
     <Text align='center' as='u' fontSize={'large'}>Taste Profile</Text>
-    <Wrap>
-      <WrapItem>
+    <Grid templateColumns={'repeat(auto-fit, minmax(200px, 1fr))'} gap={2}>
+      <GridItem>
         <GetSaltRating />
-      </WrapItem>
-      <WrapItem>
+      </GridItem>
+      <GridItem>
         <GetSweetRating />
-      </WrapItem>
-      <WrapItem>
+      </GridItem>
+      <GridItem>
         <GetSourRating />
-      </WrapItem>
-      <WrapItem>
+      </GridItem>
+      <GridItem>
         <GetBitterRating />
-      </WrapItem>
-      <WrapItem>
+      </GridItem>
+      <GridItem>
         <GetSpiceRating />
-      </WrapItem>
-    </Wrap>
+      </GridItem>
+      <GridItem>
+        <GetUmamiRating />
+      </GridItem>
+    </Grid>
     </Container>
   )
 }

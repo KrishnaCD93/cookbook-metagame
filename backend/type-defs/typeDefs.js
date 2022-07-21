@@ -36,7 +36,7 @@ const typeDefs = gql`
   }
   type Step {
     _id: ID
-    name: String!
+    stepName: String!
     action: String!
     trigger: String
     comments: String
@@ -51,6 +51,7 @@ const typeDefs = gql`
     sour: Int!
     bitter: Int!
     spice: Int!
+    umami: Int
     userID: String
   }
   type ChefsMeta {
@@ -84,16 +85,24 @@ const typeDefs = gql`
   type Query {
     recipes: [Recipe]
     recipesByUserID(userID: String!): [Recipe]
+    recipeWithData(recipeID: ID!): RecipeDataResponse
     ingredients: [Ingredient]
-    ingredientsByUserID(userID: String!): [Ingredient]
+    ingredientByID(id: ID!): Ingredient
     steps: [Step]
-    stepsByUserID(userID: String!): [Step]
+    stepByID(id: ID!): Step
     tasteProfiles: [TasteProfile]
+    tasteProfileByID(id: ID!): [TasteProfile]
     tasteProfilesByUserID(userID: String!): [TasteProfile]
     chefsMetaByRecipeCid(recipeCid: String!): ChefsMeta
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
     user(address: String!): User
+  }
+  type RecipeDataResponse {
+    recipe: Recipe
+    ingredients: [Ingredient]
+    steps: [Step]
+    tasteProfile: TasteProfile
   }
   type Mutation {
     addIngredients(
@@ -106,6 +115,7 @@ const typeDefs = gql`
       signature: String
     ): IngredientResponse!
     addSteps(
+      stepNames: [String]
       actions: [String]!
       triggers: [String]
       actionImageCids: [String]
@@ -121,6 +131,7 @@ const typeDefs = gql`
       sour: Int!
       bitter: Int!
       spice: Int!
+      umami: Int
       userID: ID
       signature: String
     ): TasteProfileResponse!
@@ -133,8 +144,8 @@ const typeDefs = gql`
       description: String
       ingredientIDs: [ID]!
       stepIDs: [ID]!
-      metaQualityTags: String
       tasteProfileID: ID!
+      metaQualityTags: String
       equipment: String
       userID: String
       signature: String

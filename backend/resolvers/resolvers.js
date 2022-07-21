@@ -1,5 +1,5 @@
 const { AuthenticationError } = require('apollo-server');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 const mongoPassword = process.env.MONGO_DB_PASSWORD;
 const mongoURI = `mongodb+srv://cookbook:${mongoPassword}@cluster0.2k2xd.mongodb.net/?retryWrites=true&w=majority`
@@ -12,7 +12,6 @@ const tasteProfileCollection = db.collection('tasteProfiles');
 const chefsMetaCollection = db.collection('chefsMeta');
 const cookbookCollection = db.collection('cookbooks');
 const userCollection = db.collection('users');
-const { SiweMessage } = require('siwe');
 
 const resolvers = {
   Query: {
@@ -28,17 +27,53 @@ const resolvers = {
       await mongoClient.close();
       return userRecipes;
     },
+    recipeWithData: async (_, args, context, info) => {
+      const { recipeID } = args;
+      let recipe;
+      const ingredients = [];
+      const steps = [];
+      let tasteProfile;
+      await mongoClient.connect();
+      try {
+        recipe = await recipeCollection.findOne({ _id: new ObjectId(recipeID) });
+        for (const ingredientID of recipe.ingredientIDs) {
+          const ingredientData = await ingredientCollection.findOne({ _id: new ObjectId(ingredientID) });
+          ingredients.push(ingredientData);
+        }
+        for (const stepID of recipe.stepIDs) {
+          const stepData = await stepCollection.findOne({ _id: new ObjectId(stepID) });
+          steps.push(stepData);
+        }
+        tasteProfile = await tasteProfileCollection.findOne({ _id: new ObjectId(recipe.tasteProfileID) });
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return {
+          recipe: recipe,
+          ingredients: ingredients,
+          steps: steps,
+          tasteProfile: tasteProfile
+        }
+      }
+    },
     ingredients: async () => {
       await mongoClient.connect();
       const ingredients = await ingredientCollection.find({}).toArray();
       await mongoClient.close();
       return ingredients;
     },
-    ingredientsByUserID: async (_, args, context, info) => {
-      await mongoClient.connect();
-      const userIngredients = await ingredientCollection.find({ userID: args.userID }).toArray();
-      await mongoClient.close();
-      return userIngredients;
+    ingredientByID: async (_, args, context, info) => {
+      let ingredient
+      try {
+        await mongoClient.connect();
+        ingredient = await ingredientCollection.findOne({ _id: new ObjectId(args.id) });
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return ingredient;
+      }
     },
     steps: async () => {
       await mongoClient.connect();
@@ -46,11 +81,11 @@ const resolvers = {
       await mongoClient.close();
       return steps;
     },
-    stepsByUserID: async (_, args, context, info) => {
+    stepByID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const userSteps = await stepCollection.find({ userID: args.userID }).toArray();
+      const step = await stepCollection.findOne({ _id: new ObjectId(args.id) });
       await mongoClient.close();
-      return userSteps;
+      return step;
     },
     tasteProfiles: async () => {
       await mongoClient.connect();
@@ -58,11 +93,17 @@ const resolvers = {
       await mongoClient.close();
       return tasteProfiles;
     },
+    tasteProfileByID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const tasteProfile = await tasteProfileCollection.find({ _id: new Object(args.id) });
+      await mongoClient.close();
+      return tasteProfile;
+    },
     tasteProfilesByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const userTasteProfiles = await tasteProfileCollection.find({ userID: args.userID }).toArray();
+      const tasteProfiles = await tasteProfileCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
-      return userTasteProfiles;
+      return tasteProfiles;
     },
     chefsMetaByRecipeCid: async (_, args, context, info) => {
       await mongoClient.connect();
@@ -126,12 +167,14 @@ const resolvers = {
     },
     addSteps: async (_, args, context, info) => {
       // if (!args.signature) throw new AuthenticationError('Please sign message.');
-      const { actions, triggers, actionImageCids, triggerImageCids, comments, userID } = args;
+      const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = args;
       const newSteps = [];
       actions.forEach((action, index) => {
         const step = {};
-        step.action = action;
         step.userID = userID;
+        step.action = action;
+        if (stepNames && stepNames[index]) step.stepName = stepNames[index];
+          else step.stepName = 'Step ' + (index + 1);
         if (triggers && triggers[index]) step.trigger = triggers[index];
         if (actionImageCids && actionImageCids[index]) step.actionImageCid = actionImageCids[index];
         if (triggerImageCids && triggerImageCids[index]) step.triggerImageCid = triggerImageCids[index];
@@ -159,13 +202,14 @@ const resolvers = {
     },
     addTasteProfile: async (_, args, context, info) => {
       // if (!args.signature) throw new AuthenticationError('Please sign message.');
-      const { salt, sweet, sour, bitter, spice, userID } = args;
+      const { salt, sweet, sour, bitter, spice, umami, userID } = args;
       const newTasteProfile = {
         salt: salt,
         sweet: sweet,
         sour: sour,
         bitter: bitter,
         spice: spice,
+        umami: umami,
         userID: userID,
       };
       let addedTasteProfile;
