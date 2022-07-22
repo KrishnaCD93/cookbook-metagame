@@ -10,7 +10,8 @@ const server = new ApolloServer({
   csrfPrevention: true,
   cache: 'bounded',
   cors: {
-    origin: ["cookbook.social", "https://studio.apollographql.com/"]
+    origin: ["https://cookbook.social/", "https://studio.apollographql.com/"],
+    credentials: true
   }
 });
 
