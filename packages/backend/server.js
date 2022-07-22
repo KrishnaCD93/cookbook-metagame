@@ -17,11 +17,12 @@ const server = new ApolloServer({
 async function startApolloServer(server) {
   await server.start();
   const corsOptions = {
-    origin: [
-      "https://cookbook.social",
-      "https://studio.apollographql.com",
-      "http://localhost:3000"
-    ],
+    origin: true,
+    // [
+    //   "https://cookbook.social",
+    //   "https://studio.apollographql.com",
+    //   "http://localhost:3000"
+    // ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
   }
