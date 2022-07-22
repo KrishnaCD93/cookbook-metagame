@@ -30,6 +30,7 @@ async function startApolloServer(server) {
       }
     },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
     credentials: true,
   }
   const app = express();
