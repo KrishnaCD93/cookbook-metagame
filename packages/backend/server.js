@@ -22,6 +22,7 @@ async function startApolloServer(server) {
       "https://studio.apollographql.com",
       "http://localhost:3000"
     ],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
   }
   const app = express();
