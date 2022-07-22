@@ -9,7 +9,9 @@ const server = new ApolloServer({
   resolvers,
   csrfPrevention: true,
   cache: 'bounded',
-  credentials: 'omit',
+  cors: {
+    origin: ["https://cookbook.social", "https://cookbook-metagame-server.herokuapp.com/"]
+  },
 });
 
 async function startApolloServer(server) {
