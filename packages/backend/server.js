@@ -12,18 +12,19 @@ const server = new ApolloServer({
   introspection: true,
   cors: {
     credentials: true,
-    origin: (origin, callback) => {
-      const whitelist = [
-        "https://cookbook.social",
-        "https://studio.apollographql.com",
-        "http://localhost:3000"
-      ];
-      if (whitelist.indexOf(origin) !== -1) {
-        callback(null, true)
-      } else {
-        callback(new Error("Not allowed by CORS"))
-      }
-    }
+    origin: '*'
+  //   origin: (origin, callback) => {
+  //     const whitelist = [
+  //       "https://cookbook.social",
+  //       "https://studio.apollographql.com",
+  //       "http://localhost:3000"
+  //     ];
+  //     if (whitelist.indexOf(origin) !== -1) {
+  //       callback(null, true)
+  //     } else {
+  //       callback(new Error("Not allowed by CORS"))
+  //     }
+  //   }
   }
 });
 
