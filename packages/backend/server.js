@@ -8,10 +8,20 @@ const server = new ApolloServer({
   typeDefs, 
   resolvers,
   csrfPrevention: true,
-  cache: 'bounded',
+  cache: "bounded",
   cors: {
-    origin: ["https://cookbook.social/", "https://studio.apollographql.com/"],
-    credentials: true
+    credentials: true,
+    origin: (origin, callback) => {
+      const whitelist = [
+        "http://cookbook.social",
+        "https://studio.apollographql.com"
+      ];
+      if (whitelist.indexOf(origin) !== -1) {
+        callback(null, true)
+      } else {
+        callback(new Error("Not allowed by CORS"))
+      }
+    }
   }
 });
 
