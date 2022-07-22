@@ -10,7 +10,7 @@ const server = new ApolloServer({
   csrfPrevention: true,
   cache: 'bounded',
   cors: {
-    origin: ["https://cookbook.social", "https://cookbook-metagame-server.herokuapp.com/"]
+    origin: ["cookbook.social", "https://studio.apollographql.com/"]
   },
 });
 
