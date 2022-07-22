@@ -42,8 +42,8 @@ const wagmiClient = createClient({
 
 const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
-  uri: 'https://cookbook-metagame-server.herokuapp.com/',
-  credentials: 'omit',
+  uri: 'https://cookbook-metagame-server.herokuapp.com/', // 'http://localhost:4000'
+  //credentials: 'omit',
 });
 
 const container = document.getElementById('root');

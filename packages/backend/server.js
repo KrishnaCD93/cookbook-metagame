@@ -14,7 +14,8 @@ const server = new ApolloServer({
     origin: (origin, callback) => {
       const whitelist = [
         "https://cookbook.social",
-        "https://studio.apollographql.com"
+        "https://studio.apollographql.com",
+        "http://localhost:3000"
       ];
       if (whitelist.indexOf(origin) !== -1) {
         callback(null, true)
