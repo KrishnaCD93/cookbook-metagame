@@ -1,1 +1,1 @@
-web: yarn && yarn backend:start
+web: yarn backend:start
