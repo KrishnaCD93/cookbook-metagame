@@ -11,7 +11,7 @@ const server = new ApolloServer({
   cache: 'bounded',
   cors: {
     origin: ["cookbook.social", "https://studio.apollographql.com/"]
-  },
+  }
 });
 
 async function startApolloServer(server) {
