@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Text, VStack, Grid, useDisclosure, Button, Flex, Spacer } from '@chakra-ui/react';
+import { Box, Text, VStack, Grid, useDisclosure, Button, Flex } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import CreateRecipe from './CreateRecipe';
@@ -52,7 +52,7 @@ function App() {
       <Grid minH="100vh" p={3}>
         <Flex justifySelf="flex-end">
           <Box>
-            <ConnectButton />
+            <ConnectButton label='Connect UserID' />
           </Box>
           <ColorModeSwitcher />
         </Flex>
@@ -64,8 +64,7 @@ function App() {
             signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
           <CreateCookbook isOpen={cookbookIsOpen} onClose={cookbookOnClose} signMessageWithEthereum={signMessageWithEthereum} accountInfo={accountInfo} />
         </VStack>
-        <Spacer />
-        <ShowRecipes accountInfo={accountInfo} />
+        {accountInfo ? <ShowRecipes accountInfo={accountInfo} /> : <Text>Connect account to view recipes</Text>}
       </Grid>
     </Box>
   );

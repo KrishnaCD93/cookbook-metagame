@@ -13,6 +13,8 @@ const chefsMetaCollection = db.collection('chefsMeta');
 const cookbookCollection = db.collection('cookbooks');
 const userCollection = db.collection('users');
 
+const nftStorageToken = process.env.NFT_STORAGE_API_KEY
+
 const resolvers = {
   Query: {
     recipes: async () => {
@@ -132,6 +134,44 @@ const resolvers = {
     }
   },
   Mutation: {
+    addRecipeImage: async (_, args, context, info) => {
+      const { imageBlob, userID, recipeName, tasteProfile } = args;
+      const file = new File([imageBlob], `${recipeName}.jpg`, { type: imageType });
+      let recipeImage;
+      try {
+        console.log('blob', imageBlob);
+        console.log('file', file);
+        const nft = {
+          image: file,
+          name: recipeName,
+          description: `${recipeName} recipe image`,
+          properties: {
+            type: 'recipe',
+            chef: userID,
+            recipeName: recipeName,
+            tasteProfile: {
+              salt: tasteProfile[0],
+              sweet: tasteProfile[1],
+              sour: tasteProfile[2],
+              bitter: tasteProfile[3],
+              spice: tasteProfile[4],
+              umami: tasteProfile[5]
+            }
+          }
+        }
+        const client = new NFTStorage({ token: nftStorageToken})
+        recipeImage = await client.store(nft)
+        console.log('uploaded image', recipeImage)
+      } catch (error) {
+        console.log('error', error)
+      } finally {
+        return {
+          success: recipeImage? true : false,
+          message: recipeImage? 'Image uploaded successfully' : 'Image upload failed',
+          imageCid: recipeImage? recipeImage.url : null
+        }
+      }
+    },
     addIngredients: async (_, args, context, info) => {
       // if (!args.signature) throw new AuthenticationError('Please sign message.');
       const { names, quantities, nutritions, comments, imageCids, userID } = args;

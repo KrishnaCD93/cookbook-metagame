@@ -5,12 +5,11 @@ import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react'
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
-import useFleekStorage from "./hooks/useFleekStorage";
 import useApolloMutations from "./hooks/useApolloMutations";
+//import Resizer from "react-image-file-resizer";
 
 // Create recipe page with recipe name, description, ingredients, steps, metaquality tags, and recipe image
 const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
-  const [fleekStorageUploadRecipeImage] = useFleekStorage();
   const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe] = useApolloMutations();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
@@ -26,18 +25,29 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         userID = accountInfo;
         signature = await signMessageWithEthereum();
       }
-      let imageCid;
-      if (data.recipeImage[0]) {
-        const imageInfo = {};
-        imageInfo.name = data.name + '-Image';
-        imageInfo.type = 'recipeImage';
-        imageInfo.recipe = data.name;
-        const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, data.recipeImage[0], accountInfo);
-        imageCid = imageUpload.hash;
-      } else if (!data.recipeImage[0]) {
-        imageCid = '';
-      }
-      console.log(data.recipeImage[0], imageCid);
+      let imageCid = '';
+      // if (data.recipeImage[0]) {
+      //   let image; 
+      //   Resizer.imageFileResizer(data.recipeImage[0],
+      //     1080,
+      //     1080,
+      //     "JPEG",
+      //     100,
+      //     0,
+      //     (uri) => {
+      //       image = uri;
+      //     },
+      //     "blob",
+      //     200,
+      //     200 
+      //   );
+      //   const imageUploadData = { image: image, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature };
+      //   const imageUpload = await uploadRecipeImage(imageUploadData);
+      //   imageCid = imageUpload.uri;
+      // } else if (!data.recipeImage[0]) {
+      //   imageCid = '';
+      // }
+      // console.log(data.recipeImage[0], imageCid);
       async function addIngredients() {
         const names = [];
         const quantities = [];
@@ -49,12 +59,9 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           quantities[index] = ingredient.quantity;
           comments[index] = ingredient.comments;
           if (ingredient.image[0]) {
-            const imageInfo = {};
-            imageInfo.name = ingredient.name;
-            imageInfo.type = 'ingredient';
-            imageInfo.recipe = data.name;
-            const imageUpload = await fleekStorageUploadRecipeImage(imageInfo, ingredient.image[0], accountInfo);
-            imageCids[index] = imageUpload.hash
+            imageCids[index] = '';
+            //const imageInfo = {  }
+            //imageCids[index]
           } else if (!ingredient.image[0]) {
             imageCids[index] = ''
           }
@@ -81,20 +88,16 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           triggers[index] = step.trigger;
           comments[index] = step.comments;
           if (step.actionImage[0]) {
-            stepActionImageData.type = `step-${index+1}-actionImage`;
-            stepActionImageData.name = 'actionImage';
-            stepActionImageData.recipe = data.name;
-            const imageUpload = await fleekStorageUploadRecipeImage(stepActionImageData, step.actionImage[0], accountInfo);
-            actionImageCids[index] = imageUpload.hash
+            stepActionImageData[index] = '';
+            //const imageInfo = {  }
+            //actionImageCids[index] = imageUpload.hash
           } else if (!step.actionImage[0]) {
             actionImageCids[index] = ''
           }
           if (step.triggerImage[0]) {
-            stepTriggerImageData.type = `step-${index+1}-triggerImage`;
-            stepTriggerImageData.name = 'triggerImage';
-            stepTriggerImageData.recipe = data.name;
-            const imageUpload = await fleekStorageUploadRecipeImage(stepTriggerImageData, step.triggerImage[0], accountInfo);
-            triggerImageCids[index] = imageUpload.hash
+            stepTriggerImageData[index] = '';
+            //const imageInfo = {  }
+            //triggerImageCids[index] = imageUpload.hash
           } else if (!step.triggerImage[0]) {
             triggerImageCids[index] = ''
           }
@@ -145,7 +148,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       const recipeId = await addRecipe(ingredientIds, stepIds, tasteProfileId);
       console.log(recipeId);
       setUploading(false);
-      if (recipeId) {
+      if (imageCid) {
+        console.log('imageCid', imageCid);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',

@@ -105,6 +105,13 @@ const typeDefs = gql`
     tasteProfile: TasteProfile
   }
   type Mutation {
+    addRecipeImage(
+      imageBlob: String!
+      userID: ID!
+      recipeID: ID!
+      recipeName: String!
+      tasteProfile: [Int]!
+    ): ImageUploadResponse!
     addIngredients(
       names: [String]!
       quantities: [String]!
@@ -223,6 +230,11 @@ const typeDefs = gql`
       image: String
       email: String
     ): UserResponse!
+  }
+  type ImageUploadResponse {
+    success: Boolean!
+    message: String!
+    imageCid: String!
   }
   type RecipeResponse {
     success: Boolean!

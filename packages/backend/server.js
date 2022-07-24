@@ -1,5 +1,4 @@
 require('dotenv').config();
-const cors = require('cors');
 const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./type-defs/typeDefs');

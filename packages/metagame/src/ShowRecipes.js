@@ -149,8 +149,8 @@ const RecipeCard = ({ recipe }) => {
     <>
     <Box boxShadow='lg' borderRadius={4} onClick={() => showRecipe(recipe)}>
       <VStack spacing={4} align="center">
-        {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} />}
         <Text fontSize="large">{recipe.name}</Text>
+        {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} w='1080px' h='1350px' />}
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
         {recipe.metaQualityTags && recipe.metaQualityTags.split(',').map((tag, index) => (
           <Badge key={index} color='teal' variant='subtle'>{tag}</Badge>
