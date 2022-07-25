@@ -19,13 +19,20 @@ const typeDefs = gql`
     createdAt: String
     updatedAt: String
   }
+  type RecipeImage {
+    imageUri: String
+    userID: ID
+    recipeName: String
+    tasteProfile: [Int]
+    signature: String
+  }
   type Ingredient {
     _id: ID
     name: String!
     quantity: String
     nutrition: Nutrition
     comments: String
-    imageCid: String
+    imageUri: String
     userID: String
   }
   type Nutrition {
@@ -40,8 +47,8 @@ const typeDefs = gql`
     action: String!
     trigger: String
     comments: String
-    actionImageCid: String
-    triggerImageCid: String
+    actionImageUri: String
+    triggerImageUri: String
     userID: String
   }
   type TasteProfile {
@@ -64,8 +71,8 @@ const typeDefs = gql`
   }
   type Cookbook {
     address: String!
-    recipeID: ID
-    recipeCids: [String]
+    recipeIDs: [ID]
+    imageUris: [String]
     name: String!
     description: String
     chefsMetaIDs: [ID]
@@ -86,6 +93,7 @@ const typeDefs = gql`
     recipes: [Recipe]
     recipesByUserID(userID: String!): [Recipe]
     recipeWithData(recipeID: ID!): RecipeDataResponse
+    recipeImages: [RecipeImage]
     ingredients: [Ingredient]
     ingredientByID(id: ID!): Ingredient
     steps: [Step]
@@ -106,11 +114,11 @@ const typeDefs = gql`
   }
   type Mutation {
     addRecipeImage(
-      imageBlob: String!
+      imageUri: String!
       userID: ID!
-      recipeID: ID!
       recipeName: String!
       tasteProfile: [Int]!
+      signature: String!
     ): ImageUploadResponse!
     addIngredients(
       names: [String]!

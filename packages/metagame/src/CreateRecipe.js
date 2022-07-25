@@ -6,11 +6,9 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
-//import Resizer from "react-image-file-resizer";
 
-// Create recipe page with recipe name, description, ingredients, steps, metaquality tags, and recipe image
 const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
-  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe] = useApolloMutations();
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadRecipeImage] = useApolloMutations();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
@@ -25,29 +23,42 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         userID = accountInfo;
         signature = await signMessageWithEthereum();
       }
-      let imageCid = '';
-      // if (data.recipeImage[0]) {
-      //   let image; 
-      //   Resizer.imageFileResizer(data.recipeImage[0],
-      //     1080,
-      //     1080,
-      //     "JPEG",
-      //     100,
-      //     0,
-      //     (uri) => {
-      //       image = uri;
-      //     },
-      //     "blob",
-      //     200,
-      //     200 
-      //   );
-      //   const imageUploadData = { image: image, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature };
-      //   const imageUpload = await uploadRecipeImage(imageUploadData);
-      //   imageCid = imageUpload.uri;
-      // } else if (!data.recipeImage[0]) {
-      //   imageCid = '';
-      // }
-      // console.log(data.recipeImage[0], imageCid);
+      let imageUploadUri;
+      // let imageUploadData
+      if (data.recipeImage[0]) {
+        const reader = new FileReader();
+        reader.readAsDataURL(data.recipeImage[0]);
+        reader.onload = () => {
+          console.log(reader.result);
+          imageUploadUri = reader.result;
+        }
+        // imageUploadData = { imageUri: reader.result, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
+        // const recipeImage = await uploadRecipeImage(imageUploadData);
+        imageUploadUri = 'recipeImage';
+        // const resizeFile = (file) =>
+        //   new Promise((resolve) => {
+        //     Resizer.imageFileResizer(
+        //       file,
+        //       1080,
+        //       1080,
+        //       "JPEG",
+        //       100,
+        //       0,
+        //       (uri) => {
+        //         console.log(uri)
+        //         resolve(uri);
+        //       },
+        //       "base64"
+        //     );
+        //   })
+        // const imageUri = await resizeFile(data.recipeImage[0]);
+        // const imageUploadData = { imageUri, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature };
+        // const imageUpload = await uploadRecipeImage(imageUploadData);
+        // imageUploadUri = imageUpload;
+      } else if (!data.recipeImage[0]) {
+        imageUploadUri = '';
+      }
+      console.log(data.recipeImage[0], imageUploadUri);
       async function addIngredients() {
         const names = [];
         const quantities = [];
@@ -126,7 +137,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       async function addRecipe(ingredientIds, stepIds, tasteProfileId) {
         const recipe = {
           name: data.name,
-          imageCid: imageCid,
+          imageUri: imageUploadUri,
           description: data.description,
           ingredientIDs: ingredientIds,
           stepIDs: stepIds,
@@ -148,8 +159,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       const recipeId = await addRecipe(ingredientIds, stepIds, tasteProfileId);
       console.log(recipeId);
       setUploading(false);
-      if (imageCid) {
-        console.log('imageCid', imageCid);
+      if (recipeId) {
+        console.log('imageUri', imageUploadUri);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',

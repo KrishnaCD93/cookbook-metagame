@@ -33,6 +33,7 @@ async function startApolloServer(server) {
     credentials: true,
   }
   const app = express();
+  app.use(express.json({ limit: '50mb' }));
   server.applyMiddleware({ app, path: '/', cors: corsOptions });
 
   app.listen({port: process.env.PORT || 4000});

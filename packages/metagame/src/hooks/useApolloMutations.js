@@ -40,15 +40,27 @@ const CREATE_RECIPE = gql`
   }
 `;
 
+const CREATE_RECIPE_IMAGE = gql`
+  mutation Mutation($userID: ID!, $recipeName: String!, $tasteProfile: [Int]!, $signature: String!, $imageUri: String!) {
+    addRecipeImage(userID: $userID, recipeName: $recipeName, tasteProfile: $tasteProfile, signature: $signature, imageUri: $imageUri) {
+      success
+      message
+      imageCid
+    }
+  }
+`;
+
 const useApolloMutations = () => {
   const ingredientsData = {};
   const stepsData = {};
   const tasteProfileData = {};
   const recipeData = {};
+  const recipeImageData = {};
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
   const [addSteps] = useMutation(CREATE_STEPS);
   const [addTasteProfile] = useMutation(CREATE_TASTE_PROFILE);
   const [addRecipe] = useMutation(CREATE_RECIPE);
+  const [addRecipeImage] = useMutation(CREATE_RECIPE_IMAGE);
 
   const uploadIngredients = async (props) => {
     console.log('uploadIngredients', props);
@@ -132,7 +144,30 @@ const useApolloMutations = () => {
     return recipeData;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe];
+  const uploadRecipeImage = async (props) => {
+    console.log('uploadRecipeImage', props);
+    const { imageUri, userID, recipeName, tasteProfile, signature } = props;
+    const tasteProfileArray = [];
+    tasteProfileArray[0] = parseInt(tasteProfile.salt);
+    tasteProfileArray[1] = parseInt(tasteProfile.sweet);
+    tasteProfileArray[2] = parseInt(tasteProfile.sour);
+    tasteProfileArray[3] = parseInt(tasteProfile.bitter);
+    tasteProfileArray[4] = parseInt(tasteProfile.spice);
+    tasteProfileArray[5] = parseInt(tasteProfile.umami);
+    await addRecipeImage({ variables: { imageUri, userID, recipeName, tasteProfile: tasteProfileArray, signature } })
+      .then((data) => {
+        console.log('uploadRecipeImage', data);
+        recipeImageData.success = data.data.addRecipeImage.success;
+        recipeImageData.message = data.data.addRecipeImage.message;
+        recipeImageData.imageCid = data.data.addRecipeImage.imageCid;
+        console.log('uploadRecipeImage', recipeImageData);
+      }).catch((error) => {
+        console.log('uploadRecipeImage error', error);
+      })
+    return recipeImageData;
+  }
+
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadRecipeImage];
 }
 
 export default useApolloMutations;

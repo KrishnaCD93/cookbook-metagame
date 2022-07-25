@@ -13,7 +13,8 @@ const chefsMetaCollection = db.collection('chefsMeta');
 const cookbookCollection = db.collection('cookbooks');
 const userCollection = db.collection('users');
 
-const nftStorageToken = process.env.NFT_STORAGE_API_KEY
+const { NFTStorage, File } = require('nft.storage');
+const nftStorageToken = process.env.NFT_STORAGE_API_KEY;
 
 const resolvers = {
   Query: {
@@ -135,11 +136,11 @@ const resolvers = {
   },
   Mutation: {
     addRecipeImage: async (_, args, context, info) => {
-      const { imageBlob, userID, recipeName, tasteProfile } = args;
-      const file = new File([imageBlob], `${recipeName}.jpg`, { type: imageType });
+      const { imageUri, userID, recipeName, tasteProfile, signature } = args;
+      console.log(imageUri, userID, recipeName, tasteProfile, signature);
       let recipeImage;
       try {
-        console.log('blob', imageBlob);
+        const file = new File([imageUri], `${recipeName}.jpg`, { type: 'image/jpeg' });
         console.log('file', file);
         const nft = {
           image: file,
@@ -156,7 +157,8 @@ const resolvers = {
               bitter: tasteProfile[3],
               spice: tasteProfile[4],
               umami: tasteProfile[5]
-            }
+            },
+            signature: signature
           }
         }
         const client = new NFTStorage({ token: nftStorageToken})

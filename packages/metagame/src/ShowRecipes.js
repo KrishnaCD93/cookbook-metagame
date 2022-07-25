@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Divider, Grid, GridItem, Image, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Divider, Grid, GridItem, Image, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -93,21 +93,17 @@ const ShowRecipes = ({ accountInfo }) => {
   if (error) console.log('recipe error', error)
   
   return (
-    <>
-    {accountInfo ?
-    <> 
-      <Text fontSize="large">Recipes</Text>
+    <VStack spacing={2}>
+      <Spacer mt={4} />
+      <Text fontSize="xl">Recipes</Text>
       <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
-              <RecipeCard recipe={recipe} />
+            <RecipeCard recipe={recipe} />
           </GridItem>
         ))}
       </Grid>
-    </>
-      : <Text>Connect polygon account to view recipes</Text>
-    }
-    </>
+    </VStack>
   );
 }
 
@@ -147,10 +143,10 @@ const RecipeCard = ({ recipe }) => {
   
   return (
     <>
-    <Box boxShadow='lg' borderRadius={4} onClick={() => showRecipe(recipe)}>
+    <Box boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)}>
       <VStack spacing={4} align="center">
         <Text fontSize="large">{recipe.name}</Text>
-        {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} w='1080px' h='1350px' />}
+        {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} maxW='1080px' maxH='1080px' />}
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
         {recipe.metaQualityTags && recipe.metaQualityTags.split(',').map((tag, index) => (
           <Badge key={index} color='teal' variant='subtle'>{tag}</Badge>

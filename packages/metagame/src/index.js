@@ -22,7 +22,7 @@ import { publicProvider } from 'wagmi/providers/public';
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 
 const { chains, provider } = configureChains(
-  [chain.polygon],
+  [chain.mainnet, chain.polygon],
   [
     alchemyProvider({ alchemyId: process.env.ALCHEMY_ID }),
     publicProvider()
@@ -41,7 +41,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame-server.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'https://cookbook-metagame-server.herokuapp.com/', //  'http://localhost:4000', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors'
