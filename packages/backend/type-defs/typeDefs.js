@@ -20,7 +20,7 @@ const typeDefs = gql`
     updatedAt: String
   }
   type RecipeImage {
-    imageUri: String
+    imageCid: String
     userID: ID
     recipeName: String
     tasteProfile: [Int]
@@ -32,7 +32,7 @@ const typeDefs = gql`
     quantity: String
     nutrition: Nutrition
     comments: String
-    imageUri: String
+    imageCid: String
     userID: String
   }
   type Nutrition {
@@ -47,8 +47,8 @@ const typeDefs = gql`
     action: String!
     trigger: String
     comments: String
-    actionImageUri: String
-    triggerImageUri: String
+    actionImageCid: String
+    triggerImageCid: String
     userID: String
   }
   type TasteProfile {
@@ -72,7 +72,7 @@ const typeDefs = gql`
   type Cookbook {
     address: String!
     recipeIDs: [ID]
-    imageUris: [String]
+    imageCids: [String]
     name: String!
     description: String
     chefsMetaIDs: [ID]

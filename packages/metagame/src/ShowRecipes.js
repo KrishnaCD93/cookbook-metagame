@@ -69,7 +69,7 @@ const GET_RECIPES = gql`
   }
 `;
 
-const ShowRecipes = ({ accountInfo }) => {
+const ShowRecipes = () => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
   
@@ -96,7 +96,7 @@ const ShowRecipes = ({ accountInfo }) => {
     <VStack spacing={2}>
       <Spacer mt={4} />
       <Text fontSize="xl">Recipes</Text>
-      <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
+      <Grid templateColumns="repeat(auto-fit)" gap={4}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
             <RecipeCard recipe={recipe} />
@@ -145,13 +145,14 @@ const RecipeCard = ({ recipe }) => {
     <>
     <Box boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)}>
       <VStack spacing={4} align="center">
-        <Text fontSize="large">{recipe.name}</Text>
+        <Text fontSize="large">{recipe.name}
+          {recipe.signature && <Badge borderRadius={2} ml={1} mb={2} colorScheme='blue' variant='subtle'>Signed</Badge>}
+        </Text>
         {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} maxW='1080px' maxH='1080px' />}
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
         {recipe.metaQualityTags && recipe.metaQualityTags.split(',').map((tag, index) => (
-          <Badge key={index} color='teal' variant='subtle'>{tag}</Badge>
+          <Badge key={index} colorScheme='teal' variant='subtle'>{tag}</Badge>
         ))}
-        {recipe.signature && <Badge color='teal' variant='subtle'>Signed</Badge>}
         <Button variant='ghost' w='100%'>View Recipe</Button>
       </VStack>
     </Box>
@@ -164,6 +165,7 @@ const RecipeCard = ({ recipe }) => {
 
 const Recipe = (props) => {
   const { isOpen, onClose, recipeData, ingredients, steps, tasteProfile } = props;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
@@ -174,7 +176,7 @@ const Recipe = (props) => {
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="center" divider={<Divider />}>
-            {recipeData && recipeData.imageCid && <Image src={`https://ipfs.io/ipfs/${recipeData.imageCid}`} alt={recipeData.name} />}
+            {recipeData && recipeData.imageCid && <Image src={`https://ipfs.io/ipfs/${recipeData.imageCid}`} alt={recipeData.name} boxSize='sm' />}
             {recipeData && recipeData.description && <Text fontSize="large">{recipeData.description}</Text>}
             {ingredients && <>
               <Text as='b' fontSize="large">Ingredients</Text>
@@ -185,9 +187,20 @@ const Recipe = (props) => {
               <Steps steps={steps} />
             </>}
             {tasteProfile && <TasteProfile tasteProfile={tasteProfile} />}
-            {recipeData && recipeData.equipment && <Text fontSize="md">Equipment: {recipeData.equipment}</Text>}
-            {recipeData && recipeData.metaQualityTags && <Text fontSize="md">Tags: {recipeData.metaQualityTags}</Text>}
-            {recipeData && recipeData.userID && <Text fontSize="md">UserID: {recipeData.userID}</Text>}
+            {recipeData && recipeData.equipment && <>
+              <Text as='b' fontSize="large">Equipment</Text>
+              {recipeData.equipment.split(',').map((equipment, index) => (
+                <Text key={index}>{equipment}</Text>
+              ))}
+            </>}
+            {recipeData && recipeData.metaQualityTags && 
+              <>
+              <Text as='b' fontSize="large">Meta Tags</Text>
+              {recipeData.metaQualityTags.split(',').map((tag, index) => (
+              <Text key={index}>{tag}</Text>
+              ))}
+              </>}
+            {recipeData && recipeData.userID && <Text>Created by {recipeData.userID}</Text>}
             {recipeData && recipeData.createdAt && <Text fontSize="md">Created On: {recipeData.createdAt.split("T")[0]}</Text>}
           </VStack>
         </ModalBody>
@@ -200,7 +213,7 @@ const Ingredients = ({ ingredients }) => {
   return (
     <Wrap spacing={4} borderRadius={4}>
     {ingredients && ingredients.map((ingredient, index) => (
-    <WrapItem key={index} spacing={4} align="center" boxShadow='sm' borderRadius={2}>
+    <WrapItem key={index} spacing={4} align="center" boxShadow='lg' borderRadius={2}>
       <Popover>
         <PopoverTrigger>
           <Text fontSize="md">{ingredient.name}</Text>

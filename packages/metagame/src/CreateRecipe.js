@@ -12,6 +12,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
+  const [recipeImage, setRecipeImage] = useState(null);
 
   const onSubmit = async (data) => {
     console.log(data);
@@ -23,42 +24,19 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         userID = accountInfo;
         signature = await signMessageWithEthereum();
       }
-      let imageUploadUri;
-      // let imageUploadData
+      let imageCid;
       if (data.recipeImage[0]) {
         const reader = new FileReader();
-        reader.readAsDataURL(data.recipeImage[0]);
         reader.onload = () => {
-          console.log(reader.result);
-          imageUploadUri = reader.result;
+          setRecipeImage(reader.result);
         }
-        // imageUploadData = { imageUri: reader.result, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
-        // const recipeImage = await uploadRecipeImage(imageUploadData);
-        imageUploadUri = 'recipeImage';
-        // const resizeFile = (file) =>
-        //   new Promise((resolve) => {
-        //     Resizer.imageFileResizer(
-        //       file,
-        //       1080,
-        //       1080,
-        //       "JPEG",
-        //       100,
-        //       0,
-        //       (uri) => {
-        //         console.log(uri)
-        //         resolve(uri);
-        //       },
-        //       "base64"
-        //     );
-        //   })
-        // const imageUri = await resizeFile(data.recipeImage[0]);
-        // const imageUploadData = { imageUri, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature };
-        // const imageUpload = await uploadRecipeImage(imageUploadData);
-        // imageUploadUri = imageUpload;
+        reader.readAsDataURL(data.recipeImage[0]);
+        const imageUploadData = { imageUri: reader.result, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
+        imageCid = await uploadRecipeImage(imageUploadData);
       } else if (!data.recipeImage[0]) {
-        imageUploadUri = '';
+        imageCid = '';
       }
-      console.log(data.recipeImage[0], imageUploadUri);
+      console.log(data.recipeImage[0], imageCid);
       async function addIngredients() {
         const names = [];
         const quantities = [];
@@ -137,7 +115,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       async function addRecipe(ingredientIds, stepIds, tasteProfileId) {
         const recipe = {
           name: data.name,
-          imageUri: imageUploadUri,
+          imageUri: imageCid,
           description: data.description,
           ingredientIDs: ingredientIds,
           stepIDs: stepIds,
@@ -159,8 +137,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       const recipeId = await addRecipe(ingredientIds, stepIds, tasteProfileId);
       console.log(recipeId);
       setUploading(false);
-      if (recipeId) {
-        console.log('imageUri', imageUploadUri);
+      if (imageCid) {
+        console.log('imageUri', imageCid);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',
@@ -203,7 +181,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
                   <TabPanels>
                     <TabPanel>
                       <FormLabel htmlFor="name">
-                        <GetRecipeName />
+                        <GetRecipeName recipeImage={recipeImage} />
                       </FormLabel>
                       <FormLabel htmlFor="description">
                         <GetDescription />
