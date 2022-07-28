@@ -27,10 +27,6 @@ function App() {
   const cld = new Cloudinary({
     cloud: {
       cloudName: 'cookbook-social'
-    },
-    url: {
-      secureDistribution: 'cookbook.social', 
-      secure: true 
     }
   });
 
