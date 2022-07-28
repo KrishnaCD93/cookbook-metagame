@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Divider, Grid, GridItem, Image, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Divider, Grid, GridItem, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
@@ -121,7 +121,6 @@ const RecipeCard = ({ recipe, cld }) => {
 
   const image = cld.image(recipe.imageCid)
   image.resize(scale().width(1080));
-  console.log('image', image)
 
   useEffect(() => {
     if (isOpen) {
@@ -129,7 +128,6 @@ const RecipeCard = ({ recipe, cld }) => {
         setRecipeID(recipe._id);
         await getRecipeWithData();
         if (recipeWithData) {
-          console.log('data', recipeWithData);
           setRecipeData(recipeWithData.recipeWithData.recipe);
           setIngredients(recipeWithData.recipeWithData.ingredients);
           setSteps(recipeWithData.recipeWithData.steps);
@@ -148,7 +146,7 @@ const RecipeCard = ({ recipe, cld }) => {
   
   return (
     <>
-    <Box boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)}>
+    <Box p={2} m={2} boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', boxShadow: 'dark-lg' }}>
       <VStack spacing={4} align="center">
         <Text fontSize="large">{recipe.name}
           {recipe.signature && <Badge borderRadius={2} ml={1} mb={2} colorScheme='blue' variant='subtle'>Signed</Badge>}
@@ -183,7 +181,6 @@ const Recipe = (props) => {
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="center" divider={<Divider />}>
-            {recipeData && recipeData.imageCid && <Image src={`https://ipfs.io/ipfs/${recipeData.imageCid}`} alt={recipeData.name} boxSize='sm' />}
             {recipeData && recipeData.description && <Text fontSize="large">{recipeData.description}</Text>}
             {ingredients && <>
               <Text as='b' fontSize="large">Ingredients</Text>
@@ -218,12 +215,12 @@ const Recipe = (props) => {
 
 const Ingredients = ({ ingredients }) => {
   return (
-    <Wrap spacing={4} borderRadius={4}>
+    <Grid templateColumns="repeat(auto-fit)" gap={4}>
     {ingredients && ingredients.map((ingredient, index) => (
-    <WrapItem key={index} spacing={4} align="center" boxShadow='lg' borderRadius={2}>
+    <GridItem key={index} spacing={4} align="center" boxShadow='md' borderRadius={2} _hover={{ cursor: 'pointer', boxShadow: 'dark-lg' }}>
       <Popover>
         <PopoverTrigger>
-          <Text fontSize="md">{ingredient.name}</Text>
+          <Text fontSize="md"><Button variant='ghost' size='sm' ml={2}>🔘</Button>{ingredient.name}</Text>
         </PopoverTrigger>
         <PopoverContent>
           <PopoverArrow />
@@ -233,14 +230,13 @@ const Ingredients = ({ ingredients }) => {
           </PopoverHeader>
           <PopoverBody>
             <Text fontSize="md">Quantity: {ingredient.quantity}</Text>
-            {ingredient.imageCid && <Image src={ingredient.imageCid} alt={ingredient.name} />}
             {ingredient.comments && <Text fontSize="md">Comments: {ingredient.comments}</Text>}
           </PopoverBody>
         </PopoverContent>
       </Popover>
-    </WrapItem>
+    </GridItem>
     ))}
-    </Wrap>
+    </Grid>
   );
 }
 
@@ -249,24 +245,17 @@ const Steps = ({ steps }) => {
     <Wrap spacing={4}>
     {steps && steps.map((step, index) => (
     <WrapItem key={index} spacing={4} align="center" boxShadow="sm">
-      {/* <Text fontSize="md">Step {index + 1}</Text> */}
-      <Text fontSize="md">{step.name}</Text>
       <Box>
-        <Text as='u' fontSize="md">Action</Text>
-        <Text fontSize='md'>{step.action}</Text>
-        {step.actionImageCid && <Image src={`https://ipfs.io/ipfs/${step.actionImageCid}`} alt={step.action} />}
+        <Text fontSize="md">Step {index + 1}</Text>
+        {step.name && <Text fontSize="md">{step.name}</Text>}
       </Box>
+      <Box>
+        <Text fontSize='md'>{step.action}</Text>
       {step.trigger && 
-      <Box>
-        <Text as='u' fontSize="md">Trigger</Text>
-        <Text fontSize='md'>{step.trigger}</Text>
-        {step.triggerImageCid && <Image src={`https://ipfs.io/ipfs/${step.triggerImageCid}`} alt={step.trigger} />} 
-      </Box>}
+        <Text fontSize='md'>{step.trigger}</Text>}
       {step.comments && 
-      <Box>
-        <Text as='u' fontSize="md">Comments</Text>
-        <Text fontSize='md'>{step.comments}</Text>
-      </Box>}
+        <Text fontSize='md'>{step.comments}</Text>}
+      </Box>
     </WrapItem>
     ))}
     </Wrap>
@@ -274,7 +263,6 @@ const Steps = ({ steps }) => {
 }
 
 const TasteProfile = ({ tasteProfile }) => {
-  console.log(tasteProfile);
   return (
     <>
     {tasteProfile &&

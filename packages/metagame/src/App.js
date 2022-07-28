@@ -10,11 +10,14 @@ import {Cloudinary} from "@cloudinary/url-gen";
 
 import { ethers } from 'ethers';
 import { SiweMessage } from 'siwe';
+import detectEthereumProvider from '@metamask/detect-provider'
+
+const provider = await detectEthereumProvider()
 
 const domain = window.location.host;
 const origin = window.location.origin;
 let signer;
-if (window.ethereum) {
+if (provider) {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
 }

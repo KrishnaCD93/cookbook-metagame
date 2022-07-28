@@ -32,6 +32,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           console.log(nftCid);
           // @TODO: add nft data to blockchain and update user cookbook
         }
+      } else if (!accountInfo) {
+        userID = '0x0000000000000000000000000000000000000000';
       }
       if (data.recipeImage[0]) {
         imageCid = await uploadRecipeImage(data.recipeImage[0]);
