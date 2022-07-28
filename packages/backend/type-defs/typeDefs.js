@@ -19,7 +19,7 @@ const typeDefs = gql`
     createdAt: String
     updatedAt: String
   }
-  type RecipeImage {
+  type RecipeNFT {
     imageCid: String
     userID: ID
     recipeName: String
@@ -93,7 +93,7 @@ const typeDefs = gql`
     recipes: [Recipe]
     recipesByUserID(userID: String!): [Recipe]
     recipeWithData(recipeID: ID!): RecipeDataResponse
-    recipeImages: [RecipeImage]
+    recipeNFTs: [RecipeNFT]
     ingredients: [Ingredient]
     ingredientByID(id: ID!): Ingredient
     steps: [Step]
@@ -113,13 +113,13 @@ const typeDefs = gql`
     tasteProfile: TasteProfile
   }
   type Mutation {
-    addRecipeImage(
+    addRecipeNFT(
       imageUri: String!
       userID: ID!
       recipeName: String!
       tasteProfile: [Int]!
       signature: String!
-    ): ImageUploadResponse!
+    ): NFTUploadResponse!
     addIngredients(
       names: [String]!
       quantities: [String]!
@@ -239,10 +239,10 @@ const typeDefs = gql`
       email: String
     ): UserResponse!
   }
-  type ImageUploadResponse {
+  type NFTUploadResponse {
     success: Boolean!
     message: String!
-    imageCid: String!
+    nftCid: String!
   }
   type RecipeResponse {
     success: Boolean!

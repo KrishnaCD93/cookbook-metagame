@@ -1,8 +1,9 @@
 import { Badge, Box, Button, Divider, Grid, GridItem, Image, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
-
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
+import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/react';
+import { scale } from "@cloudinary/url-gen/actions/resize";
 
 const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {
@@ -69,10 +70,10 @@ const GET_RECIPES = gql`
   }
 `;
 
-const ShowRecipes = () => {
+const ShowRecipes = ({ cld }) => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
-  
+
   // Ensure all recipes are loaded and memoize recipe
   const recipesMemo = useMemo(() => {
     if (recipes && recipes.length > 0) {
@@ -99,7 +100,7 @@ const ShowRecipes = () => {
       <Grid templateColumns="repeat(auto-fit)" gap={4}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
-            <RecipeCard recipe={recipe} />
+            <RecipeCard recipe={recipe} cld={cld} />
           </GridItem>
         ))}
       </Grid>
@@ -107,7 +108,7 @@ const ShowRecipes = () => {
   );
 }
 
-const RecipeCard = ({ recipe }) => {
+const RecipeCard = ({ recipe, cld }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [recipeID, setRecipeID] = useState('');
   const [getRecipeWithData, { data: recipeWithData, loading: recipeWithLoading, error: recipeWithError }] = useLazyQuery(GET_RECIPE_WITH_DATA, { 
@@ -117,6 +118,10 @@ const RecipeCard = ({ recipe }) => {
   const [ingredients, setIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
   const [tasteProfile, setTasteProfile] = useState(null);
+
+  const image = cld.image(recipe.imageCid)
+  image.resize(scale().width(1080));
+  console.log('image', image)
 
   useEffect(() => {
     if (isOpen) {
@@ -148,7 +153,9 @@ const RecipeCard = ({ recipe }) => {
         <Text fontSize="large">{recipe.name}
           {recipe.signature && <Badge borderRadius={2} ml={1} mb={2} colorScheme='blue' variant='subtle'>Signed</Badge>}
         </Text>
-        {recipe.imageCid && <Image src={`https://ipfs.io/ipfs/${recipe.imageCid}`} alt={recipe.name} maxW='1080px' maxH='1080px' />}
+        {recipe.imageCid && <AdvancedImage cldImg={image} 
+        plugins={[lazyload(), responsive(100), placeholder()]} 
+        />}
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
         {recipe.metaQualityTags && recipe.metaQualityTags.split(',').map((tag, index) => (
           <Badge key={index} colorScheme='teal' variant='subtle'>{tag}</Badge>
@@ -226,7 +233,7 @@ const Ingredients = ({ ingredients }) => {
           </PopoverHeader>
           <PopoverBody>
             <Text fontSize="md">Quantity: {ingredient.quantity}</Text>
-            {ingredient.imageCid && <Image src={`https://ipfs.io/ipfs/${ingredient.imageCid}`} alt={ingredient.name} />}
+            {ingredient.imageCid && <Image src={ingredient.imageCid} alt={ingredient.name} />}
             {ingredient.comments && <Text fontSize="md">Comments: {ingredient.comments}</Text>}
           </PopoverBody>
         </PopoverContent>

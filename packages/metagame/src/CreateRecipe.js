@@ -1,4 +1,4 @@
-import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody } from "@chakra-ui/react";
+import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex } from "@chakra-ui/react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
@@ -8,31 +8,33 @@ import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
 
 const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
-  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadRecipeImage] = useApolloMutations();
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadRecipeNFT] = useApolloMutations();
   const [uploading, setUploading] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
-  const [recipeImage, setRecipeImage] = useState(null);
 
   const onSubmit = async (data) => {
     console.log(data);
     try {
       let userID = '';
       let signature = '';
+      let nftCid = '';
+      let imageCid = '';
       setUploading(true)
-      if (accountInfo) {
+      if (accountInfo) { // if user is connected to ethereum, sign the message and create an NFT
         userID = accountInfo;
         signature = await signMessageWithEthereum();
-      }
-      let imageCid;
-      if (data.recipeImage[0]) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setRecipeImage(reader.result);
+        if (data.recipeImage[0] && data.createNFT) {
+          const image = data.recipeImage[0];
+          const imageUrl = URL.createObjectURL(image);
+          const nftUploadData = { imageUri: imageUrl, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
+          nftCid = await uploadRecipeNFT(nftUploadData);
+          console.log(nftCid);
+          // @TODO: add nft data to blockchain and update user cookbook
         }
-        reader.readAsDataURL(data.recipeImage[0]);
-        const imageUploadData = { imageUri: reader.result, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
-        imageCid = await uploadRecipeImage(imageUploadData);
+      }
+      if (data.recipeImage[0]) {
+        imageCid = await uploadRecipeImage(data.recipeImage[0]);
       } else if (!data.recipeImage[0]) {
         imageCid = '';
       }
@@ -48,9 +50,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           quantities[index] = ingredient.quantity;
           comments[index] = ingredient.comments;
           if (ingredient.image[0]) {
-            imageCids[index] = '';
-            //const imageInfo = {  }
-            //imageCids[index]
+            imageCids[index] = await uploadRecipeImage(ingredient.image[0]);
           } else if (!ingredient.image[0]) {
             imageCids[index] = ''
           }
@@ -68,8 +68,6 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         const actionImageCids = [];
         const triggerImageCids = [];
         const comments = [];
-        const stepActionImageData = {};
-        const stepTriggerImageData = {};
         data.steps.forEach(async (step, index) => {
           if (!step.action) return;
           stepNames[index] = step.stepName;
@@ -77,16 +75,12 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
           triggers[index] = step.trigger;
           comments[index] = step.comments;
           if (step.actionImage[0]) {
-            stepActionImageData[index] = '';
-            //const imageInfo = {  }
-            //actionImageCids[index] = imageUpload.hash
+            actionImageCids[index] = await uploadRecipeImage(step.actionImage[0]);
           } else if (!step.actionImage[0]) {
             actionImageCids[index] = ''
           }
           if (step.triggerImage[0]) {
-            stepTriggerImageData[index] = '';
-            //const imageInfo = {  }
-            //triggerImageCids[index] = imageUpload.hash
+            triggerImageCids[index] = await uploadRecipeImage(step.triggerImage[0]);
           } else if (!step.triggerImage[0]) {
             triggerImageCids[index] = ''
           }
@@ -115,7 +109,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       async function addRecipe(ingredientIds, stepIds, tasteProfileId) {
         const recipe = {
           name: data.name,
-          imageUri: imageCid,
+          imageCid: imageCid,
           description: data.description,
           ingredientIDs: ingredientIds,
           stepIDs: stepIds,
@@ -138,7 +132,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
       console.log(recipeId);
       setUploading(false);
       if (imageCid) {
-        console.log('imageUri', imageCid);
+        console.log('imageCid', imageCid);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',
@@ -181,7 +175,7 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
                   <TabPanels>
                     <TabPanel>
                       <FormLabel htmlFor="name">
-                        <GetRecipeName recipeImage={recipeImage} />
+                        <GetRecipeName />
                       </FormLabel>
                       <FormLabel htmlFor="description">
                         <GetDescription />
@@ -203,9 +197,9 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
                       </FormLabel>
                       <FormLabel htmlFor="equipment">
                         <GetEquipment />
+                      </FormLabel>
                       <FormLabel htmlFor="metaQualityTags">
                         <GetMetaQualityTags />
-                      </FormLabel>
                       </FormLabel>
                     </TabPanel>
                   </TabPanels>
@@ -246,8 +240,9 @@ function EditableControls() {
 // Function to get recipe name
 function GetRecipeName() {
   const { register, errors } = useFormContext();
-  const { ref, ...fields } = register('recipeImage')
+  const { ref, onChange, ...fields } = register('recipeImage')
   const hiddenFileInput = useRef(null);
+  const [imageName, setImageName] = useState(null);
   const imageUpload = event => { 
     hiddenFileInput.current?.click();
   }
@@ -279,11 +274,18 @@ function GetRecipeName() {
     </Container>
     <IconButton icon={<FaImage />} onClick={imageUpload}
       border='1px' />
-    <Input type={'file'} style={{ display: 'none' }} accept='image/*, video/*' {...fields}
-      ref={(instance) => {
-        ref(instance)
-        hiddenFileInput.current = instance
-      }} />
+    <Flex>
+      <Input type={'file'} style={{ display: 'none' }} accept='image/jpeg' {...fields} 
+        onChange={(event) => {
+          onChange(event)
+          setImageName(event.target.files[0].name)
+        }}
+        ref={(instance) => {
+          ref(instance)
+          hiddenFileInput.current = instance
+        }} />
+      {imageName &&  <Text>{imageName}</Text>}
+    </Flex>
     </Container>
   )
 }
@@ -371,19 +373,28 @@ const GetIngredients = () => {
   }
 
   // Function to get a picture of the ingredient
-  function GetImage({ index }) {
-    const { ref, ...fields } = register(`ingredients[${index}].image`)
+  function GetIngredientImage({ index }) {
+    const { ref, onChange, ...fields } = register(`ingredients[${index}].image`)
+    const [ingredientImageName, setIngredientImageName] = useState(null);
     const hiddenFileInput = useRef(null);
     const imageUpload = event => { hiddenFileInput.current?.click() }
+
     return (
       <>
       <IconButton icon={<FaImage />} onClick={imageUpload} 
         border='1px' />
-      <Input py={2} px={2} style={{ display: 'none'}} accept='image/*, video/*' {...fields}
-        type='file' ref={(instance) => {
-          ref(instance)
-          hiddenFileInput.current = instance
-        }} />
+      <Flex>
+        <Input type='file' style={{ display: 'none'}} accept='image/jpeg' {...fields} 
+          onChange={event => { 
+            onChange(event)
+            setIngredientImageName(event.target.files[0].name) 
+          }}
+          ref={(instance) => {
+            ref(instance)
+            hiddenFileInput.current = instance
+          }} />
+        {ingredientImageName && <Text>{ingredientImageName}</Text>}
+      </Flex>
       </>
     )
   }
@@ -399,7 +410,7 @@ const GetIngredients = () => {
             <GetName index={index} />
             <GetAmount index={index} />
             <GetIngredientComments index={index} />
-            <GetImage index={index} />
+            <GetIngredientImage index={index} />
           </Box>
         </VStack>
       </WrapItem>
@@ -484,36 +495,48 @@ const GetSteps = () => {
 
   // Function to get the image of the action
   function GetActionImage({ index }) {
-    const { ref, ...fields } = register(`steps[${index}].actionImage`)
+    const { ref, onChange, ...fields } = register(`steps[${index}].actionImage`)
+    const [actionImageName, setActionImageName] = useState(null);
     const hiddenFileInput = useRef(null);
     const imageUpload = event => { hiddenFileInput.current?.click() }
     return (
       <>
       <IconButton icon={<FaImage />} onClick={imageUpload}
         border='1px' />
-      <Input type='file' style={{ display: 'none'}} accept='image/*, video/*' {...fields} 
+      <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
+        onChange={event => { 
+          onChange(event)
+          setActionImageName(event.target.files[0].name) 
+        }}
         ref={(instance) => {
           ref(instance)
           hiddenFileInput.current = instance
         }} />
+      {actionImageName && <Text>{actionImageName}</Text>}
       </>
     )
   }
 
   // Function to get the image of the trigger
   function GetTriggerImage({ index }) {
-    const { ref, ...fields } = register(`steps[${index}].triggerImage`)
+    const { ref, onChange, ...fields } = register(`steps[${index}].triggerImage`)
+    const [triggerImageName, setTriggerImageName] = useState(null);
     const hiddenFileInput = useRef(null);
     const imageUpload = event => { hiddenFileInput.current.click() }
     return (
       <>
       <IconButton icon={<FaImage />} onClick={imageUpload}
         border='1px' />
-      <Input type='file' style={{ display: 'none'}} accept='image/*, video/*' {...fields} 
+      <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
+        onChange={event => { 
+          onChange(event)
+          setTriggerImageName(event.target.files[0].name) 
+        }}
         ref={(instance) => {
           ref(instance)
           hiddenFileInput.current = instance
         }} />
+      {triggerImageName && <Text>{triggerImageName}</Text>}
       </>
     )
   }

@@ -135,10 +135,9 @@ const resolvers = {
     }
   },
   Mutation: {
-    addRecipeImage: async (_, args, context, info) => {
+    addRecipeNFT: async (_, args, context, info) => {
       const { imageUri, userID, recipeName, tasteProfile, signature } = args;
-      console.log(imageUri, userID, recipeName, tasteProfile, signature);
-      let recipeImage;
+      let recipeNFT;
       try {
         const file = new File([imageUri], `${recipeName}.jpg`, { type: 'image/jpeg' });
         console.log('file', file);
@@ -162,15 +161,15 @@ const resolvers = {
           }
         }
         const client = new NFTStorage({ token: nftStorageToken})
-        recipeImage = await client.store(nft)
-        console.log('uploaded image', recipeImage)
+        recipeNFT = await client.store(nft)
+        console.log('uploaded NFT', recipeNFT)
       } catch (error) {
         console.log('error', error)
       } finally {
         return {
-          success: recipeImage? true : false,
-          message: recipeImage? 'Image uploaded successfully' : 'Image upload failed',
-          imageCid: recipeImage? recipeImage.url : null
+          success: recipeNFT? true : false,
+          message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
+          nftCid: recipeNFT? recipeNFT.url : null
         }
       }
     },

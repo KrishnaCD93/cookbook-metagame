@@ -1,4 +1,5 @@
 import { gql, useMutation } from '@apollo/client';
+import Resizer from 'react-image-file-resizer';
 
 const CREATE_INGREDIENTS = gql`
   mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
@@ -40,9 +41,9 @@ const CREATE_RECIPE = gql`
   }
 `;
 
-const CREATE_RECIPE_IMAGE = gql`
+const CREATE_RECIPE_NFT = gql`
   mutation Mutation($userID: ID!, $recipeName: String!, $tasteProfile: [Int]!, $signature: String!, $imageUri: String!) {
-    addRecipeImage(userID: $userID, recipeName: $recipeName, tasteProfile: $tasteProfile, signature: $signature, imageUri: $imageUri) {
+    addRecipeNFT(userID: $userID, recipeName: $recipeName, tasteProfile: $tasteProfile, signature: $signature, imageUri: $imageUri) {
       success
       message
       imageCid
@@ -50,17 +51,19 @@ const CREATE_RECIPE_IMAGE = gql`
   }
 `;
 
+const cloudinaryUploadEndpoint = 'https://api.cloudinary.com/v1_1/cookbook-social/auto/upload';
+
 const useApolloMutations = () => {
   const ingredientsData = {};
   const stepsData = {};
   const tasteProfileData = {};
   const recipeData = {};
-  const recipeImageData = {};
+  const recipeMetadata = {};
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
   const [addSteps] = useMutation(CREATE_STEPS);
   const [addTasteProfile] = useMutation(CREATE_TASTE_PROFILE);
   const [addRecipe] = useMutation(CREATE_RECIPE);
-  const [addRecipeImage] = useMutation(CREATE_RECIPE_IMAGE);
+  const [addRecipeNFT] = useMutation(CREATE_RECIPE_NFT);
 
   const uploadIngredients = async (props) => {
     console.log('uploadIngredients', props);
@@ -123,6 +126,41 @@ const useApolloMutations = () => {
     return tasteProfileData;
   }
 
+  const uploadRecipeImage = async (props) => {
+    console.log('uploadRecipeImage', props);
+    try {
+      const resizeFile = (file) =>
+      new Promise((resolve) => {
+        Resizer.imageFileResizer(
+          file,
+          1080,
+          1080,
+          "JPEG",
+          100,
+          0,
+          (uri) => {
+            resolve(uri);
+          },
+          "base64"
+        );
+      });
+      const resizedFile = await resizeFile(props);
+      const formData = new FormData();
+      formData.append('file', resizedFile);
+      formData.append('upload_preset', 'jvcboirw');
+      const options = {
+        method: 'POST',
+        body: formData
+      };
+      const response = await fetch(cloudinaryUploadEndpoint, options);
+      const data = await response.json();
+      console.log('uploadRecipeImage', data);
+      return data.public_id;
+    } catch (error) {
+      console.log('uploadRecipeImage error', error);
+    }
+  }
+
   const uploadRecipe = async (props) => {
     console.log('uploadRecipe', props);
     const { 
@@ -144,9 +182,9 @@ const useApolloMutations = () => {
     return recipeData;
   }
 
-  const uploadRecipeImage = async (props) => {
-    console.log('uploadRecipeImage', props);
-    const { imageUri, userID, recipeName, tasteProfile, signature } = props;
+  const uploadRecipeNFT = async (props) => {
+    console.log('uploadRecipeNFT', props);
+    const { userID, recipeName, tasteProfile, signature, image } = props;
     const tasteProfileArray = [];
     tasteProfileArray[0] = parseInt(tasteProfile.salt);
     tasteProfileArray[1] = parseInt(tasteProfile.sweet);
@@ -154,20 +192,36 @@ const useApolloMutations = () => {
     tasteProfileArray[3] = parseInt(tasteProfile.bitter);
     tasteProfileArray[4] = parseInt(tasteProfile.spice);
     tasteProfileArray[5] = parseInt(tasteProfile.umami);
-    await addRecipeImage({ variables: { imageUri, userID, recipeName, tasteProfile: tasteProfileArray, signature } })
+    const resizeFile = (file) =>
+      new Promise((resolve) => {
+        Resizer.imageFileResizer(
+          file,
+          1080,
+          1080,
+          "JPEG",
+          100,
+          0,
+          (uri) => {
+            resolve(uri);
+          },
+          "base64"
+        );
+      });
+    const imageUri = await resizeFile(image);
+    await addRecipeNFT({ variables: { imageUri, userID, recipeName, tasteProfile: tasteProfileArray, signature } })
       .then((data) => {
-        console.log('uploadRecipeImage', data);
-        recipeImageData.success = data.data.addRecipeImage.success;
-        recipeImageData.message = data.data.addRecipeImage.message;
-        recipeImageData.imageCid = data.data.addRecipeImage.imageCid;
-        console.log('uploadRecipeImage', recipeImageData);
+        console.log('uploadRecipeNFT', data);
+        recipeMetadata.success = data.data.addRecipeNFT.success;
+        recipeMetadata.message = data.data.addRecipeNFT.message;
+        recipeMetadata.imageCid = data.data.addRecipeNFT.imageCid;
+        console.log('uploadRecipeNFT', recipeMetadata);
       }).catch((error) => {
-        console.log('uploadRecipeImage error', error);
+        console.log('uploadRecipeNFT error', error);
       })
-    return recipeImageData;
+    return recipeMetadata;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadRecipeImage];
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadRecipeNFT];
 }
 
 export default useApolloMutations;

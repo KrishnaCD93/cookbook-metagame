@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Text, VStack, Grid, useDisclosure, Button, Flex, GridItem, Heading } from '@chakra-ui/react';
+import { Box, VStack, Grid, useDisclosure, Button, Flex, GridItem, Heading } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import CreateRecipe from './CreateRecipe';
 import CreateCookbook from './CreateCookbook';
 import ShowRecipes from './ShowRecipes';
+
+import {Cloudinary} from "@cloudinary/url-gen";
 
 import { ethers } from 'ethers';
 import { SiweMessage } from 'siwe';
@@ -21,6 +23,16 @@ function App() {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
   const { isOpen: cookbookIsOpen, onOpen: cookbookOnOpen, onClose: cookbookOnClose } = useDisclosure();
   const [accountInfo, setAccountInfo] = useState('');
+
+  const cld = new Cloudinary({
+    cloud: {
+      cloudName: 'cookbook-social'
+    },
+    url: {
+      secureDistribution: 'cookbook.social', 
+      secure: true 
+    }
+  });
 
   function createSiweMessage (address, statement) {
     const message = new SiweMessage({
@@ -45,7 +57,7 @@ function App() {
 
   useEffect(() => {
     if (signer) {
-      async function getAccountInfo () {
+      async function getAccountInfo() {
         setAccountInfo(await signer.getAddress());
       }
       getAccountInfo();
@@ -57,7 +69,7 @@ function App() {
       <Grid minH="100vh" p={3} spacing={8}>
         <Flex justifySelf="flex-end">
           <Box>
-            <ConnectButton label='Connect UserID' />
+            <ConnectButton label='Connect Address' />
           </Box>
           <ColorModeSwitcher />
         </Flex>
@@ -72,7 +84,7 @@ function App() {
         </VStack>
         </GridItem>
         <GridItem>
-        {accountInfo ? <ShowRecipes accountInfo={accountInfo} /> : <Text>Connect account to view recipes</Text>}
+        <ShowRecipes cld={cld} />
         </GridItem>
       </Grid>
     </Box>
