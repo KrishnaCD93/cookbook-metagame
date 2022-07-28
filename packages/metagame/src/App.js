@@ -12,15 +12,9 @@ import { ethers } from 'ethers';
 import { SiweMessage } from 'siwe';
 import detectEthereumProvider from '@metamask/detect-provider'
 
-const provider = await detectEthereumProvider()
-
 const domain = window.location.host;
 const origin = window.location.origin;
 let signer;
-if (provider) {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  signer = provider.getSigner();
-}
 
 function App() {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
@@ -55,12 +49,15 @@ function App() {
   }
 
   useEffect(() => {
-    if (signer) {
-      async function getAccountInfo() {
+    async function getAccountInfo() {
+      const provider = await detectEthereumProvider();
+      if (provider) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
         setAccountInfo(await signer.getAddress());
       }
-      getAccountInfo();
     }
+    getAccountInfo();
   }, []);
 
   return (
