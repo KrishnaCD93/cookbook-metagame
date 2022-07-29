@@ -6,34 +6,50 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
+import { useAccount, useSignMessage } from "wagmi"; 
+import { verifyMessage } from 'ethers/lib/utils'
 
-const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo }) => {
+const CreateRecipe = ({ isOpen, onClose }) => {
   const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadRecipeNFT] = useApolloMutations();
   const [uploading, setUploading] = useState(false);
+  const [userID, setUserID] = useState('');
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
+  const { isConnected, address: accountInfo } = useAccount();
+  const recoveredAddress = useRef('')
+  const { data: signatureData, signMessage } = useSignMessage({
+    onSuccess(data, variables) {
+      // Verify signature when sign message succeeds
+      const address = verifyMessage(variables.message, data)
+      recoveredAddress.current = address
+    },
+  })
 
   const onSubmit = async (data) => {
     console.log(data);
     try {
-      let userID = '';
-      let signature = '';
+      let signature;
       let nftCid = '';
       let imageCid = '';
+      const date = new Date().toISOString();
       setUploading(true)
-      if (accountInfo) { // if user is connected to ethereum, sign the message and create an NFT
-        userID = accountInfo;
-        signature = await signMessageWithEthereum();
+      if (isConnected) {
+        setUserID(accountInfo);
+        const sign = (message) => 
+        new Promise((resolve) => {
+          signMessage({ message })
+          resolve(signatureData)
+        })
+        signature = await sign(`Create recipe ${data.name} on ${date}`)
         if (data.recipeImage[0] && data.createNFT) {
+          // TODO: add nft data to blockchain and update user cookbook
           const image = data.recipeImage[0];
-          const imageUrl = URL.createObjectURL(image);
-          const nftUploadData = { imageUri: imageUrl, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
+          const nftUploadData = { image, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
           nftCid = await uploadRecipeNFT(nftUploadData);
           console.log(nftCid);
-          // @TODO: add nft data to blockchain and update user cookbook
         }
-      } else if (!accountInfo) {
-        userID = '0x0000000000000000000000000000000000000000';
+      } else if (!isConnected) {
+        setUserID('0x0');
       }
       if (data.recipeImage[0]) {
         imageCid = await uploadRecipeImage(data.recipeImage[0]);
@@ -60,8 +76,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         const ingredientList = { names, quantities, comments, imageCids, userID };
         const addedIngredients = await uploadIngredients(ingredientList);
         console.log(addedIngredients);
-        const ingredientIds = addedIngredients.ingredientIDs;
-        return ingredientIds;
+        const ingredientIDs = addedIngredients.ingredientIDs;
+        return ingredientIDs;
       }
       async function addSteps() {
         const stepNames = [];
@@ -90,8 +106,8 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         const stepList = { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID };
         const addedSteps = await uploadSteps(stepList);
         console.log(addedSteps);
-        const stepIds = addedSteps.stepIDs;
-        return stepIds;
+        const stepIDs = addedSteps.stepIDs;
+        return stepIDs;
       }
       async function addTasteProfile() {
         const tasteProfile = {
@@ -105,36 +121,36 @@ const CreateRecipe = ({ isOpen, onClose, signMessageWithEthereum, accountInfo })
         }
         const addedTasteProfile = await uploadTasteProfile(tasteProfile);
         console.log(addedTasteProfile);
-        const tasteProfileId = addedTasteProfile.tasteProfileID;
-        return tasteProfileId;
+        const tasteProfileID = addedTasteProfile.tasteProfileID;
+        return tasteProfileID;
       }
-      async function addRecipe(ingredientIds, stepIds, tasteProfileId) {
+      async function addRecipe(ingredientIDs, stepIDs, tasteProfileID) {
         const recipe = {
           name: data.name,
           imageCid: imageCid,
           description: data.description,
-          ingredientIDs: ingredientIds,
-          stepIDs: stepIds,
-          tasteProfileID: tasteProfileId,
+          ingredientIDs: ingredientIDs,
+          stepIDs: stepIDs,
+          tasteProfileID: tasteProfileID,
           metaQualityTags: data.metaQualityTags,
           equipment: data.equipment,
           userID: userID,
           signature: signature,
-          createdAt: new Date().toISOString()
+          createdAt: date
         }
         const uploadedRecipe = await uploadRecipe(recipe);
         console.log(uploadedRecipe);
-        const recipeId = uploadedRecipe.recipeID;
-        return recipeId;
+        const recipeID = uploadedRecipe.recipeID;
+        return recipeID;
       }
-      const ingredientIds = await addIngredients();
-      const stepIds = await addSteps();
-      const tasteProfileId = await addTasteProfile();
-      const recipeId = await addRecipe(ingredientIds, stepIds, tasteProfileId);
-      console.log(recipeId);
+      const ingredientIDs = await addIngredients();
+      const stepIDs = await addSteps();
+      const tasteProfileID = await addTasteProfile();
+      const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
+      console.log(recipeID);
       setUploading(false);
-      if (imageCid) {
-        console.log('imageCid', imageCid);
+      if (recipeID) {
+        console.log('recipeID', recipeID);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',

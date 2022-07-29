@@ -74,7 +74,7 @@ const ShowRecipes = ({ cld }) => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
 
-  // Ensure all recipes are loaded and memoize recipe
+  // Ensure all recipes are loaded and memoize recipe ordered by createdAt
   const recipesMemo = useMemo(() => {
     if (recipes && recipes.length > 0) {
       return recipes
@@ -84,7 +84,11 @@ const ShowRecipes = ({ cld }) => {
   
   useEffect(() => {
     if (data && data.recipes && data.recipes.length > 0) {
-      setRecipes(data.recipes);
+      const sortRecipes = [...data.recipes]
+      sortRecipes.sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
+      setRecipes(sortRecipes);
     }
   }, [data]);
   
@@ -220,7 +224,7 @@ const Ingredients = ({ ingredients }) => {
     <GridItem key={index} spacing={4} align="center" boxShadow='md' borderRadius={2} _hover={{ cursor: 'pointer', boxShadow: 'dark-lg' }}>
       <Popover>
         <PopoverTrigger>
-          <Text fontSize="md"><Button variant='ghost' size='sm' ml={2}>🔘</Button>{ingredient.name}</Text>
+          <Text fontSize="md" m={2}><Button variant='ghost' size='sm'>🔘</Button>{ingredient.name}</Text>
         </PopoverTrigger>
         <PopoverContent>
           <PopoverArrow />
@@ -244,12 +248,12 @@ const Steps = ({ steps }) => {
   return (
     <Wrap spacing={4}>
     {steps && steps.map((step, index) => (
-    <WrapItem key={index} spacing={4} align="center" boxShadow="sm">
+    <WrapItem key={index} spacing={4} alignItems="center" boxShadow="sm" justifyContent="center" align='center'>
       <Box>
         <Text fontSize="md">Step {index + 1}</Text>
         {step.name && <Text fontSize="md">{step.name}</Text>}
       </Box>
-      <Box>
+      <Box m={2} p={2}>
         <Text fontSize='md'>{step.action}</Text>
       {step.trigger && 
         <Text fontSize='md'>{step.trigger}</Text>}
