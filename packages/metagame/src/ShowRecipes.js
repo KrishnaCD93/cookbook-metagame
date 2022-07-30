@@ -84,11 +84,7 @@ const ShowRecipes = ({ cld }) => {
   
   useEffect(() => {
     if (data && data.recipes && data.recipes.length > 0) {
-      const sortRecipes = [...data.recipes]
-      sortRecipes.sort((a, b) => {
-        return new Date(b.createdAt) - new Date(a.createdAt)
-      })
-      setRecipes(sortRecipes);
+      setRecipes(data.recipes);
     }
   }, [data]);
   

@@ -22,13 +22,17 @@ const resolvers = {
       await mongoClient.connect();
       const recipes = await recipeCollection.find({}).toArray();
       await mongoClient.close();
-      return recipes;
+      return recipes.sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      })
     },
     recipesByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
       const userRecipes = await recipeCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
-      return userRecipes;
+      return userRecipes.sort((a, b) => {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
     },
     recipeWithData: async (_, args, context, info) => {
       const { recipeID } = args;
@@ -303,13 +307,18 @@ const resolvers = {
       if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to delete a recipe.');
       let deleted = false;
       let recipes = [];
-      if (recipeCollection.find(recipe => recipe.id === args.recipeID)) {
+      if (recipeCollection.find(recipe => recipe._id === args.id)) {
         try {
           await mongoClient.connect();
-          await recipeCollection.deleteOne({ id: args.recipeID });
-          let newRecipeList = await recipeCollection.find({}).toArray();
-          recipes.push(newRecipeList);
-          deleted = true;
+          recipeSignature = await recipeCollection.findOne({ id: new ObjectId(args.id) });
+          if (recipeSignature.signature === args.signature) {
+            await recipeCollection.deleteOne({ id: args.recipeID });
+            let newRecipeList = await recipeCollection.find({}).toArray();
+            recipes.push(newRecipeList);
+            deleted = true;
+          } else {
+            deleted = false;
+          }
         } catch (error) {
           deleted = false;
           throw new Error(error);
@@ -317,7 +326,7 @@ const resolvers = {
           await mongoClient.close();
           return {
             success: deleted ? true : false,
-            message: deleted ? 'Recipe deleted successfully' : 'Error deleting recipe',
+            message: deleted ? 'Recipe deleted successfully' : 'Signature does not match',
             recipes: newRecipeList
           }
         }
@@ -334,22 +343,21 @@ const resolvers = {
       let updated = false;
       let newRecipeList = [];
       let recipeToUpdate = {}
-      if (recipeCollection.find(recipe => recipe.id === args.recipeID)) {
-        recipeToUpdate.recipeCid = args.newRecipeCid;
-        if (args.imageCids) recipeToUpdate.imageCids = args.imageCids;
+      if (recipeCollection.find(recipe => recipe._id === args.id)) {
         if (args.cookbookAddress) recipeToUpdate.cookbookAddress = args.cookbookAddress;
         if (args.tokenNumber) recipeToUpdate.tokenNumber = args.tokenNumber;
         if (args.name) recipeToUpdate.name = args.name;
-        if (args.image) recipeToUpdate.image = args.image;
+        if (args.imageCid) recipeToUpdate.image = args.imageCid;
         if (args.description) recipeToUpdate.description = args.description;
         if (args.ingredientIDs) recipeToUpdate.ingredientIDs = args.ingredientIDs;
         if (args.stepIDs) recipeToUpdate.stepIDs = args.stepIDs;
-        if (args.metaQualityTags) recipeToUpdate.metaQualityTags = args.metaQualityTags;
+        if (args.tasteProfileID) recipeToUpdate.tasteProfileID = args.tasteProfileID;
         if (args.equipment) recipeToUpdate.equipment = args.equipment;
+        if (args.metaQualityTags) recipeToUpdate.metaQualityTags = args.metaQualityTags;
         if (args.userID) recipeToUpdate.userID = args.userID;
         try {
           await mongoClient.connect();
-          await recipeCollection.updateOne({ recipeCid: args.recipeCid }, { $set: recipeToUpdate });
+          await recipeCollection.updateOne({ _id: new ObjectId(args.id) }, { $set: recipeToUpdate });
           newRecipeList = await recipeCollection.find({}).toArray();
           updated = true;
         } catch (error) {
@@ -462,13 +470,15 @@ const resolvers = {
       let added = false;
       let cookbookList = [];
       const newCookbook = {
-        recipeCids: args.recipeCids,
+        recipeIDs: args.recipeIDs,
         name: args.name,
         description: args.description,
-        chefsMeta: args.chefsMeta,
-        tags: args.tags,
-        tasteProfile: args.tasteProfile,
-        userID: args.userID
+        ingredientIDs: args.ingredientIDs,
+        stepIDs: args.stepIDs,
+        tasteProfileIDs: args.tasteProfileIDs,
+        chefsMetaIDs: args.chefsMetaIDs,
+        userID: args.userID,
+        signature: args.signature
       };
       try {
         await mongoClient.connect();
@@ -494,11 +504,13 @@ const resolvers = {
       if (db.collection('cookbooks').find(cookbook => cookbook.name === args.name)) {
         cookbookToUpdate.name = args.name;
         if (args.description) cookbookToUpdate.description = args.description;
-        if (args.recipeCids) cookbookToUpdate.recipeCids = args.recipeCids;
+        if (args.recipeIDs) cookbookToUpdate.recipeIDs = args.recipeIDs;
+        if (args.ingredientIDs) cookbookToUpdate.ingredientIDs = args.ingredientIDs;
+        if (args.stepIDs) cookbookToUpdate.stepIDs = args.stepIDs;
+        if (args.tasteProfileIDs) cookbookToUpdate.tasteProfileIDs = args.tasteProfileIDs;
         if (args.chefsMeta) cookbookToUpdate.chefsMeta = args.chefsMeta;
-        if (args.tags) cookbookToUpdate.tags = args.tags;
-        if (args.tasteProfile) cookbookToUpdate.tasteProfile = args.tasteProfile;
         if (args.userID) cookbookToUpdate.userID = args.userID;
+        if (args.signature) cookbookToUpdate.signature = args.signature;
         try {
           await mongoClient.connect();
           await db.collection('cookbooks').updateOne({ name: args.name }, { $set: cookbookToUpdate });
@@ -552,33 +564,56 @@ const resolvers = {
       }
     },
     addUser: async (_, args, context, info) => {
-      const { message, signature } = args
-      const siweMessage = new SiweMessage(message)
-      let added = false;
-      let userList = [];
+      const { address, name, email, image, signature } = args;
+      let addedUser;
       const newUser = {
-        address: message.address,
-        signature: '',
-        name: message.name,
-        email: message.email,
-        image: message.image,
+        address: address,
+        signature: signature,
+        name: name,
+        email: email,
+        image: image,
       };
       try {
-        const signed = await siweMessage.validate(signature)
-        newUser.signature = signed
         await mongoClient.connect();
-        await db.collection('users').insertOne(newUser);
-        userList = await db.collection('users').find({}).toArray();
-        added = true;
+        addedUser = await db.collection('users').insertOne(newUser);
       } catch (error) {
-        added = false;
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: added ? true : false,
-          message: added ? 'User added successfully' : 'Error adding user',
-          userList
+          success: addedUser.acknowledged ? true : false,
+          message: addedUser.acknowledged ? 'User added successfully' : 'Error adding user',
+          userID: addedUser.insertedId
+        }
+      }
+    },
+    updateUser: async (_, args, context, info) => {
+      let userToUpdate = {};
+      let updatedUser;
+      if (db.collection('users').find(user => user.address === args.address)) {
+        userToUpdate.userID = args.userID;
+        userToUpdate.signature = args.signature;
+        userToUpdate.name = args.name;
+        userToUpdate.email = args.email;
+        userToUpdate.image = args.image;
+        try {
+          await mongoClient.connect();
+          updatedUser = await db.collection('users').updateOne({ email: args.email }, { $set: userToUpdate });
+        } catch (error) {
+          throw new Error(error);
+        } finally {
+          await mongoClient.close();
+          return {
+            success: updatedUser.acknowledged ? true : false,
+            message: updatedUser.acknowledged ? 'User updated successfully' : 'Error updating user',
+            userID: args.address
+          }
+        }
+      } else {
+        return {
+          success: false,
+          message: 'User does not exist',
+          userID: args.address
         }
       }
     }

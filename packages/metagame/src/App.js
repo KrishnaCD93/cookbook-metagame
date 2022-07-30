@@ -1,12 +1,12 @@
 import React from 'react';
 import { Box, VStack, Grid, useDisclosure, Button, Flex, GridItem, Heading } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import CreateRecipe from './CreateRecipe';
 import CreateCookbook from './CreateCookbook';
 import ShowRecipes from './ShowRecipes';
 
 import {Cloudinary} from "@cloudinary/url-gen";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 function App() {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
@@ -23,7 +23,7 @@ function App() {
       <Grid minH="100vh" p={3} spacing={8}>
         <Flex justifySelf="flex-end">
           <Box>
-            <ConnectButton label='Connect Address' />
+            <ConnectButton />
           </Box>
           <ColorModeSwitcher />
         </Flex>
