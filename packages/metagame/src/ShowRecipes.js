@@ -55,7 +55,7 @@ const GET_RECIPE_WITH_DATA = gql`
   }
 `;
 
-const GET_RECIPES = gql`
+export const GET_RECIPES = gql`
   query Query {
     recipes {
       _id
@@ -96,7 +96,7 @@ const ShowRecipes = ({ cld }) => {
     <VStack spacing={2}>
       <Spacer mt={4} />
       <Text fontSize="xl">Recipes</Text>
-      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+      <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
             <RecipeCard recipe={recipe} cld={cld} />

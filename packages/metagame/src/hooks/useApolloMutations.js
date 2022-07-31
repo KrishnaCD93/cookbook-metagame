@@ -1,5 +1,6 @@
 import { gql, useMutation } from '@apollo/client';
 import Resizer from 'react-image-file-resizer';
+import { GET_RECIPES } from '../ShowRecipes';
 
 const CREATE_INGREDIENTS = gql`
   mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
@@ -62,7 +63,9 @@ const useApolloMutations = () => {
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
   const [addSteps] = useMutation(CREATE_STEPS);
   const [addTasteProfile] = useMutation(CREATE_TASTE_PROFILE);
-  const [addRecipe] = useMutation(CREATE_RECIPE);
+  const [addRecipe] = useMutation(CREATE_RECIPE, {
+    refetchQueries: [{ query: GET_RECIPES }]
+  });
   const [addRecipeNFT] = useMutation(CREATE_RECIPE_NFT);
 
   const uploadIngredients = async (props) => {
