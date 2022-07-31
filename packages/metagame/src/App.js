@@ -8,6 +8,8 @@ import ShowRecipes from './ShowRecipes';
 import {Cloudinary} from "@cloudinary/url-gen";
 import Profile from './Profile';
 
+window.Buffer = window.Buffer || require("buffer").Buffer;
+
 function App() {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
   const { isOpen: cookbookIsOpen, onOpen: cookbookOnOpen, onClose: cookbookOnClose } = useDisclosure();

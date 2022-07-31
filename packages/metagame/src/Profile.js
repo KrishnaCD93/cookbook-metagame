@@ -1,5 +1,4 @@
 import { Box, Button, ButtonGroup } from '@chakra-ui/react'
-import { useState } from 'react'
 import {
   useAccount,
   useConnect,
@@ -15,12 +14,9 @@ function Profile() {
   const { connect, connectors, error, isLoading, pendingConnector } =
     useConnect()
   const { disconnect } = useDisconnect()
-  const [shortAddress, setShortAddress] = useState('')
-
-  // Get the first 6 and last 4 characters of the address
-  if (address) setShortAddress(address.slice(0, 6) + '...' + address.slice(-4))
-
+  
   if (isConnected) {
+    const shortAddress = address.slice(0, 6) + '...' + address.slice(-4);
     return (
       <Box>
         {ensAvatar && <img src={ensAvatar} alt="ENS Avatar" />}
@@ -32,23 +28,25 @@ function Profile() {
   }
 
   return (
-    <ButtonGroup>
-      {connectors.map((connector) => (
-        <Button
-          disabled={!connector.ready}
-          key={connector.id}
-          onClick={() => connect({ connector })}
-        >
-          {connector.name}
-          {!connector.ready && ' (unsupported)'}
-          {isLoading &&
-            connector.id === pendingConnector?.id &&
-            ' (connecting)'}
-        </Button>
-      ))}
+    <Box>
+      <ButtonGroup>
+        {connectors.map((connector) => (
+          <Button
+            disabled={!connector.ready}
+            key={connector.id}
+            onClick={() => connect({ connector })}
+          >
+            {connector.name}
+            {!connector.ready && ' (unsupported)'}
+            {isLoading &&
+              connector.id === pendingConnector?.id &&
+              ' (connecting)'}
+          </Button>
+        ))}
+      </ButtonGroup>
 
-      {error && <Box>{error.message}</Box>}
-    </ButtonGroup>
+        {error && <Box>{error.message}</Box>}
+    </Box>
   )
 }
 
