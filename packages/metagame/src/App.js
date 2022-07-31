@@ -5,12 +5,13 @@ import CreateRecipe from './CreateRecipe';
 import CreateCookbook from './CreateCookbook';
 import ShowRecipes from './ShowRecipes';
 
-import {Cloudinary} from "@cloudinary/url-gen";
-import Profile from './Profile';
+import { Cloudinary } from "@cloudinary/url-gen";
+import Profile from './components/Profile';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
 function App() {
+  const { isOpen: walletIsOpen, onOpen: walletOnOpen, onClose: walletOnClose } = useDisclosure();
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
   const { isOpen: cookbookIsOpen, onOpen: cookbookOnOpen, onClose: cookbookOnClose } = useDisclosure();
 
@@ -25,7 +26,8 @@ function App() {
       <Grid minH="100vh" p={3} spacing={8}>
         <Flex justifySelf="flex-end">
           <Box>
-            <Profile />
+            <Button onClick={walletOnOpen}>Connect Wallet</Button>
+            <Profile isOpen={walletIsOpen} onClose={walletOnClose} />
           </Box>
           <ColorModeSwitcher />
         </Flex>
