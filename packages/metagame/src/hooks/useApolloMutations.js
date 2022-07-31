@@ -32,8 +32,8 @@ const CREATE_TASTE_PROFILE = gql`
 `;
 
 const CREATE_RECIPE = gql`
-  mutation Mutation($name: String!, $ingredientIDs: [ID]!, $stepIDs: [ID]!, $tasteProfileID: ID!, $imageCid: String, $description: String, $metaQualityTags: String, $equipment: String, $userID: String, $signature: String, $createdAt: String) {
-    addRecipe(name: $name, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, imageCid: $imageCid, description: $description, metaQualityTags: $metaQualityTags, equipment: $equipment, userID: $userID, signature: $signature, createdAt: $createdAt) {
+  mutation Mutation($name: String!, $ingredientIDs: [ID]!, $stepIDs: [ID]!, $tasteProfileID: ID!, $imageCid: String, $description: String, $qualityTags: String, $equipment: String, $userID: String, $signature: String, $createdAt: String) {
+    addRecipe(name: $name, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, imageCid: $imageCid, description: $description, qualityTags: $qualityTags, equipment: $equipment, userID: $userID, signature: $signature, createdAt: $createdAt) {
       success
       message
       recipeID
@@ -66,7 +66,6 @@ const useApolloMutations = () => {
   const [addRecipeNFT] = useMutation(CREATE_RECIPE_NFT);
 
   const uploadIngredients = async (props) => {
-    console.log('uploadIngredients', props);
     const { names, quantities, comments, imageCids, userID } = props;
     await addIngredients({ variables: { names, quantities, comments, imageCids, userID } })
       .then((data) => {
@@ -83,7 +82,6 @@ const useApolloMutations = () => {
   }
 
   const uploadSteps = async (props) => {
-    console.log('uploadSteps', props);
     const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = props;
     await addSteps({ variables: { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } })
       .then((data) => {
@@ -100,7 +98,6 @@ const useApolloMutations = () => {
   }
 
   const uploadTasteProfile = async (props) => {
-    console.log('uploadTasteProfile', props);
     const { salt, sweet, sour, bitter, spice, umami, userID } = props;
     await addTasteProfile({ 
       variables: { 
@@ -127,7 +124,6 @@ const useApolloMutations = () => {
   }
 
   const uploadRecipeImage = async (props) => {
-    console.log('uploadRecipeImage', props);
     try {
       const resizeFile = (file) =>
       new Promise((resolve) => {
@@ -162,12 +158,11 @@ const useApolloMutations = () => {
   }
 
   const uploadRecipe = async (props) => {
-    console.log('uploadRecipe', props);
     const { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, metaQualityTags, equipment, userID, signature, createdAt 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt 
     } = props;
     await addRecipe({ variables: { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, metaQualityTags, equipment, userID, signature, createdAt 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt 
     } })
       .then((data) => {
         console.log('uploadRecipe', data);
@@ -184,7 +179,7 @@ const useApolloMutations = () => {
 
   const uploadRecipeNFT = async (props) => {
     console.log('uploadRecipeNFT', props);
-    const { userID, recipeName, tasteProfile, signature, image } = props;
+    const { userID, name, description, tasteProfile, signature, image } = props;
     const tasteProfileArray = [];
     tasteProfileArray[0] = parseInt(tasteProfile.salt);
     tasteProfileArray[1] = parseInt(tasteProfile.sweet);
@@ -208,7 +203,7 @@ const useApolloMutations = () => {
         );
       });
     const imageUri = await resizeFile(image);
-    await addRecipeNFT({ variables: { imageUri, userID, recipeName, tasteProfile: tasteProfileArray, signature } })
+    await addRecipeNFT({ variables: { imageUri, userID, name, description, tasteProfile: tasteProfileArray, signature } })
       .then((data) => {
         console.log('uploadRecipeNFT', data);
         recipeMetadata.success = data.data.addRecipeNFT.success;

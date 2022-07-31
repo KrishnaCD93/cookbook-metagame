@@ -82,6 +82,12 @@ const resolvers = {
         return ingredient;
       }
     },
+    ingredientsByUserID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const ingredients = await ingredientCollection.find({ userID: args.userID }).toArray();
+      await mongoClient.close();
+      return ingredients;
+    },
     steps: async () => {
       await mongoClient.connect();
       const steps = await stepCollection.find({}).toArray();
@@ -94,6 +100,12 @@ const resolvers = {
       await mongoClient.close();
       return step;
     },
+    stepsByUserID: async (_, args, context, info) => {
+      await mongoClient.connect();
+      const steps = await stepCollection.find({ userID: args.userID }).toArray();
+      await mongoClient.close();
+      return steps;
+    },
     tasteProfiles: async () => {
       await mongoClient.connect();
       const tasteProfiles = await tasteProfileCollection.find({}).toArray();
@@ -102,7 +114,7 @@ const resolvers = {
     },
     tasteProfileByID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const tasteProfile = await tasteProfileCollection.find({ _id: new Object(args.id) });
+      const tasteProfile = await tasteProfileCollection.findOne({ _id: new Object(args.id) });
       await mongoClient.close();
       return tasteProfile;
     },
@@ -140,19 +152,19 @@ const resolvers = {
   },
   Mutation: {
     addRecipeNFT: async (_, args, context, info) => {
-      const { imageUri, userID, recipeName, tasteProfile, signature } = args;
+      const { imageUri, userID, name, description, tasteProfile, signature } = args;
       let recipeNFT;
       try {
-        const file = new File([imageUri], `${recipeName}.jpg`, { type: 'image/jpeg' });
+        const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
         console.log('file', file);
         const nft = {
           image: file,
-          name: recipeName,
-          description: `${recipeName} recipe image`,
+          name: name,
+          description: `${description}`,
           properties: {
             type: 'recipe',
             chef: userID,
-            recipeName: recipeName,
+            name: name,
             tasteProfile: {
               salt: tasteProfile[0],
               sweet: tasteProfile[1],
@@ -274,7 +286,7 @@ const resolvers = {
     },
     addRecipe: async (_, args, context, info) => {
       // if (!args.signature) throw new AuthenticationError('Please sign message.');
-      const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, metaQualityTags, equipment, userID, signature, createdAt } = args;
+      const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt } = args;
       let addedRecipe;
       const newRecipe = {
         name: name,
@@ -282,7 +294,7 @@ const resolvers = {
         description: description,
         ingredientIDs: ingredientIDs,
         stepIDs: stepIDs,
-        metaQualityTags: metaQualityTags,
+        qualityTags: qualityTags,
         tasteProfileID: tasteProfileID,
         equipment: equipment,
         userID: userID,
@@ -305,8 +317,6 @@ const resolvers = {
     },
     deleteRecipe: async (_, args, context, info) => {
       if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to delete a recipe.');
-      let deleted = false;
-      let recipes = [];
       if (recipeCollection.find(recipe => recipe._id === args.id)) {
         try {
           await mongoClient.connect();
@@ -327,14 +337,14 @@ const resolvers = {
           return {
             success: deleted ? true : false,
             message: deleted ? 'Recipe deleted successfully' : 'Signature does not match',
-            recipes: newRecipeList
+            recipeID: ''
           }
         }
       } else {
         return {
           success: false,
           message: 'Recipe does not exist',
-          recipes: newRecipeList
+          recipeID: args.id
         }
       }
     },
@@ -353,7 +363,7 @@ const resolvers = {
         if (args.stepIDs) recipeToUpdate.stepIDs = args.stepIDs;
         if (args.tasteProfileID) recipeToUpdate.tasteProfileID = args.tasteProfileID;
         if (args.equipment) recipeToUpdate.equipment = args.equipment;
-        if (args.metaQualityTags) recipeToUpdate.metaQualityTags = args.metaQualityTags;
+        if (args.qualityTags) recipeToUpdate.qualityTags = args.qualityTags;
         if (args.userID) recipeToUpdate.userID = args.userID;
         try {
           await mongoClient.connect();
@@ -390,7 +400,7 @@ const resolvers = {
       try {
         await mongoClient.connect();
         await db.collection('chefsMeta').insertOne(newSpecial);
-        chefsMetaList = await db.collection('chefsMeta').find({recipeID: args.recipeID}).toArray();
+        chefsMetaList = await db.collection('chefsMeta').find({recipeID: new ObjectId(args.recipeID)}).toArray();
         added = true;
       } catch (error) {
         added = false;
@@ -467,12 +477,11 @@ const resolvers = {
       }
     },
     addCookbook: async (_, args, context, info) => {
-      let added = false;
-      let cookbookList = [];
+      let cookbook;
       const newCookbook = {
-        recipeIDs: args.recipeIDs,
         name: args.name,
         description: args.description,
+        recipeIDs: args.recipeIDs,
         ingredientIDs: args.ingredientIDs,
         stepIDs: args.stepIDs,
         tasteProfileIDs: args.tasteProfileIDs,
@@ -482,27 +491,23 @@ const resolvers = {
       };
       try {
         await mongoClient.connect();
-        await db.collection('cookbooks').insertOne(newCookbook);
-        cookbookList = await db.collection('cookbooks').find({}).toArray();
-        added = true;
+        cookbook = await db.collection('cookbooks').insertOne(newCookbook);
       } catch (error) {
-        added = false;
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: added ? true : false,
-          message: added ? 'Cookbook added successfully' : 'Error adding cookbook',
-          cookbookList
+          success: cookbook ? true : false,
+          message: cookbook ? 'Cookbook added successfully' : 'Error adding cookbook',
+          cookbookID: cookbook.insertedId
         }
       }
     },
     updateCookbook: async (_, args, context, info) => {
-      let updated = false;
-      let newCookbookList = [];
+      let cookbook;
       let cookbookToUpdate = {}
-      if (db.collection('cookbooks').find(cookbook => cookbook.name === args.name)) {
-        cookbookToUpdate.name = args.name;
+      if (db.collection('cookbooks').find(cookbook => cookbook.userID === args.userID)) {
+        if (args.name) cookbookToUpdate.name = args.name;
         if (args.description) cookbookToUpdate.description = args.description;
         if (args.recipeIDs) cookbookToUpdate.recipeIDs = args.recipeIDs;
         if (args.ingredientIDs) cookbookToUpdate.ingredientIDs = args.ingredientIDs;
@@ -513,53 +518,46 @@ const resolvers = {
         if (args.signature) cookbookToUpdate.signature = args.signature;
         try {
           await mongoClient.connect();
-          await db.collection('cookbooks').updateOne({ name: args.name }, { $set: cookbookToUpdate });
-          newCookbookList = await db.collection('cookbooks').find({}).toArray();
-          updated = true;
+          cookbook = await db.collection('cookbooks').updateOne({ name: args.name }, { $set: cookbookToUpdate });
         } catch (error) {
-          updated = false;
           throw new Error(error);
         } finally {
           await mongoClient.close();
           return {
-            success: updated ? true : false,
-            message: updated ? 'Cookbook updated successfully' : 'Error updating cookbook',
-            cookbookList: newCookbookList
+            success: cookbook ? true : false,
+            message: cookbook ? 'Cookbook updated successfully' : 'Error updating cookbook',
+            cookbookID: cookbook.upsertedId
           }
         }
       } else {
         return {
           success: false,
           message: 'Cookbook does not exist',
-          cookbookList: newCookbookList
+          cookbookID: ''
         }
       }
     },
     deleteCookbook: async (_, args, context, info) => {
       let deleted = false;
-      let cookbookList = [];
       if (db.collection('cookbooks').find(cookbook => cookbook.name === args.name)) {
         try {
           await mongoClient.connect();
           await db.collection('cookbooks').deleteOne({ name: args.name });
-          cookbookList = await db.collection('cookbooks').find({}).toArray();
-          deleted = true;
         } catch (error) {
-          deleted = false;
           throw new Error(error);
         } finally {
           await mongoClient.close();
           return {
             success: deleted ? true : false,
             message: deleted ? 'Cookbook deleted successfully' : 'Error deleting cookbook',
-            cookbookList
+            cookbookID: ''
           }
         }
       } else {
         return {
           success: false,
           message: 'Cookbook does not exist',
-          cookbookList
+          cookbookID: ''
         }
       }
     },
@@ -606,7 +604,7 @@ const resolvers = {
           return {
             success: updatedUser.acknowledged ? true : false,
             message: updatedUser.acknowledged ? 'User updated successfully' : 'Error updating user',
-            userID: args.address
+            userID: updatedUser.upsertedId
           }
         }
       } else {

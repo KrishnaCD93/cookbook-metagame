@@ -1,9 +1,10 @@
-import { Badge, Box, Button, Divider, Grid, GridItem, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Divider, Grid, GridItem, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
 import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
+import { FaSignature } from 'react-icons/fa';
 
 const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {
@@ -16,7 +17,7 @@ const GET_RECIPE_WITH_DATA = gql`
         ingredientIDs
         stepIDs
         tasteProfileID
-        metaQualityTags
+        qualityTags
         equipment
         userID
         signature
@@ -61,11 +62,9 @@ const GET_RECIPES = gql`
       name
       imageCid
       description
-      metaQualityTags
-      equipment
+      qualityTags
       userID
       signature
-      createdAt
     }
   }
 `;
@@ -97,7 +96,7 @@ const ShowRecipes = ({ cld }) => {
     <VStack spacing={2}>
       <Spacer mt={4} />
       <Text fontSize="xl">Recipes</Text>
-      <Grid templateColumns="repeat(auto-fit)" gap={4}>
+      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
             <RecipeCard recipe={recipe} cld={cld} />
@@ -146,16 +145,16 @@ const RecipeCard = ({ recipe, cld }) => {
   
   return (
     <>
-    <Box p={2} m={2} boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', boxShadow: 'dark-lg' }}>
+    <Box p={2} m={2} boxShadow='inner' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', bg: 'gray.400' }}>
       <VStack spacing={4} align="center">
         <Text fontSize="large">{recipe.name}
-          {recipe.signature && <Badge borderRadius={2} ml={1} mb={2} colorScheme='blue' variant='subtle'>Signed</Badge>}
+          {recipe.signature && <Icon as={FaSignature} size="1.5em" color='blue' ml={2} mb={2} />}
         </Text>
         {recipe.imageCid && <AdvancedImage cldImg={image} 
         plugins={[lazyload(), responsive(100), placeholder()]} 
         />}
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
-        {recipe.metaQualityTags && recipe.metaQualityTags.split(',').map((tag, index) => (
+        {recipe.qualityTags && recipe.qualityTags.split(',').map((tag, index) => (
           <Badge key={index} colorScheme='teal' variant='subtle'>{tag}</Badge>
         ))}
         <Button variant='ghost' w='100%'>View Recipe</Button>
@@ -197,10 +196,10 @@ const Recipe = (props) => {
                 <Text key={index}>{equipment}</Text>
               ))}
             </>}
-            {recipeData && recipeData.metaQualityTags && 
+            {recipeData && recipeData.qualityTags && 
               <>
-              <Text as='b' fontSize="large">Meta Tags</Text>
-              {recipeData.metaQualityTags.split(',').map((tag, index) => (
+              <Text as='b' fontSize="large">Quality Tags</Text>
+              {recipeData.qualityTags.split(',').map((tag, index) => (
               <Text key={index}>{tag}</Text>
               ))}
               </>}

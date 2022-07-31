@@ -41,13 +41,6 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           resolve(signatureData)
         })
         signature = await sign(`Create recipe ${data.name} on ${date}`)
-        if (data.recipeImage[0] && data.createNFT) {
-          // TODO: add nft data to blockchain and update user cookbook
-          const image = data.recipeImage[0];
-          const nftUploadData = { image, userID: userID, recipeName: data.name, tasteProfile: data.tasteProfile, signature: signature }
-          nftCid = await uploadRecipeNFT(nftUploadData);
-          console.log(nftCid);
-        }
       } else if (!isConnected) {
         setUserID('0x0');
       }
@@ -132,7 +125,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           ingredientIDs: ingredientIDs,
           stepIDs: stepIDs,
           tasteProfileID: tasteProfileID,
-          metaQualityTags: data.metaQualityTags,
+          qualityTags: data.qualityTags,
           equipment: data.equipment,
           userID: userID,
           signature: signature,
@@ -144,9 +137,37 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         return recipeID;
       }
       const ingredientIDs = await addIngredients();
+      if (ingredientIDs) {
+        toast({
+          title: 'Ingredients added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
       const stepIDs = await addSteps();
+      if (stepIDs) {
+        toast({
+          title: 'Steps added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
       const tasteProfileID = await addTasteProfile();
+      if (tasteProfileID) {
+        toast({
+          title: 'Taste profile added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
       const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
+      if (data.recipeImage[0] && data.createNFT) {
+        // TODO: add nft data to blockchain and update user cookbook
+        const image = data.recipeImage[0];
+        const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, signature: signature }
+        nftCid = await uploadRecipeNFT(nftUploadData);
+        console.log(nftCid);
+      }
       console.log(recipeID);
       setUploading(false);
       if (recipeID) {
@@ -188,7 +209,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                     <Tab>Recipe{errors && errors.name ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Meta Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Meta Info{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel>
@@ -216,8 +237,8 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                       <FormLabel htmlFor="equipment">
                         <GetEquipment />
                       </FormLabel>
-                      <FormLabel htmlFor="metaQualityTags">
-                        <GetMetaQualityTags />
+                      <FormLabel htmlFor="qualityTags">
+                        <GetQualityTags />
                       </FormLabel>
                     </TabPanel>
                   </TabPanels>
@@ -330,7 +351,7 @@ function GetDescription() {
           />
         </Tooltip>
         <Input py={2} px={2} as={EditableTextarea} isInvalid={false}
-          {...register('description')} />
+          {...register('description', {required: 'Add a short description of the dish'})} />
           <FormErrorMessage>
             {errors.description && errors.description.message}
           </FormErrorMessage>
@@ -740,16 +761,16 @@ function GetEquipment() {
   )
 }
 
-// Function to get the metaquality tags of the recipe
-function GetMetaQualityTags() {
+// Function to get the quality tags of the recipe
+function GetQualityTags() {
   const { register } = useFormContext();
 
-  // Function to get the tag of the metaquality
+  // Function to get the tag of the quality
   function GetTags() {
     return (
       <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
         <Textarea py={2} px={2} placeholder="...tags, eg. high protien, breakfast food" variant={'flushed'} isInvalid={false}
-          {...register('metaQualityTags')} />
+          {...register('qualityTags')} />
       </Tooltip>
     )
   }
@@ -757,7 +778,7 @@ function GetMetaQualityTags() {
   return (
     <Container p={2} m={2} centerContent>
       <VStack spacing={2}>
-        <Text as='u' align='center' fontSize={'large'}>Metaquality Tags</Text>
+        <Text as='u' align='center' fontSize={'large'}>quality Tags</Text>
         <GetTags />
       </VStack>
     </Container>

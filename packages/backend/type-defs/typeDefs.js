@@ -8,11 +8,11 @@ const typeDefs = gql`
     tokenNumber: Int
     name: String!
     imageCid: String
-    description: String
+    description: String!
     ingredientIDs: [ID]!
     stepIDs: [ID]!
     tasteProfileID: ID!
-    metaQualityTags: String
+    qualityTags: String
     equipment: String
     userID: String
     signature: String
@@ -20,11 +20,12 @@ const typeDefs = gql`
     updatedAt: String
   }
   type RecipeNFT {
-    imageCid: String
-    userID: ID
-    recipeName: String
-    tasteProfile: [Int]
-    signature: String
+    imageUri: String!
+    userID: ID!
+    name: String!
+    description: String!
+    tasteProfile: [Int]!
+    signature: String!
   }
   type Ingredient {
     _id: ID
@@ -70,7 +71,7 @@ const typeDefs = gql`
     signature: String!
   }
   type Cookbook {
-    address: String!
+    address: String
     name: String!
     description: String
     recipeIDs: [ID]
@@ -78,7 +79,7 @@ const typeDefs = gql`
     stepIDs: [ID]
     tasteProfileIDs: [ID]
     chefsMetaIDs: [ID]
-    user: [User]!
+    user: User!
     signature: String!
   }
   type User {
@@ -128,8 +129,10 @@ const typeDefs = gql`
     recipeNFTs: [RecipeNFT]
     ingredients: [Ingredient]
     ingredientByID(id: ID!): Ingredient
+    ingredientsByUserID(userID: String!): [Ingredient]
     steps: [Step]
     stepByID(id: ID!): Step
+    stepsByUserID(userID: String!): [Step]
     tasteProfiles: [TasteProfile]
     tasteProfileByID(id: ID!): [TasteProfile]
     tasteProfilesByUserID(userID: String!): [TasteProfile]
@@ -149,7 +152,8 @@ const typeDefs = gql`
     addRecipeNFT(
       imageUri: String!
       userID: ID!
-      recipeName: String!
+      name: String!
+      description: String
       tasteProfile: [Int]!
       signature: String!
     ): NFTUploadResponse!
@@ -193,7 +197,7 @@ const typeDefs = gql`
       ingredientIDs: [ID]!
       stepIDs: [ID]!
       tasteProfileID: ID!
-      metaQualityTags: String
+      qualityTags: String
       equipment: String
       userID: String
       signature: String
@@ -211,7 +215,7 @@ const typeDefs = gql`
       ingredientIDs: [ID]
       stepIDs: [ID]
       tasteProfileID: ID
-      metaQualityTags: String
+      qualityTags: String
       equipment: String
       cookbookToken: String
       userID: String!
@@ -233,7 +237,7 @@ const typeDefs = gql`
       comments: [String]
     ): ChefsMetaResponse!
     addCookbook(
-      address: String!
+      address: String
       name: String!
       description: String
       recipeIDs: [String]!

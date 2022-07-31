@@ -21,8 +21,8 @@ function Profile({ isOpen, onClose }) {
     return (
       <Box>
         {ensAvatar && <img src={ensAvatar} alt="ENS Avatar" />}
-        <Box>{ensName ? `${ensName} (${shortAddress})` : shortAddress}</Box>
-        <Box>Connected to {connector.name}</Box>
+        <Text>{ensName ? `${ensName} (${shortAddress})` : shortAddress}</Text>
+        {connector && <Text fontSize='x-small'>Connected to {connector.name}</Text>}
         <Button onClick={disconnect}>Disconnect</Button>
       </Box>
     )
