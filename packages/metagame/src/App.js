@@ -6,7 +6,7 @@ import CreateCookbook from './CreateCookbook';
 import ShowRecipes from './ShowRecipes';
 
 import {Cloudinary} from "@cloudinary/url-gen";
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Profile from './Profile';
 
 function App() {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
@@ -23,7 +23,7 @@ function App() {
       <Grid minH="100vh" p={3} spacing={8}>
         <Flex justifySelf="flex-end">
           <Box>
-            <ConnectButton />
+            <Profile />
           </Box>
           <ColorModeSwitcher />
         </Flex>

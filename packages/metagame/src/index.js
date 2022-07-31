@@ -5,43 +5,62 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorker from './serviceWorker';
 
-import '@rainbow-me/rainbowkit/styles.css';
-import {
-  getDefaultWallets,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
-import {
-  chain,
-  configureChains,
-  createClient,
-  WagmiConfig,
-} from 'wagmi';
-import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { publicProvider } from 'wagmi/providers/public';
-
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 
-const { chains, provider } = configureChains(
-  [chain.mainnet, chain.polygon],
-  [
-    alchemyProvider({ alchemyId: process.env.ALCHEMY_ID }),
-    publicProvider()
-  ]
-);
+import {
+  WagmiConfig,
+  createClient,
+  defaultChains,
+  configureChains,
+} from 'wagmi'
 
-const { connectors } = getDefaultWallets({
-  appName: 'Cookbook Metagame',
-  chains
-});
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { publicProvider } from 'wagmi/providers/public'
 
+import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
+import { InjectedConnector } from 'wagmi/connectors/injected'
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+
+// Configure chains & providers with the Alchemy provider.
+// Two popular providers are Alchemy (alchemy.com) and Infura (infura.io)
+const { chains, provider, webSocketProvider } = configureChains(defaultChains, [
+  alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
+  publicProvider(),
+])
+
+// Set up client
 const wagmiClient = createClient({
   autoConnect: true,
-  connectors,
-  provider
+  connectors: [
+    new MetaMaskConnector({ chains }),
+    new CoinbaseWalletConnector({
+      chains,
+      options: {
+        appName: 'wagmi',
+      },
+    }),
+    new WalletConnectConnector({
+      chains,
+      options: {
+        qrcode: true,
+      },
+    }),
+    new InjectedConnector({
+      chains,
+      options: {
+        name: 'Injected',
+        shimDisconnect: true,
+      },
+    }),
+  ],
+  provider,
+  webSocketProvider,
 })
 
+
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame-server.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame-server.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors'
@@ -63,9 +82,7 @@ root.render(
     <ApolloProvider client={apolloClient}>
       <ChakraProvider theme={theme}>
         <WagmiConfig client={wagmiClient}>
-          <RainbowKitProvider chains={chains}>
             <App />
-          </RainbowKitProvider>
         </WagmiConfig>
       </ChakraProvider>
     </ApolloProvider>
