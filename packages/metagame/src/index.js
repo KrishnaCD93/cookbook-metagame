@@ -10,42 +10,35 @@ import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/c
 import {
   WagmiConfig,
   createClient,
-  defaultChains,
+  chain,
   configureChains,
 } from 'wagmi'
 
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 
-import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
-import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
-
+// import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
+// import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
+// import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import '@rainbow-me/rainbowkit/styles.css';
+import {
+  getDefaultWallets,
+  RainbowKitProvider,
+} from '@rainbow-me/rainbowkit';
 // Configure chains & providers with the Alchemy provider.
 // Two popular providers are Alchemy (alchemy.com) and Infura (infura.io)
-const { chains, provider, webSocketProvider } = configureChains(defaultChains, [
+const { chains, provider, webSocketProvider } = configureChains([chain.mainnet, chain.polygon], [
   alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
   publicProvider(),
 ])
-
+const { connectors } = getDefaultWallets({
+  appName: 'My RainbowKit App',
+  chains
+});
 // Set up client
 const wagmiClient = createClient({
   autoConnect: true,
-  connectors: [
-    new MetaMaskConnector({ chains }),
-    new CoinbaseWalletConnector({
-      chains,
-      options: {
-        appName: 'wagmi',
-      },
-    }),
-    new WalletConnectConnector({
-      chains,
-      options: {
-        qrcode: true,
-      },
-    }),
-  ],
+  connectors,
   provider,
   webSocketProvider,
 })
@@ -74,7 +67,9 @@ root.render(
     <ApolloProvider client={apolloClient}>
       <ChakraProvider theme={theme}>
         <WagmiConfig client={wagmiClient}>
+          <RainbowKitProvider chains={chains}>
             <App />
+          </RainbowKitProvider>
         </WagmiConfig>
       </ChakraProvider>
     </ApolloProvider>

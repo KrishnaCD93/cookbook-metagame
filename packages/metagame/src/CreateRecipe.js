@@ -1,4 +1,4 @@
-import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex } from "@chakra-ui/react";
+import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox } from "@chakra-ui/react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
@@ -7,7 +7,8 @@ import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
 import { useAccount, useSignMessage } from "wagmi"; 
-import { verifyMessage } from 'ethers/lib/utils'
+import { verifyMessage } from 'ethers/lib/utils';
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const CreateRecipe = ({ isOpen, onClose }) => {
   const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadRecipeNFT] = useApolloMutations();
@@ -36,9 +37,10 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       if (isConnected) {
         setUserID(accountInfo);
         const sign = (message) => 
-        new Promise((resolve) => {
+        new Promise((resolve, reject) => {
           signMessage({ message })
           resolve(signatureData)
+          reject(new Error('Signature failed'))
         })
         signature = await sign(`Create recipe ${data.name} on ${date}`)
       } else if (!isConnected) {
@@ -162,7 +164,6 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       }
       const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
       if (data.recipeImage[0] && data.createNFT) {
-        // TODO: add nft data to blockchain and update user cookbook
         const image = data.recipeImage[0];
         const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, signature: signature }
         nftCid = await uploadRecipeNFT(nftUploadData);
@@ -209,7 +210,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                     <Tab>Recipe{errors && errors.name ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Meta Info{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Meta Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
                   </TabList>
                   <TabPanels>
                     <TabPanel>
@@ -243,10 +244,13 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                     </TabPanel>
                   </TabPanels>
                 </Tabs>
+                <FormLabel htmlFor="mintNFT">
+                  <GetMintNFT accountInfo={accountInfo} />
+                </FormLabel>
               </FormControl>
-              <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
-                Create
-              </Button>
+              {accountInfo ? <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
+                Create Recipe
+              </Button> : <ConnectButton label='connect wallet to create recipe' />}
             </form>
           </FormProvider>
         </ModalBody>
@@ -783,6 +787,26 @@ function GetQualityTags() {
       </VStack>
     </Container>
   )
+}
+
+// Function to check whether the user wants to mint an NFT
+function GetMintNFT({ accountInfo }) {
+  const { register } = useFormContext();
+  if (accountInfo) {
+    return (
+      <Container p={2} m={2} centerContent>
+        <Text as='u' align='center' fontSize={'large'}>Mint NFT</Text>
+        <Tooltip label="Do you want to mint an NFT of the recipe?">
+          <Checkbox
+            label="Mint NFT"
+            isInvalid={false}
+            {...register('mintNFT')}
+          />
+        </Tooltip>
+      </Container>
+    )
+  }
+  return null
 }
 
 export default CreateRecipe;

@@ -95,7 +95,6 @@ const ShowRecipes = ({ cld }) => {
   return (
     <VStack spacing={2}>
       <Spacer mt={4} />
-      <Text fontSize="xl">Recipes</Text>
       <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
         {recipesMemo && recipesMemo.map((recipe, index) => (
           <GridItem key={index}>
@@ -145,7 +144,7 @@ const RecipeCard = ({ recipe, cld }) => {
   
   return (
     <>
-    <Box p={2} m={2} boxShadow='inner' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', bg: 'gray.400' }}>
+    <Box p={2} m={2} boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', bg: 'gray.400' }}>
       <VStack spacing={4} align="center">
         <Text fontSize="large">{recipe.name}
           {recipe.signature && <Icon as={FaSignature} size="1.5em" color='blue' ml={2} mb={2} />}
@@ -246,7 +245,7 @@ const Steps = ({ steps }) => {
     <WrapItem key={index} spacing={4} alignItems="center" boxShadow="sm" justifyContent="center" align='center'>
       <Box>
         <Text fontSize="md">Step {index + 1}</Text>
-        {step.name && <Text fontSize="md">{step.name}</Text>}
+        {step.stepName && <Text fontSize="md">{step.stepName}</Text>}
       </Box>
       <Box m={2} p={2}>
         <Text fontSize='md'>{step.action}</Text>
