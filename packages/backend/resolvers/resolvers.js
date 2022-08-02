@@ -1,5 +1,6 @@
 const { AuthenticationError } = require('apollo-server');
 const { MongoClient, ObjectId } = require('mongodb');
+const { ThirdwebSDK } = require('@thirdweb-dev/sdk');
 
 const mongoPassword = process.env.MONGO_DB_PASSWORD;
 const mongoURI = `mongodb+srv://cookbook:${mongoPassword}@cluster0.2k2xd.mongodb.net/?retryWrites=true&w=majority`
@@ -15,6 +16,10 @@ const userCollection = db.collection('users');
 
 const { NFTStorage, File } = require('nft.storage');
 const nftStorageToken = process.env.NFT_STORAGE_API_KEY;
+
+// const polygonPrivateKey = process.env.POLYGON_PRIVATE_KEY;
+// const sdkContestNFTs = new ThirdwebSDK.fromPrivateKey(polygonPrivateKey, 'polygon');
+const sdk = new ThirdwebSDK('mumbai');
 
 const resolvers = {
   Query: {
@@ -124,9 +129,9 @@ const resolvers = {
       await mongoClient.close();
       return tasteProfiles;
     },
-    chefsMetaByRecipeCid: async (_, args, context, info) => {
+    chefsMetaByRecipeID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const chefsMeta = await chefsMetaCollection.find({ recipeCid: args.recipeCid }).toArray();
+      const chefsMeta = await chefsMetaCollection.find({ recipeID: new ObjectId(args.recipeID) }).toArray();
       await mongoClient.close();
       return chefsMeta;
     },
@@ -138,7 +143,24 @@ const resolvers = {
     },
     cookbookByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const cookbook = await cookbookCollection.find({ userID: args.userID }).toArray();
+      const cookbook = {};
+      cookbook.user.userID = args.userID;
+      const recipes = await recipeCollection.find({ userID: args.userID }).toArray();
+      for (const recipe of recipes) {
+        cookbook.recipes.push(recipe);
+        for (const ingredient of recipe.ingredientIDs) {
+          const ingredientData = await ingredientCollection.findOne({ _id: new ObjectId(ingredient) });
+          cookbook.ingredients.push(ingredientData);
+        }
+        for (const step of recipe.stepIDs) {
+          const stepData = await stepCollection.findOne({ _id: new ObjectId(step) });
+          cookbook.steps.push(stepData);
+        }
+        const tasteProfile = await tasteProfileCollection.findOne({ _id: new ObjectId(recipe.tasteProfileID) });
+        cookbook.tasteProfiles.push(tasteProfile);
+        const chefsMeta = await chefsMetaCollection.find({ recipeID: new ObjectId(recipe._id) }).toArray();
+        cookbook.chefsMeta.push(chefsMeta);
+      }
       await mongoClient.close();
       return cookbook;
     },
@@ -153,14 +175,18 @@ const resolvers = {
   Mutation: {
     addRecipeNFT: async (_, args, context, info) => {
       const { imageUri, userID, name, description, tasteProfile, signature } = args;
-      let recipeNFT;
+      let nftCid;
+      const contractAddress = await sdk.deployer.deployEdition({
+        name: name,
+        primary_sale_recipient: userID,
+      });
       try {
         const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
         console.log('file', file);
-        const nft = {
+        const nftMetadata = {
           image: file,
           name: name,
-          description: `${description}`,
+          description: description,
           properties: {
             type: 'recipe',
             chef: userID,
@@ -176,16 +202,30 @@ const resolvers = {
             signature: signature
           }
         }
-        const client = new NFTStorage({ token: nftStorageToken})
-        recipeNFT = await client.store(nft)
-        console.log('uploaded NFT', recipeNFT)
+        // const client = new NFTStorage({ token: nftStorageToken})
+        // recipeNFT = await client.store(nftMetadata)
+        // royalties on the whole contract
+        const contract = sdk.getEdition(deployedAddress);
+        contract.royalties.setDefaultRoyaltyInfo({
+          seller_fee_basis_points: 500, // 5%
+          fee_recipient: "0x7B9C880E5118A96Eeb6734E7f6C3f17f7fa2EEE2"
+        });
+        const metadataWithSupply = {
+          nftMetadata,
+          supply: 1,
+        }
+        const tx = await contract.mintTo(userID, metadataWithSupply);
+        const receipt = await tx.receipt;
+        const tokenId = tx.id;
+        nftCid = await tx.data();
+        console.log('uploaded NFT', nftCid)
       } catch (error) {
         console.log('error', error)
       } finally {
         return {
           success: recipeNFT? true : false,
           message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
-          nftCid: recipeNFT? recipeNFT.url : null
+          nftCid: contractAddress? contractAddress : null
         }
       }
     },

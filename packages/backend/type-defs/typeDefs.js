@@ -9,8 +9,8 @@ const typeDefs = gql`
     name: String!
     imageCid: String
     description: String!
-    ingredientIDs: [ID]!
-    stepIDs: [ID]!
+    ingredientIDs: [ID]
+    stepIDs: [ID]
     tasteProfileID: ID!
     qualityTags: String
     equipment: String
@@ -21,7 +21,7 @@ const typeDefs = gql`
   }
   type RecipeNFT {
     imageUri: String!
-    userID: ID!
+    userID: String!
     name: String!
     description: String!
     tasteProfile: [Int]!
@@ -72,19 +72,19 @@ const typeDefs = gql`
   }
   type Cookbook {
     address: String
-    name: String!
+    name: String
     description: String
-    recipeIDs: [ID]
-    ingredientIDs: [ID]
-    stepIDs: [ID]
-    tasteProfileIDs: [ID]
-    chefsMetaIDs: [ID]
-    user: User!
-    signature: String!
+    recipes: [Recipe]
+    ingredients: [Ingredient]
+    steps: [Step]
+    tasteProfiles: [TasteProfile]
+    chefsMetas: [ChefsMeta]
+    user: User
+    signature: String
   }
   type User {
     userID: String! # This is the user's Ethereum address
-    signature: String!
+    signature: String
     name: String
     image: String
     email: String
@@ -122,6 +122,12 @@ const typeDefs = gql`
     imageCid: String
     contractAddress: String
   }
+  type Vote {
+    _id: ID
+    userID: ID
+    recipeID: ID
+    signature: String
+  }
   type Query {
     recipes: [Recipe]
     recipesByUserID(userID: String!): [Recipe]
@@ -136,7 +142,7 @@ const typeDefs = gql`
     tasteProfiles: [TasteProfile]
     tasteProfileByID(id: ID!): [TasteProfile]
     tasteProfilesByUserID(userID: String!): [TasteProfile]
-    chefsMetaByRecipeCid(recipeCid: String!): ChefsMeta
+    chefsMetaByRecipeID(recipeID: String!): ChefsMeta
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
     user(userID: String!): User
@@ -151,7 +157,7 @@ const typeDefs = gql`
   type Mutation {
     addRecipeNFT(
       imageUri: String!
-      userID: ID!
+      userID: String!
       name: String!
       description: String
       tasteProfile: [Int]!
@@ -293,7 +299,7 @@ const typeDefs = gql`
     addContestEntry(
       userID: ID
       recipeID: ID
-      recipeNFTAddress: String
+      nftCid: String
       prompt: String
       signature: String
     ): ContestEntryResponse
@@ -315,7 +321,7 @@ const typeDefs = gql`
   type NFTUploadResponse {
     success: Boolean!
     message: String!
-    nftCid: String!
+    nftCid: String! # NFT contract address
   }
   type RecipeResponse {
     success: Boolean!

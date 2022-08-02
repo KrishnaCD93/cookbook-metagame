@@ -2,10 +2,13 @@ import { ChakraProvider, ColorModeScript, theme } from '@chakra-ui/react';
 import React, { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import App from './App';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorker from './serviceWorker';
 
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
+
+import ViewCookbook from './routes/ViewCookbook';
 
 import {
   WagmiConfig,
@@ -17,20 +20,21 @@ import {
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 
-// import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
-// import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
-// import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import '@rainbow-me/rainbowkit/styles.css';
 import {
   getDefaultWallets,
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
-// Configure chains & providers with the Alchemy provider.
-// Two popular providers are Alchemy (alchemy.com) and Infura (infura.io)
-const { chains, provider, webSocketProvider } = configureChains([chain.mainnet, chain.polygon], [
+import ShowRecipes from './routes/ShowRecipes';
+import Home from './routes/Home';
+
+const { chains, provider, webSocketProvider } = configureChains(
+  [chain.mainnet, chain.polygon, chain.polygonMumbai], 
+  [
   alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
   publicProvider(),
-])
+  ]
+);
 const { connectors } = getDefaultWallets({
   appName: 'My RainbowKit App',
   chains
@@ -45,7 +49,7 @@ const wagmiClient = createClient({
 
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame-server.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame-server.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors'
@@ -68,7 +72,23 @@ root.render(
       <ChakraProvider theme={theme}>
         <WagmiConfig client={wagmiClient}>
           <RainbowKitProvider chains={chains}>
-            <App />
+            <HashRouter>
+              <Routes>
+                <Route path="/" element={<App />}>
+                  <Route index element={<Home />} />
+                  <Route path="cookbook" element={<ViewCookbook />} />
+                  <Route path="recipes" element={<ShowRecipes />} />
+                  <Route
+                    path="*"
+                    element={
+                      <main style={{ padding: "1rem" }}>
+                        <p>There's nothing here!</p>
+                      </main>
+                    }
+                  />
+                </Route>
+              </Routes>
+            </HashRouter>
           </RainbowKitProvider>
         </WagmiConfig>
       </ChakraProvider>

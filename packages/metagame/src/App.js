@@ -1,68 +1,25 @@
 import React from 'react';
-import { Box, VStack, Grid, useDisclosure, Button, Flex, GridItem, Image, Spacer, useColorModeValue, Text, Divider } from '@chakra-ui/react';
+import { Box, Grid, Spacer } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
-import CreateRecipe from './CreateRecipe';
-import ViewCookbook from './ViewCookbook';
-import ShowRecipes from './ShowRecipes';
-
-import { Cloudinary } from "@cloudinary/url-gen";
-// import Profile from './components/Profile';
-// import { useAccount } from 'wagmi';
-
-import wordmark from './assets/wordmark.svg';
-import altWordmark from './assets/alt-wordmark.svg';
-import logomark from './assets/logomark.png';
-import altLogomark from './assets/alt-logomark.png';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Navbar from './components/navbar/Navbar';
+import { Outlet } from 'react-router-dom';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
 function App() {
-  // const { isOpen: walletIsOpen, onOpen: walletOnOpen, onClose: walletOnClose } = useDisclosure();
-  const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
-  const { isOpen: cookbookIsOpen, onOpen: cookbookOnOpen, onClose: cookbookOnClose } = useDisclosure();
-  // const { isConnected } = useAccount();
-
-  const cld = new Cloudinary({
-    cloud: {
-      cloudName: 'cookbook-social'
-    }
-  })
-
-  const wordmarkLogo = useColorModeValue(wordmark, altWordmark);
-  const logomarkLogo = useColorModeValue(logomark, altLogomark);
 
   return (
     <Box textAlign="center" fontSize="xl">
       <Grid minH="100vh" p={3} spacing={8}>
-        <Flex>
-          <Image onClick={() => window.location.reload()}
-            src={logomarkLogo} alt="Cookbook Social" h='50px' borderRadius={8} _hover={{ border: '1px solid #000', cursor: 'pointer' }} />
+        <Navbar>
           <Spacer />
           <Box>
-            {/* {!isConnected && <Button h='50px' onClick={walletOnOpen}>Connect Wallet</Button>}
-            <Profile isOpen={walletIsOpen} onClose={walletOnClose} /> */}
             <ConnectButton />
           </Box>
           <ColorModeSwitcher />
-        </Flex>
-        <GridItem>
-        <VStack mb={4}>
-          <Box>
-            <Image src={wordmarkLogo} alt="Cookbook Social" h='25vh' borderRadius={8} />
-            <Text>A platform for foodies to contribute tastes and discover recipes.</Text>
-            <Text>Welcome to the social metagame!</Text>
-          </Box>
-          <Button onClick={recipeOnOpen}>Add A Recipe</Button>
-          <Button onClick={cookbookOnOpen}>View Your Cookbook</Button>
-          <CreateRecipe isOpen={recipeIsOpen} onClose={recipeOnClose} />
-          <ViewCookbook isOpen={cookbookIsOpen} onClose={cookbookOnClose} />
-        </VStack>
-        </GridItem>
-        <Divider />
-        <GridItem>
-        <ShowRecipes cld={cld} />
-        </GridItem>
+        </Navbar>
+        <Outlet />
       </Grid>
     </Box>
   );

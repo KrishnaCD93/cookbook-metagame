@@ -5,6 +5,7 @@ import { gql, useLazyQuery, useQuery } from '@apollo/client';
 import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import { FaSignature } from 'react-icons/fa';
+import { Cloudinary } from '@cloudinary/url-gen';
 
 const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {
@@ -69,9 +70,15 @@ export const GET_RECIPES = gql`
   }
 `;
 
-const ShowRecipes = ({ cld }) => {
+const ShowRecipes = () => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
+
+  const cld = new Cloudinary({
+    cloud: {
+      cloudName: 'cookbook-social'
+    }
+  })
 
   // Ensure all recipes are loaded and memoize recipe ordered by createdAt
   const recipesMemo = useMemo(() => {
@@ -86,7 +93,6 @@ const ShowRecipes = ({ cld }) => {
       setRecipes(data.recipes);
     }
   }, [data]);
-  
   
   if (loading) return <div>Loading Recipes...</div>;
   

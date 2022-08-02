@@ -6,17 +6,21 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
+import useNFTStorage from "./hooks/useNFTStorage";
 import { useAccount, useSignMessage } from "wagmi"; 
+import { useSigner } from 'wagmi';
 import { verifyMessage } from 'ethers/lib/utils';
-import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const CreateRecipe = ({ isOpen, onClose }) => {
-  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadRecipeNFT] = useApolloMutations();
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe] = useApolloMutations();
+  const [uploadRecipeNFT] = useNFTStorage();
   const [uploading, setUploading] = useState(false);
   const [userID, setUserID] = useState('');
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
   const { isConnected, address: accountInfo } = useAccount();
+  const { data: signer, isError: signerError, isLoading: signerLoading } = useSigner();
   const recoveredAddress = useRef('')
   const { data: signatureData, signMessage } = useSignMessage({
     onSuccess(data, variables) {
@@ -35,7 +39,6 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       const date = new Date().toISOString();
       setUploading(true)
       if (isConnected) {
-        setUserID(accountInfo);
         const sign = (message) => 
         new Promise((resolve, reject) => {
           signMessage({ message })
@@ -43,15 +46,23 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           reject(new Error('Signature failed'))
         })
         signature = await sign(`Create recipe ${data.name} on ${date}`)
+        setUserID(accountInfo);
+        console.log('userID', userID);
+        console.log('signature', signature);
+        if (data.recipeImage[0] && data.mintNFT && signer && recoveredAddress.current) {
+          const image = data.recipeImage[0];
+          const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, qualityTags: data.qualityTags, signer }
+          nftCid = await uploadRecipeNFT(nftUploadData);
+        }
       } else if (!isConnected) {
         setUserID('0x0');
       }
-      if (data.recipeImage[0]) {
-        imageCid = await uploadRecipeImage(data.recipeImage[0]);
-      } else if (!data.recipeImage[0]) {
-        imageCid = '';
-      }
-      console.log(data.recipeImage[0], imageCid);
+      // if (data.recipeImage[0]) {
+      //   imageCid = await uploadRecipeImage(data.recipeImage[0]);
+      // } else if (!data.recipeImage[0]) {
+      //   imageCid = '';
+      // }
+      // console.log(data.recipeImage[0], imageCid);
       async function addIngredients() {
         const names = [];
         const quantities = [];
@@ -138,41 +149,34 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         const recipeID = uploadedRecipe.recipeID;
         return recipeID;
       }
-      const ingredientIDs = await addIngredients();
-      if (ingredientIDs) {
-        toast({
-          title: 'Ingredients added',
-          status: 'success',
-          duration: 1000,
-        })
-      }
-      const stepIDs = await addSteps();
-      if (stepIDs) {
-        toast({
-          title: 'Steps added',
-          status: 'success',
-          duration: 1000,
-        })
-      }
-      const tasteProfileID = await addTasteProfile();
-      if (tasteProfileID) {
-        toast({
-          title: 'Taste profile added',
-          status: 'success',
-          duration: 1000,
-        })
-      }
-      const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
-      if (data.recipeImage[0] && data.createNFT) {
-        const image = data.recipeImage[0];
-        const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, signature: signature }
-        nftCid = await uploadRecipeNFT(nftUploadData);
-        console.log(nftCid);
-      }
-      console.log(recipeID);
+      // const ingredientIDs = await addIngredients();
+      // if (ingredientIDs) {
+      //   toast({
+      //     title: 'Ingredients added',
+      //     status: 'success',
+      //     duration: 1000,
+      //   })
+      // }
+      // const stepIDs = await addSteps();
+      // if (stepIDs) {
+      //   toast({
+      //     title: 'Steps added',
+      //     status: 'success',
+      //     duration: 1000,
+      //   })
+      // }
+      // const tasteProfileID = await addTasteProfile();
+      // if (tasteProfileID) {
+      //   toast({
+      //     title: 'Taste profile added',
+      //     status: 'success',
+      //     duration: 1000,
+      //   })
+      // }
+      // const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
       setUploading(false);
-      if (recipeID) {
-        console.log('recipeID', recipeID);
+      if (nftCid) {
+        console.log('nftCid', nftCid);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',
@@ -192,6 +196,9 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       console.log('error: ', error)
     }
   }
+
+  if (signerLoading) return <div>Loading</div>
+  if (signerError) console.log(signerError);
 
   return (
     <>
@@ -245,12 +252,12 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   </TabPanels>
                 </Tabs>
                 <FormLabel htmlFor="mintNFT">
-                  <GetMintNFT accountInfo={accountInfo} />
+                  <GetMintNFT />
                 </FormLabel>
               </FormControl>
               {accountInfo ? <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
                 Create Recipe
-              </Button> : <ConnectButton label='connect wallet to create recipe' />}
+              </Button> : <Button w='100%'><ConnectButton /></Button>}
             </form>
           </FormProvider>
         </ModalBody>
@@ -377,7 +384,7 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Name of the ingredient">
         <Input py={2} px={2} placeholder="...name, eg. eggs" variant={'flushed'} isInvalid={false}
-        {...register(`ingredients[${index}].name`, {required: 'Give the ingredient a name'})} />
+        {...register(`ingredients[${index}].name`)} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].name && (
         <FormErrorMessage>
@@ -394,7 +401,7 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Add the quantity of the ingredient">
         <Input py={2} px={2} placeholder="...amount, eg. 2, large" variant={'flushed'} isInvalid={false}
-        {...register(`ingredients[${index}].quantity`, {required: 'Give the ingredient a quantity'})} />
+        {...register(`ingredients[${index}].quantity`)} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].quantity && (
         <FormErrorMessage>
@@ -408,7 +415,7 @@ const GetIngredients = () => {
   // Function to get the ingredient's meta: the effect on the recipe's taste
   function GetIngredientComments({ index }) {
     return (
-      <Tooltip label="How does this ingredient affect the taste of the recipe?">
+      <Tooltip label="Add any comments about the ingredient">
         <Textarea py={2} px={2} placeholder="...comments, eg. Organic free roam eggs" variant={'flushed'} isInvalid={false}
         {...register(`ingredients[${index}].comments`)} />
       </Tooltip>
@@ -445,20 +452,23 @@ const GetIngredients = () => {
   return (
     <Container p={2} m={2} centerContent>
     <Text as='u' align='center' fontSize={'large'}>Ingredients</Text>
-    <Wrap>
-      {Array.from({ length: numIngredients }, (_, index) => (
-      <WrapItem key={index} border='1px' borderRadius={2}>
-        <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
+    {Array.from({ length: numIngredients }, (_, index) => (
+      <Box border='1px' m={2} p={2}>
+        <Flex>
           <Box>
+            <Text>Name</Text>
             <GetName index={index} />
-            <GetAmount index={index} />
-            <GetIngredientComments index={index} />
             <GetIngredientImage index={index} />
           </Box>
-        </VStack>
-      </WrapItem>
-      ))}
-    </Wrap>
+          <Box>
+            <Text>Amount</Text>
+            <GetAmount index={index} />
+          </Box>
+        </Flex>
+        <Text>Comments</Text>
+        <GetIngredientComments index={index} />
+        </Box>
+    ))}
     <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
       <Button onClick={() => setNumIngredients(numIngredients + 1)}
         border='1px' >＋ Ingredient</Button>
@@ -497,8 +507,8 @@ const GetSteps = () => {
       <>
       <Tooltip label="What're the actions for this step of the recipe?">
         <Textarea py={2} px={2} placeholder="...action, eg. crack eggs into a bowl, use a fork to mix with salt and pepper" variant={'flushed'} isInvalid={false}
-          {...register(`steps[${index}].action`, {required: 'Add an action',
-          maxLength: {value: 280, message: 'Action must be less than 280 characters'}})} />
+          {...register(`steps[${index}].action`, 
+          {maxLength: {value: 280, message: 'Action must be less than 280 characters'}})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].action && (
       <FormErrorMessage>
@@ -591,23 +601,26 @@ return (
   {Array.from({ length: numSteps }, (_, index) => (
     <WrapItem key={index} border='1px' borderRadius={2}>
       <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
-        <Text as='u' align='center' fontSize={'large'}>Step {index + 1}</Text>
-        <Box border='1px' borderRadius={2}>
+        <Text as='u' align='center'>Step {index + 1}</Text>
+        <Box>
           <GetStepName index={index} />
         </Box>
-        <Box border='1px' borderRadius={2}>
+        <Box>
           <Box>
+            <Text mt={2} as='u'>Action</Text>
             <GetAction index={index} />
             <GetActionImage index={index} />
           </Box>
         </Box>
-        <Box border='1px' borderRadius={2}>
+        <Box>
           <Box>
+            <Text mt={2} as='u'>Trigger</Text>
             <GetTrigger index={index} />
             <GetTriggerImage index={index} />
           </Box>
         </Box>
         <Box>
+          <Text mt={2} as='u'>Comments</Text>
           <GetStepComments index={index} />
         </Box>
       </VStack>
@@ -782,7 +795,7 @@ function GetQualityTags() {
   return (
     <Container p={2} m={2} centerContent>
       <VStack spacing={2}>
-        <Text as='u' align='center' fontSize={'large'}>quality Tags</Text>
+        <Text as='u' align='center' fontSize={'large'}>Quality Tags</Text>
         <GetTags />
       </VStack>
     </Container>
@@ -790,23 +803,20 @@ function GetQualityTags() {
 }
 
 // Function to check whether the user wants to mint an NFT
-function GetMintNFT({ accountInfo }) {
+function GetMintNFT() {
   const { register } = useFormContext();
-  if (accountInfo) {
-    return (
-      <Container p={2} m={2} centerContent>
-        <Text as='u' align='center' fontSize={'large'}>Mint NFT</Text>
-        <Tooltip label="Do you want to mint an NFT of the recipe?">
-          <Checkbox
-            label="Mint NFT"
-            isInvalid={false}
-            {...register('mintNFT')}
-          />
-        </Tooltip>
-      </Container>
-    )
-  }
-  return null
+  return (
+    <Container p={2} m={2} centerContent>
+      <Text as='u' mb={2} align='center' fontSize={'large'}>Mint NFT</Text>
+      <Tooltip label="Do you want to mint an NFT of the recipe?">
+        <Checkbox
+          label="Mint NFT"
+          isInvalid={false}
+          {...register('mintNFT')}
+        />
+      </Tooltip>
+    </Container>
+  )
 }
 
 export default CreateRecipe;

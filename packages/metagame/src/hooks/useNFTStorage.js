@@ -1,50 +1,97 @@
-import { NFTStorage, File } from 'nft.storage'
-
-const nftStorageToken = process.env.REACT_APP_NFT_STORAGE_API_KEY
+import { ThirdwebSDK } from '@thirdweb-dev/sdk';
+import Resizer from 'react-image-file-resizer';
+import { File } from 'nft.storage';
 
 const useNFTStorage = () => {
 
-  // @param {blob} image - image to upload
-  // @param {string} userID - userID of the user who is uploading the image
-  // @param {string} recipeName - name of the recipe
-  // @param {int} tasteProfile - taste profile of the recipe: salt, sweet, sour, bitter, spice, umami
-  const uploadRecipeImage = async (props) => {
-    console.log('uploadRecipeImage', props);  
-    const { image, userID, recipeName, tasteProfile } = props;
-    const type = image.type;
-    try {
-      const content = new Blob([image], { type });
-      const file = new File([content], `${recipeName}.png`, { type })
-      console.log('type', type);
-      console.log('blob', content);
-      console.log('file', file);
-      const nft = {
-        image: file,
-        name: recipeName,
-        description: `${recipeName} recipe image`,
-        properties: {
-          type: 'recipe',
-          chef: userID,
-          recipeName: recipeName,
-          tasteProfile: {
-            salt: tasteProfile.salt,
-            sweet: tasteProfile.sweet,
-            sour: tasteProfile.sour,
-            bitter: tasteProfile.bitter,
-            spice: tasteProfile.spice,
-            umami: tasteProfile.umami
-          }
+  const uploadRecipeNFT = async (props) => {
+    console.log('uploadRecipeNFT', props);
+    const { image, userID, name, description, tasteProfile, signer } = props;
+    const sdk = ThirdwebSDK.fromSigner(signer, 'mumbai')
+    const contractAddress = await sdk.deployer.deployEdition({
+      name: `${name} NFT`,
+      primary_sale_recipient: userID,
+    });
+    const contract = sdk.getEdition(contractAddress);
+    contract.royalties.setDefaultRoyaltyInfo({
+      seller_fee_basis_points: 100, // 1%
+      fee_recipient: "0x7B9C880E5118A96Eeb6734E7f6C3f17f7fa2EEE2"
+    });
+    const tasteProfileArray = [];
+    tasteProfileArray[0] = parseInt(tasteProfile.salt);
+    tasteProfileArray[1] = parseInt(tasteProfile.sweet);
+    tasteProfileArray[2] = parseInt(tasteProfile.sour);
+    tasteProfileArray[3] = parseInt(tasteProfile.bitter);
+    tasteProfileArray[4] = parseInt(tasteProfile.spice);
+    tasteProfileArray[5] = parseInt(tasteProfile.umami);
+    const resizeFile = (file) =>
+      new Promise((resolve) => {
+        Resizer.imageFileResizer(
+          file,
+          1080,
+          1080,
+          "JPEG",
+          100,
+          0,
+          (uri) => {
+            resolve(uri);
+          },
+          "base64"
+        );
+      });
+    const imageUri = await resizeFile(image);
+    const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
+    const metadata = {
+      image: file,
+      name: name,
+      description: description,
+      properties: [
+        {
+          display_type: 'number',
+          trait_type: 'salt',
+          value: tasteProfileArray[0]
+        },
+        {
+          display_type: 'number',
+          trait_type: 'sweet',
+          value: tasteProfileArray[1]
+        },
+        {
+          display_type: 'number',
+          trait_type: 'sour',
+          value: tasteProfileArray[2]
+        },
+        {
+          display_type: 'number',
+          trait_type: 'bitter',
+          value: tasteProfileArray[3]
+        },
+        {
+          display_type: 'number',
+          trait_type: 'spice',
+          value: tasteProfileArray[4]
+        },
+        {
+          display_type: 'number',
+          trait_type: 'umami',
+          value: tasteProfileArray[5]
         }
-      }
-      const client = new NFTStorage({ token: nftStorageToken})
-      const recipeImage = await client.store(nft)
-      console.log('uploaded image', recipeImage)
-      return recipeImage
-    } catch (error) {
-      console.log('error', error)
+      ]
     }
+    const metadataWithSupply = {
+      metadata,
+      supply: 1,
+    }
+    const tx = await contract.mintTo(userID, metadataWithSupply);
+    const receipt = tx.receipt;
+    const tokenId = tx.id;
+    const nftCid = await tx.data();
+    console.log('receipt', receipt);
+    console.log('tokenId', tokenId);
+    console.log('uploaded NFT', nftCid);
+    return contractAddress;
   }
-  return [uploadRecipeImage]
+  return [uploadRecipeNFT]
 }
 
 export default useNFTStorage;
