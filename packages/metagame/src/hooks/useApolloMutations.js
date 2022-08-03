@@ -1,6 +1,7 @@
 import { gql, useMutation } from '@apollo/client';
 import Resizer from 'react-image-file-resizer';
 import { GET_RECIPES } from '../routes/ShowRecipes';
+import { GET_USER_COOKBOOK } from '../routes/ViewCookbook';
 
 const CREATE_INGREDIENTS = gql`
   mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
@@ -42,6 +43,26 @@ const CREATE_RECIPE = gql`
   }
 `;
 
+const CREATE_EXTERNAL_RECIPE = gql`
+  mutation Mutation($name: String, $recipeUrl: String, $userId: String, $signature: String) {
+    addExternalRecipe(name: $name, recipeUrl: $recipeUrl, userID: $userId, signature: $signature) {
+      success
+      message
+      externalRecipeID
+    }
+  }
+`;
+
+const CREATE_CHEFS_META = gql`
+  mutation Mutation($recipeId: ID!, $specialtyTags: [String], $comments: [String], $signature: String) {
+    addChefsMeta(recipeID: $recipeId, specialtyTags: $specialtyTags, comments: $comments, signature: $signature) {
+      success
+      message
+      chefsMetaID
+    }
+  }
+`;
+
 const cloudinaryUploadEndpoint = 'https://api.cloudinary.com/v1_1/cookbook-social/auto/upload';
 
 const useApolloMutations = () => {
@@ -54,6 +75,12 @@ const useApolloMutations = () => {
   const [addTasteProfile] = useMutation(CREATE_TASTE_PROFILE);
   const [addRecipe] = useMutation(CREATE_RECIPE, {
     refetchQueries: [{ query: GET_RECIPES }]
+  });
+  const [addExternalRecipe] = useMutation(CREATE_EXTERNAL_RECIPE, {
+    refetchQueries: [{ query: GET_USER_COOKBOOK}]
+  })
+  const [addChefsMeta] = useMutation(CREATE_CHEFS_META, {
+    refetchQueries: [{ query: GET_USER_COOKBOOK}]
   });
 
   const uploadIngredients = async (props) => {
@@ -168,7 +195,41 @@ const useApolloMutations = () => {
     return recipeData;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe];
+  const uploadExternalRecipe = async (props) => {
+    const { name, recipeUrl, userID, signature } = props;
+    const externalRecipeData = {};
+    await addExternalRecipe({ variables: { name, recipeUrl, userID, signature } })
+      .then((data) => {
+        console.log('uploadExternalRecipe', data);
+        externalRecipeData.success = data.data.addExternalRecipe.success;
+        externalRecipeData.message = data.data.addExternalRecipe.message;
+        externalRecipeData.recipeID = data.data.addExternalRecipe.externalRecipeID;
+        console.log('uploadExternalRecipe', externalRecipeData);
+      })
+      .catch((error) => {
+        console.log('uploadExternalRecipe error', error);
+      })
+    return externalRecipeData;
+  }
+
+  const uploadChefsMeta = async (props) => {
+    const { userID, specialtyTags, comments, signature } = props;
+    const chefsMetaData = {};
+    await addChefsMeta({ variables: { userID, specialtyTags, comments, signature } })
+      .then((data) => {
+        console.log('uploadChefsMeta', data);
+        chefsMetaData.success = data.data.addChefsMeta.success;
+        chefsMetaData.message = data.data.addChefsMeta.message;
+        chefsMetaData.chefsMetaID = data.data.addChefsMeta.chefsMetaID;
+        console.log('uploadChefsMeta', chefsMetaData);
+      }
+      ).catch((error) => {
+        console.log('uploadChefsMeta error', error);
+      })
+    return chefsMetaData;
+  }
+
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadExternalRecipe, uploadChefsMeta];
 }
 
 export default useApolloMutations;

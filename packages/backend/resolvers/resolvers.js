@@ -10,8 +10,9 @@ const recipeCollection = db.collection('recipes');
 const ingredientCollection = db.collection('ingredients');
 const stepCollection = db.collection('steps');
 const tasteProfileCollection = db.collection('tasteProfiles');
+const externalRecipeCollection = db.collection('externalRecipes');
 const chefsMetaCollection = db.collection('chefsMeta');
-const cookbookCollection = db.collection('cookbooks');
+const cookbookCollection = db.collection('cookbook');
 const userCollection = db.collection('users');
 
 const { NFTStorage, File } = require('nft.storage');
@@ -142,10 +143,22 @@ const resolvers = {
       return cookbooks;
     },
     cookbookByUserID: async (_, args, context, info) => {
+      const cookbook = {
+        recipes: [],
+        ingredients: [],
+        steps: [],
+        tasteProfiles: [],
+        externalRecipes: [],
+        chefsMeta: [],
+        user: {
+          userID: '',
+        }
+      };
+      try {
       await mongoClient.connect();
-      const cookbook = {};
       cookbook.user.userID = args.userID;
       const recipes = await recipeCollection.find({ userID: args.userID }).toArray();
+      const externalRecipes = await externalRecipeCollection.find({ userID: args.userID }).toArray();
       for (const recipe of recipes) {
         cookbook.recipes.push(recipe);
         for (const ingredient of recipe.ingredientIDs) {
@@ -158,11 +171,20 @@ const resolvers = {
         }
         const tasteProfile = await tasteProfileCollection.findOne({ _id: new ObjectId(recipe.tasteProfileID) });
         cookbook.tasteProfiles.push(tasteProfile);
-        const chefsMeta = await chefsMetaCollection.find({ recipeID: new ObjectId(recipe._id) }).toArray();
+        const chefsMeta = await chefsMetaCollection.find({ recipeID: recipe._id }).toArray();
         cookbook.chefsMeta.push(chefsMeta);
       }
-      await mongoClient.close();
-      return cookbook;
+      for (const externalRecipe of externalRecipes) {
+        cookbook.externalRecipes.push(externalRecipe);
+        const chefsMeta = await chefsMetaCollection.find({ recipeID: externalRecipe._id }).toArray();
+        cookbook.chefsMeta.push(chefsMeta);
+      }
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return cookbook;
+      }
     },
     user: async (_, args, context, info) => {
       if (!context.user) return null;
@@ -430,33 +452,30 @@ const resolvers = {
       }
     },
     addChefsMeta: async (_, args, context, info) => {
-      let added = false;
-      let chefsMetaList = [];
+      let chefsMeta;
       const newSpecial = {
         recipeID: args.recipeID,
         specialtyTags: args.specialtyTags,
-        comments: args.comments
+        comments: args.comments,
+        signature: args.signature
       };
       try {
         await mongoClient.connect();
-        await db.collection('chefsMeta').insertOne(newSpecial);
-        chefsMetaList = await db.collection('chefsMeta').find({recipeID: new ObjectId(args.recipeID)}).toArray();
-        added = true;
+        chefsMeta = await db.collection('chefsMeta').insertOne(newSpecial);
       } catch (error) {
-        added = false;
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: added ? true : false,
-          message: added ? 'Chef special added successfully' : 'Error adding chef special',
-          chefsMetaList
+          success: chefsMeta.acknowledged ? true : false,
+          message: chefsMeta.acknowledged ? 'Chef special added successfully' : 'Error adding chef special',
+          chefsMetaID: chefsMeta.insertedId
         }
       }
     },
     updateChefsMeta: async (_, args, context, info) => {
       let updated = false;
-      let newChefsMetaList = [];
+      let newChefsMetaID;
       let chefsMetaToUpdate = {}
       if (db.collection('chefsMeta').find(chefsMeta => chefsMeta.recipeID === args.recipeID)) {
         chefsMetaToUpdate.recipeID = args.recipeID;
@@ -466,9 +485,7 @@ const resolvers = {
           else chefsMetaToUpdate.comments = args.comments;
         try {
           await mongoClient.connect();
-          await db.collection('chefsMeta').updateOne({ recipeID: args.recipeID }, { $set: chefsMetaToUpdate });
-          newChefsMetaList = await db.collection('chefsMeta').find({recipeID: args.recipeID}).toArray();
-          updated = true;
+          newChefsMetaID = await db.collection('chefsMeta').updateOne({ recipeID: args.recipeID }, { $set: chefsMetaToUpdate });
         } catch (error) {
           updated = false;
           throw new Error(error);
@@ -477,14 +494,14 @@ const resolvers = {
           return {
             success: updated ? true : false,
             message: updated ? 'Chef special updated successfully' : 'Error updating chef special',
-            chefsMetaList: newChefsMetaList
+            chefsMetaID: newChefsMetaID.upsertedId
           }
         }
       } else {
         return {
           success: false,
           message: 'Chef special does not exist',
-          chefsMetaList: newChefsMetaList
+          chefsMetaID: newChefsMetaID
         }
       }
     },
@@ -516,88 +533,25 @@ const resolvers = {
         }
       }
     },
-    addCookbook: async (_, args, context, info) => {
-      let cookbook;
-      const newCookbook = {
+    addExternalRecipe: async (_, args, context, info) => {
+      let externalRecipeID;
+      const newExternalRecipe = {
         name: args.name,
-        description: args.description,
-        recipeIDs: args.recipeIDs,
-        ingredientIDs: args.ingredientIDs,
-        stepIDs: args.stepIDs,
-        tasteProfileIDs: args.tasteProfileIDs,
-        chefsMetaIDs: args.chefsMetaIDs,
+        recipeUrl: args.recipeUrl,
         userID: args.userID,
         signature: args.signature
       };
       try {
         await mongoClient.connect();
-        cookbook = await db.collection('cookbooks').insertOne(newCookbook);
+        externalRecipeID = await db.collection('externalRecipes').insertOne(newExternalRecipe);
       } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: cookbook ? true : false,
-          message: cookbook ? 'Cookbook added successfully' : 'Error adding cookbook',
-          cookbookID: cookbook.insertedId
-        }
-      }
-    },
-    updateCookbook: async (_, args, context, info) => {
-      let cookbook;
-      let cookbookToUpdate = {}
-      if (db.collection('cookbooks').find(cookbook => cookbook.userID === args.userID)) {
-        if (args.name) cookbookToUpdate.name = args.name;
-        if (args.description) cookbookToUpdate.description = args.description;
-        if (args.recipeIDs) cookbookToUpdate.recipeIDs = args.recipeIDs;
-        if (args.ingredientIDs) cookbookToUpdate.ingredientIDs = args.ingredientIDs;
-        if (args.stepIDs) cookbookToUpdate.stepIDs = args.stepIDs;
-        if (args.tasteProfileIDs) cookbookToUpdate.tasteProfileIDs = args.tasteProfileIDs;
-        if (args.chefsMeta) cookbookToUpdate.chefsMeta = args.chefsMeta;
-        if (args.userID) cookbookToUpdate.userID = args.userID;
-        if (args.signature) cookbookToUpdate.signature = args.signature;
-        try {
-          await mongoClient.connect();
-          cookbook = await db.collection('cookbooks').updateOne({ name: args.name }, { $set: cookbookToUpdate });
-        } catch (error) {
-          throw new Error(error);
-        } finally {
-          await mongoClient.close();
-          return {
-            success: cookbook ? true : false,
-            message: cookbook ? 'Cookbook updated successfully' : 'Error updating cookbook',
-            cookbookID: cookbook.upsertedId
-          }
-        }
-      } else {
-        return {
-          success: false,
-          message: 'Cookbook does not exist',
-          cookbookID: ''
-        }
-      }
-    },
-    deleteCookbook: async (_, args, context, info) => {
-      let deleted = false;
-      if (db.collection('cookbooks').find(cookbook => cookbook.name === args.name)) {
-        try {
-          await mongoClient.connect();
-          await db.collection('cookbooks').deleteOne({ name: args.name });
-        } catch (error) {
-          throw new Error(error);
-        } finally {
-          await mongoClient.close();
-          return {
-            success: deleted ? true : false,
-            message: deleted ? 'Cookbook deleted successfully' : 'Error deleting cookbook',
-            cookbookID: ''
-          }
-        }
-      } else {
-        return {
-          success: false,
-          message: 'Cookbook does not exist',
-          cookbookID: ''
+          success: externalRecipeID.acknowledged ? true : false,
+          message: externalRecipeID.acknowledged ? 'External recipe added successfully' : 'Error adding external recipe',
+          externalRecipeID: externalRecipeID.insertedId
         }
       }
     },

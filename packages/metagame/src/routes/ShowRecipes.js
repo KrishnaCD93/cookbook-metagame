@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Divider, Grid, GridItem, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Checkbox, Divider, Grid, GridItem, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Skeleton, Spacer, Spinner, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
@@ -93,22 +93,22 @@ const ShowRecipes = () => {
       setRecipes(data.recipes);
     }
   }, [data]);
-  
-  if (loading) return <div>Loading Recipes...</div>;
-  
+    
   if (error) console.log('recipe error', error)
   
   return (
-    <VStack spacing={2}>
-      <Spacer mt={4} />
-      <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
-        {recipesMemo && recipesMemo.map((recipe, index) => (
-          <GridItem key={index}>
-            <RecipeCard recipe={recipe} cld={cld} />
-          </GridItem>
-        ))}
-      </Grid>
-    </VStack>
+    <Skeleton isLoaded={loading ? false : true}>
+      <VStack spacing={2}>
+        <Spacer mt={4} />
+        <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
+          {recipesMemo && recipesMemo.map((recipe, index) => (
+            <GridItem key={index}>
+              <RecipeCard recipe={recipe} cld={cld} />
+            </GridItem>
+          ))}
+        </Grid>
+      </VStack>
+    </Skeleton>
   );
 }
 
@@ -145,7 +145,7 @@ const RecipeCard = ({ recipe, cld }) => {
     setRecipeID(recipe._id);
     onOpen();
   } 
-  if (recipeWithLoading) return <div>Loading Recipe...</div>;
+  if (recipeWithLoading) return <Spinner />;
   if (recipeWithError) console.log('recipe error', recipeWithError)
   
   return (
@@ -250,8 +250,9 @@ const Steps = ({ steps }) => {
     {steps && steps.map((step, index) => (
     <WrapItem key={index} spacing={4} alignItems="center" boxShadow="sm" justifyContent="center" align='center'>
       <Box>
-        <Text fontSize="md">Step {index + 1}</Text>
+        <Text fontSize="md">{index + 1}</Text>
         {step.stepName && <Text fontSize="md">{step.stepName}</Text>}
+        <Checkbox />
       </Box>
       <Box m={2} p={2}>
         <Text fontSize='md'>{step.action}</Text>

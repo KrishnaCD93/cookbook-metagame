@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Spacer } from '@chakra-ui/react';
+import { Box, Grid } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Navbar from './components/navbar/Navbar';
@@ -11,14 +11,13 @@ function App() {
 
   return (
     <Box textAlign="center" fontSize="xl">
+      <Navbar>
+        <Box>
+          <ConnectButton />
+        </Box>
+        <ColorModeSwitcher />
+      </Navbar>
       <Grid minH="100vh" p={3} spacing={8}>
-        <Navbar>
-          <Spacer />
-          <Box>
-            <ConnectButton />
-          </Box>
-          <ColorModeSwitcher />
-        </Navbar>
         <Outlet />
       </Grid>
     </Box>

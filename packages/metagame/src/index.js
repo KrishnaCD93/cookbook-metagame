@@ -21,10 +21,7 @@ import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 
 import '@rainbow-me/rainbowkit/styles.css';
-import {
-  getDefaultWallets,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
+import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import ShowRecipes from './routes/ShowRecipes';
 import Home from './routes/Home';
 
@@ -82,7 +79,7 @@ root.render(
                     path="*"
                     element={
                       <main style={{ padding: "1rem" }}>
-                        <p>There's nothing here!</p>
+                        <p>There's nothing here yet!</p>
                       </main>
                     }
                   />

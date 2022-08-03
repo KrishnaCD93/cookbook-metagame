@@ -27,6 +27,12 @@ const typeDefs = gql`
     tasteProfile: [Int]!
     signature: String!
   }
+  type ExternalRecipe {
+    _id: ID
+    name: String
+    recipeUrl: String
+    userID: String
+  }
   type Ingredient {
     _id: ID
     name: String!
@@ -75,6 +81,7 @@ const typeDefs = gql`
     name: String
     description: String
     recipes: [Recipe]
+    externalRecipes: [ExternalRecipe]
     ingredients: [Ingredient]
     steps: [Step]
     tasteProfiles: [TasteProfile]
@@ -228,7 +235,7 @@ const typeDefs = gql`
       signature: String!
     ): RecipeResponse!
     addChefsMeta(
-      cookbookID: String!
+      recipeID: ID!
       specialtyTags: [String]
       comments: [String]
       signature: String
@@ -242,31 +249,12 @@ const typeDefs = gql`
       specialtyTags: [String]
       comments: [String]
     ): ChefsMetaResponse!
-    addCookbook(
-      address: String
-      name: String!
-      description: String
-      recipeIDs: [String]!
-      ingredientIDs: [String]
-      stepIDs: [String]
-      tasteProfileIDs: [String]
-      userID: String!
-      signature: String!
-    ): CookbookResponse!
-    deleteCookbook(
-      address: String!
-      signature: String!
-    ): CookbookResponse!
-    updateCookbook(
-      address: String!
-      signature: String!
-      recipeIDs: [String]!
-      ingredientIDs: [String]
-      stepIDs: [String]
-      tasteProfileIDs: [String]
-      name: String!
-      description: String
-    ): CookbookResponse!
+    addExternalRecipe(
+      name: String
+      recipeUrl: String
+      userID: String
+      signature: String
+    ): ExternalRecipeResponse
     addUser(
       userID: String!
       signature: String!
@@ -348,10 +336,10 @@ const typeDefs = gql`
     message: String
     chefsMetaID: ID
   }
-  type CookbookResponse {
+  type ExternalRecipeResponse {
     success: Boolean!
     message: String
-    cookbookID: ID
+    externalRecipeID: ID
   }
   type UserResponse {
     success: Boolean!

@@ -1,110 +1,144 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Text } from '@chakra-ui/react';
-import { gql, useLazyQuery } from '@apollo/client';
-import { useAccount, useQuery } from 'wagmi';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Divider, Grid, GridItem, Skeleton, Text } from '@chakra-ui/react';
+import { gql, useQuery } from '@apollo/client';
+import { useAccount, useEnsName } from 'wagmi';
+import useApolloMutations from '../hooks/useApolloMutations';
 
-const GET_RECIPE_TASTE = gql`
-  query Query($id: ID!) {
-    tasteProfileByID(id: $id) {
-      salt
-      sweet
-      sour
-      spice
-      bitter
-      umami
-    }
-  }
-`
-
-const GET_USER_RECIPES = gql`
+export const GET_USER_COOKBOOK = gql`
   query Query($userID: String!) {
-    recipesByUserID(userID: $userID) {
-      _id
-      name
-      imageCid
+    cookbookByUserID(userID: $userID) {
       description
-      ingredientIDs
-      stepIDs
-      tasteProfileID
-      qualityTags
-      equipment
-      signature
-      createdAt
+      recipes {
+        _id
+        name
+        imageCid
+        description
+        ingredientIDs
+        stepIDs
+        tasteProfileID
+        qualityTags
+        equipment
+        signature
+        createdAt
+      }
+      ingredients {
+        _id
+        name
+        quantity
+        comments
+        imageCid
+      }
+      steps {
+        _id
+        stepName
+        action
+        trigger
+        comments
+        actionImageCid
+        triggerImageCid
+      }
+      tasteProfiles {
+        _id
+        salt
+        sweet
+        sour
+        bitter
+        spice
+        umami
+      }
+      chefsMetas {
+        _id
+        recipeID
+        comments
+        specialtyTags
+      }
+      externalRecipes {
+        _id
+        name
+        recipeUrl
+      }
+      user {
+        userID
+        name
+        image
+        email
+      }
     }
   }
-`
+`;
 
 const ViewCookbook = () => {
   const { address } = useAccount();
-  const userID = useRef('0x0');
-  const { data: recipeData, loading: recipeLoading, error: recipeError } = useQuery(GET_USER_RECIPES, { variables: { userID: `${userID.current}` }});
+  const { data: ensName } = useEnsName({ address });
+  const [userID, setUserID] = useState('');
+  const [uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
+  const { data: cookbookData, loading: cookbookLoading, error: cookbookError } = useQuery(GET_USER_COOKBOOK, { variables: { userID: `${userID}` }});
 
   useEffect(() => {
-    userID.current = address || '0x0';
+    setUserID(address ? address : '0x0');
   }, [address]);
 
-  const recipesMemo = useMemo(() => {
-  if (recipeData) {
-    return recipeData.recipesByUserID;
-  }
-  }, [recipeData]);
+  const cookbookMemo = useMemo(() => {
+    if (cookbookData) {
+      return cookbookData.cookbookByUserID;
+    }
+  }, [cookbookData]);
 
-  if (recipeLoading) {
-    return <div>Loading...</div>;
-  }
+  if (cookbookError) console.log('cookbook error', cookbookError);
 
-  if (recipeError) console.log('recipe error', recipeError);
   return (
     <Box>
-      <Text>{userID.current}'s Cookbook</Text>
-      <Text as='b' fontSize='lg'>Recipes</Text>
-      {recipesMemo && recipesMemo.map(recipe => (
-        <Box key={recipe._id} _hover={{ bg: 'gray.200', cursor: 'pointer' }}>
-          <ViewTasteProfile recipe={recipe} />
+      <Text>{ensName ? ensName : userID}'s Cookbook</Text>
+      <Skeleton isLoaded={cookbookLoading ? false : true}>
+      {cookbookMemo && 
+      <>
+        <Box>
+          {cookbookMemo.description && <Text>{cookbookMemo.description}</Text>}
+          {cookbookMemo.recipes && <Text>{cookbookMemo.recipes.length} recipe(s)</Text>}
+          {cookbookMemo.ingredients && <Text>{cookbookMemo.ingredients.length} ingredient(s)</Text>}
+          {cookbookMemo.steps && <Text>{cookbookMemo.steps.length} step(s)</Text>}
+          {cookbookMemo.tasteProfiles && <Text>{cookbookMemo.tasteProfiles.length} taste profile(s)</Text>}
+          {cookbookMemo.chefsMetas && <Text>{cookbookMemo.chefsMetas.length} chefs meta(s)</Text>}
+          {cookbookMemo.externalRecipes && <Text>{cookbookMemo.externalRecipes.length} external recipe(s)</Text>}
+        </Box>
+        <Divider />
+        {/* Show recipes in a grid that users can click that shows the recipe's chefs meta if clicked */}
+        <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+          {cookbookMemo.recipes && cookbookMemo.recipes.map((recipe, index) => (
+            <GridItem key={index} _hover={{ cursor: 'pointer' }}>
+              <RecipeCard cookbook={cookbookMemo} recipe={recipe} uploadExternalRecipe={uploadExternalRecipe} uploadChefsMeta={uploadChefsMeta} />
+            </GridItem>
+          ))}
+        </Grid>
+        </>
+      }
+      </Skeleton>
+    </Box>
+  );
+}
+
+// This is the component that is rendered for each recipe in the grid to show the chefs meta from the cookbook
+const RecipeCard = ({ recipe, cookbook, uploadExternalRecipe, uploadChefsMeta }) => {
+  const [recipeChefsMeta, setRecipeChefsMeta] = useState(null);
+
+  const handleClick = () => {
+    if (cookbook.chefsMetas && cookbook.chefsMetas.find(chefsMeta => chefsMeta.recipeID === recipe._id)) {
+      setRecipeChefsMeta(cookbook.chefsMetas.filter(meta => meta.recipeID === recipe._id));
+    }
+  }
+
+  return (
+    <Box onClick={handleClick}>
+      <Text>{recipe.name}</Text>
+      {recipeChefsMeta && recipeChefsMeta.map((meta, index) => (
+        <Box key={index}>
+          <Text>{meta.comments}</Text>
+          <Text>{meta.specialtyTags}</Text>
         </Box>
       ))}
     </Box>
   );
 }
 
-const ViewTasteProfile = (recipe) => {
-  const [getTaste, { data, loading, error }] = useLazyQuery(GET_RECIPE_TASTE);
-  const [tasteProfileID, setTasteProfileID] = useState('')
-  const [tasteInfo, setTasteInfo] = useState({})
-
-  const getTasteProfile = async () => {
-    setTasteProfileID(recipe.tasteProfileID)
-    await getTaste({ variables: { id: `${tasteProfileID}` } })
-    if (data) setTasteInfo({
-      salt: data.tasteProfileByID.salt,
-      sweet: data.tasteProfileByID.sweet,
-      sour: data.tasteProfileByID.sour,
-      bitter: data.tasteProfileByID.bitter,
-      spice: data.tasteProfileByID.spice,
-      umami: data.tasteProfileByID.umami
-    })
-  }
-
-  if (loading) return <div>Loading...</div>;
-  if (error) console.log('error', error);
-
-  return (
-    <Box onClick={getTasteProfile}>
-      <Text>{recipe.name}</Text>
-      <Text fontSize='sm'>{recipe.description}</Text>
-      <Text>Taste Profile</Text>
-      {data && tasteInfo && (
-        <Box>
-          <Text>Salt: {tasteInfo.salt}</Text>
-          <Text>Sweet: {tasteInfo.sweet}</Text>
-          <Text>Sour: {tasteInfo.sour}</Text>
-          <Text>Bitter: {tasteInfo.bitter}</Text>
-          <Text>Spice: {tasteInfo.spice}</Text>
-          <Text>Umami: {tasteInfo.umami}</Text>
-        </Box>
-      )}
-    </Box>
-  );
-}
 
 export default ViewCookbook;

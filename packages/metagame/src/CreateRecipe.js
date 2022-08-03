@@ -49,20 +49,21 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         setUserID(accountInfo);
         console.log('userID', userID);
         console.log('signature', signature);
-        if (data.recipeImage[0] && data.mintNFT && signer && recoveredAddress.current) {
+        if (data.recipeImage[0] && data.mintNFT && signer) {
           const image = data.recipeImage[0];
           const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, qualityTags: data.qualityTags, signer }
           nftCid = await uploadRecipeNFT(nftUploadData);
         }
+        if (nftCid) console.log('nftCid', nftCid);
       } else if (!isConnected) {
         setUserID('0x0');
       }
-      // if (data.recipeImage[0]) {
-      //   imageCid = await uploadRecipeImage(data.recipeImage[0]);
-      // } else if (!data.recipeImage[0]) {
-      //   imageCid = '';
-      // }
-      // console.log(data.recipeImage[0], imageCid);
+      if (data.recipeImage[0]) {
+        imageCid = await uploadRecipeImage(data.recipeImage[0]);
+      } else if (!data.recipeImage[0]) {
+        imageCid = '';
+      }
+      console.log(data.recipeImage[0], imageCid);
       async function addIngredients() {
         const names = [];
         const quantities = [];
@@ -149,34 +150,34 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         const recipeID = uploadedRecipe.recipeID;
         return recipeID;
       }
-      // const ingredientIDs = await addIngredients();
-      // if (ingredientIDs) {
-      //   toast({
-      //     title: 'Ingredients added',
-      //     status: 'success',
-      //     duration: 1000,
-      //   })
-      // }
-      // const stepIDs = await addSteps();
-      // if (stepIDs) {
-      //   toast({
-      //     title: 'Steps added',
-      //     status: 'success',
-      //     duration: 1000,
-      //   })
-      // }
-      // const tasteProfileID = await addTasteProfile();
-      // if (tasteProfileID) {
-      //   toast({
-      //     title: 'Taste profile added',
-      //     status: 'success',
-      //     duration: 1000,
-      //   })
-      // }
-      // const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
+      const ingredientIDs = await addIngredients();
+      if (ingredientIDs) {
+        toast({
+          title: 'Ingredients added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
+      const stepIDs = await addSteps();
+      if (stepIDs) {
+        toast({
+          title: 'Steps added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
+      const tasteProfileID = await addTasteProfile();
+      if (tasteProfileID) {
+        toast({
+          title: 'Taste profile added',
+          status: 'success',
+          duration: 1000,
+        })
+      }
+      const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
       setUploading(false);
-      if (nftCid) {
-        console.log('nftCid', nftCid);
+      if (recipeID) {
+        console.log('recipeID', recipeID);
         toast({
           title: 'Recipe uploaded successfully!',
           status: 'success',
@@ -214,7 +215,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
               <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
                 <Tabs>
                   <TabList>
-                    <Tab>Recipe{errors && errors.name ? <Text color='red'>*</Text> : null}</Tab>
+                    <Tab>Recipe{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
                     <Tab>Meta Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
