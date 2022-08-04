@@ -8,7 +8,7 @@ import * as serviceWorker from './serviceWorker';
 
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 
-import ViewCookbook from './routes/ViewCookbook';
+import ViewCookbook from './routes/YourCookbook';
 
 import {
   WagmiConfig,
@@ -44,9 +44,8 @@ const wagmiClient = createClient({
   webSocketProvider,
 })
 
-
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame-server.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // https://cookbook-metagame-server.herokuapp.com/, 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors'

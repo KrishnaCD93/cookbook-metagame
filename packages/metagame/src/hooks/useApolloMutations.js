@@ -1,7 +1,7 @@
 import { gql, useMutation } from '@apollo/client';
 import Resizer from 'react-image-file-resizer';
 import { GET_RECIPES } from '../routes/ShowRecipes';
-import { GET_USER_COOKBOOK } from '../routes/ViewCookbook';
+import { GET_USER_COOKBOOK } from '../routes/YourCookbook';
 
 const CREATE_INGREDIENTS = gql`
   mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
@@ -213,9 +213,13 @@ const useApolloMutations = () => {
   }
 
   const uploadChefsMeta = async (props) => {
-    const { userID, specialtyTags, comments, signature } = props;
+    const { recipeID, specialtyTags, comments, signature } = props;
+    const commentData = [];
+    const tagData = [];
+    commentData.push(comments);
+    tagData.push(specialtyTags);
     const chefsMetaData = {};
-    await addChefsMeta({ variables: { userID, specialtyTags, comments, signature } })
+    await addChefsMeta({ variables: { recipeID, comments: commentData, specialtyTags: tagData, signature } })
       .then((data) => {
         console.log('uploadChefsMeta', data);
         chefsMetaData.success = data.data.addChefsMeta.success;

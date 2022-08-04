@@ -43,7 +43,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         new Promise((resolve, reject) => {
           signMessage({ message })
           resolve(signatureData)
-          reject(new Error('Signature failed'))
+          reject(new Error('Signature rejected'))
         })
         signature = await sign(`Create recipe ${data.name} on ${date}`)
         setUserID(accountInfo);

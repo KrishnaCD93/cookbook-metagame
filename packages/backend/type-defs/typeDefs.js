@@ -71,10 +71,9 @@ const typeDefs = gql`
   type ChefsMeta {
     _id: ID
     recipeID: ID
-    recipeCid: String
     specialtyTags: [String]
     comments: [String]
-    signature: String!
+    signature: String
   }
   type Cookbook {
     address: String
