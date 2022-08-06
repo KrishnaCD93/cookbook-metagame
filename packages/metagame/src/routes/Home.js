@@ -1,4 +1,4 @@
-import { AspectRatio, Box, Button, Divider, GridItem, Image, Text, useColorModeValue, useDisclosure, VStack } from '@chakra-ui/react';
+import { Box, Button, Container, Divider, GridItem, Image, Text, useColorModeValue, useDisclosure, VStack } from '@chakra-ui/react';
 import React, { useState } from 'react';
 import CreateRecipe from '../CreateRecipe';
 import ShowRecipes from './ShowRecipes';
@@ -26,13 +26,15 @@ const Home = () => {
     </GridItem>
     <Divider />
     <GridItem>
-      <iframe
-      src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
-      width="600px"
-      height="600px"
-      frameborder="0"
-      title='Cookbook Social Silver Spoon'
-      ></iframe>
+      <Container centerContent>
+        <iframe
+        src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
+        width="600px"
+        height="600px"
+        frameborder="0"
+        title='Cookbook Social Silver Spoon'
+        ></iframe>
+      </Container>
     </GridItem>
     <GridItem>
       <ShowRecipes />
