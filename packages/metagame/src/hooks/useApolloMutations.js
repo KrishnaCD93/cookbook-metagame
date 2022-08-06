@@ -1,7 +1,8 @@
 import { gql, useMutation } from '@apollo/client';
+import { useState } from 'react';
 import Resizer from 'react-image-file-resizer';
 import { GET_RECIPES } from '../routes/ShowRecipes';
-import { GET_USER_COOKBOOK } from '../routes/YourCookbook';
+import { GET_USER_COOKBOOK } from '../routes/YourKitchen';
 
 const CREATE_INGREDIENTS = gql`
   mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
@@ -34,8 +35,8 @@ const CREATE_TASTE_PROFILE = gql`
 `;
 
 const CREATE_RECIPE = gql`
-  mutation Mutation($name: String!, $ingredientIDs: [ID]!, $stepIDs: [ID]!, $tasteProfileID: ID!, $imageCid: String, $description: String, $qualityTags: String, $equipment: String, $userID: String, $signature: String, $createdAt: String) {
-    addRecipe(name: $name, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, imageCid: $imageCid, description: $description, qualityTags: $qualityTags, equipment: $equipment, userID: $userID, signature: $signature, createdAt: $createdAt) {
+  mutation Mutation($name: String!, $ingredientIDs: [ID], $stepIDs: [ID], $tasteProfileID: ID!, $imageCid: String, $description: String, $qualityTags: String, $equipment: String, $userID: String, $signature: String) {
+    addRecipe(name: $name, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, imageCid: $imageCid, description: $description, qualityTags: $qualityTags, equipment: $equipment, userID: $userID, signature: $signature) {
       success
       message
       recipeID
@@ -44,8 +45,8 @@ const CREATE_RECIPE = gql`
 `;
 
 const CREATE_EXTERNAL_RECIPE = gql`
-  mutation Mutation($name: String, $recipeUrl: String, $userId: String, $signature: String) {
-    addExternalRecipe(name: $name, recipeUrl: $recipeUrl, userID: $userId, signature: $signature) {
+  mutation Mutation($name: String, $recipeUrl: String, $userID: String, $notes: String) {
+    addExternalRecipe(name: $name, recipeUrl: $recipeUrl, userID: $userID, notes: $notes) {
       success
       message
       externalRecipeID
@@ -54,11 +55,21 @@ const CREATE_EXTERNAL_RECIPE = gql`
 `;
 
 const CREATE_CHEFS_META = gql`
-  mutation Mutation($recipeId: ID!, $specialtyTags: [String], $comments: [String], $signature: String) {
-    addChefsMeta(recipeID: $recipeId, specialtyTags: $specialtyTags, comments: $comments, signature: $signature) {
+  mutation Mutation($recipeID: ID!, $specialtyTags: [String], $comments: [String], $userID: String) {
+    addChefsMeta(recipeID: $recipeID, specialtyTags: $specialtyTags, comments: $comments, userID: $userID) {
       success
       message
       chefsMetaID
+    }
+  }
+`;
+
+const PREPARE_RECIPE_NFT = gql`
+  mutation Mutation($userID: ID, $recipeID: ID, $nftCid: String, $prompt: String, $signature: String) {
+    addContestEntry(userID: $userID, recipeID: $recipeID, nftCid: $nftCid, prompt: $prompt, signature: $signature) {
+      success
+      message
+      contestEntryID
     }
   }
 `;
@@ -70,6 +81,7 @@ const useApolloMutations = () => {
   const stepsData = {};
   const tasteProfileData = {};
   const recipeData = {};
+  const [userID, setUserID] = useState('');
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
   const [addSteps] = useMutation(CREATE_STEPS);
   const [addTasteProfile] = useMutation(CREATE_TASTE_PROFILE);
@@ -77,10 +89,13 @@ const useApolloMutations = () => {
     refetchQueries: [{ query: GET_RECIPES }]
   });
   const [addExternalRecipe] = useMutation(CREATE_EXTERNAL_RECIPE, {
-    refetchQueries: [{ query: GET_USER_COOKBOOK}]
+    refetchQueries: [{ query: GET_USER_COOKBOOK, variables: { userID: userID } }]
   })
   const [addChefsMeta] = useMutation(CREATE_CHEFS_META, {
-    refetchQueries: [{ query: GET_USER_COOKBOOK}]
+    refetchQueries: [{ query: GET_USER_COOKBOOK, variables: { userID: userID } }]
+  });
+  const [addContestEntry] = useMutation(PREPARE_RECIPE_NFT, {
+    refetchQueries: [{ query: GET_RECIPES }]
   });
 
   const uploadIngredients = async (props) => {
@@ -196,9 +211,10 @@ const useApolloMutations = () => {
   }
 
   const uploadExternalRecipe = async (props) => {
-    const { name, recipeUrl, userID, signature } = props;
+    const { name, recipeUrl, userID, notes } = props;
+    console.log('uploadExternalRecipe', props);
     const externalRecipeData = {};
-    await addExternalRecipe({ variables: { name, recipeUrl, userID, signature } })
+    await addExternalRecipe({ variables: { name, recipeUrl, userID, notes } })
       .then((data) => {
         console.log('uploadExternalRecipe', data);
         externalRecipeData.success = data.data.addExternalRecipe.success;
@@ -213,15 +229,11 @@ const useApolloMutations = () => {
   }
 
   const uploadChefsMeta = async (props) => {
-    const { recipeID, specialtyTags, comments, signature } = props;
-    const commentData = [];
-    const tagData = [];
-    commentData.push(comments);
-    tagData.push(specialtyTags);
+    const { recipeID, specialtyTags, comments, userID } = props;
+    setUserID(userID);
     const chefsMetaData = {};
-    await addChefsMeta({ variables: { recipeID, comments: commentData, specialtyTags: tagData, signature } })
+    await addChefsMeta({ variables: { recipeID, comments, specialtyTags, userID } })
       .then((data) => {
-        console.log('uploadChefsMeta', data);
         chefsMetaData.success = data.data.addChefsMeta.success;
         chefsMetaData.message = data.data.addChefsMeta.message;
         chefsMetaData.chefsMetaID = data.data.addChefsMeta.chefsMetaID;
@@ -230,10 +242,27 @@ const useApolloMutations = () => {
       ).catch((error) => {
         console.log('uploadChefsMeta error', error);
       })
+    setUserID(null);
     return chefsMetaData;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadExternalRecipe, uploadChefsMeta];
+  const uploadContestEntry = async (props) => {
+    const { recipeID, userID, prompt, signature } = props;
+    const contestEntryData = {};
+    await addContestEntry({ variables: { recipeID, userID, prompt, signature } })
+      .then((data) => {
+        contestEntryData.success = data.data.addContestEntry.success;
+        contestEntryData.message = data.data.addContestEntry.message;
+        contestEntryData.contestEntryID = data.data.addContestEntry.contestEntryID;
+        console.log('uploadContestEntry', contestEntryData);
+      }
+      ).catch((error) => {
+        console.log('uploadContestEntry error', error);
+      })
+    return contestEntryData;
+  }
+
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadExternalRecipe, uploadChefsMeta, uploadContestEntry];
 }
 
 export default useApolloMutations;

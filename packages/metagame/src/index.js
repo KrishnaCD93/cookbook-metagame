@@ -8,7 +8,7 @@ import * as serviceWorker from './serviceWorker';
 
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 
-import ViewCookbook from './routes/YourCookbook';
+import MetaKitchen from './routes/YourKitchen';
 
 import {
   WagmiConfig,
@@ -24,6 +24,9 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import ShowRecipes from './routes/ShowRecipes';
 import Home from './routes/Home';
+import Blogposts from './routes/blogposts/Blogposts';
+
+// TODO: add recipe page with recipeID
 
 const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet, chain.polygon, chain.polygonMumbai], 
@@ -72,8 +75,9 @@ root.render(
               <Routes>
                 <Route path="/" element={<App />}>
                   <Route index element={<Home />} />
-                  <Route path="cookbook" element={<ViewCookbook />} />
+                  <Route path="about" element={<Blogposts />} />
                   <Route path="recipes" element={<ShowRecipes />} />
+                  <Route path="kitchen" element={<MetaKitchen />} />
                   <Route
                     path="*"
                     element={

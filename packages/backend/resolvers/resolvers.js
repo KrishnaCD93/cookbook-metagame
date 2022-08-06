@@ -15,12 +15,11 @@ const chefsMetaCollection = db.collection('chefsMeta');
 const cookbookCollection = db.collection('cookbook');
 const userCollection = db.collection('users');
 
-const { NFTStorage, File } = require('nft.storage');
-const nftStorageToken = process.env.NFT_STORAGE_API_KEY;
+const { File } = require('nft.storage');
 
-// const polygonPrivateKey = process.env.POLYGON_PRIVATE_KEY;
-// const sdkContestNFTs = new ThirdwebSDK.fromPrivateKey(polygonPrivateKey, 'polygon');
-const sdk = new ThirdwebSDK('mumbai');
+const privateKey = process.env.COOKBOOK_PRIV_KEY;
+const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
+const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
 
 const resolvers = {
   Query: {
@@ -130,9 +129,9 @@ const resolvers = {
       await mongoClient.close();
       return tasteProfiles;
     },
-    chefsMetaByRecipeID: async (_, args, context, info) => {
+    chefsMetaByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const chefsMeta = await chefsMetaCollection.find({ recipeID: new ObjectId(args.recipeID) }).toArray();
+      const chefsMeta = await chefsMetaCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
       return chefsMeta;
     },
@@ -148,8 +147,8 @@ const resolvers = {
         ingredients: [],
         steps: [],
         tasteProfiles: [],
+        chefsMetas: [],
         externalRecipes: [],
-        chefsMeta: [],
         user: {
           userID: '',
         }
@@ -158,7 +157,6 @@ const resolvers = {
       await mongoClient.connect();
       cookbook.user.userID = args.userID;
       const recipes = await recipeCollection.find({ userID: args.userID }).toArray();
-      const externalRecipes = await externalRecipeCollection.find({ userID: args.userID }).toArray();
       for (const recipe of recipes) {
         cookbook.recipes.push(recipe);
         for (const ingredient of recipe.ingredientIDs) {
@@ -171,15 +169,10 @@ const resolvers = {
         }
         const tasteProfile = await tasteProfileCollection.findOne({ _id: new ObjectId(recipe.tasteProfileID) });
         cookbook.tasteProfiles.push(tasteProfile);
-        const chefsMeta = await chefsMetaCollection.find({ recipeID: recipe._id }).toArray();
-        cookbook.chefsMeta.push(chefsMeta);
       }
-      for (const externalRecipe of externalRecipes) {
-        cookbook.externalRecipes.push(externalRecipe);
-        const chefsMeta = await chefsMetaCollection.find({ recipeID: externalRecipe._id }).toArray();
-        cookbook.chefsMeta.push(chefsMeta);
-      }
-      } catch (error) {
+      cookbook.externalRecipes = await externalRecipeCollection.find({ userID: args.userID }).toArray();
+      cookbook.chefsMetas = await chefsMetaCollection.find({ userID: args.userID }).toArray();
+    } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
@@ -198,10 +191,6 @@ const resolvers = {
     addRecipeNFT: async (_, args, context, info) => {
       const { imageUri, userID, name, description, tasteProfile, signature } = args;
       let nftCid;
-      const contractAddress = await sdk.deployer.deployEdition({
-        name: name,
-        primary_sale_recipient: userID,
-      });
       try {
         const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
         console.log('file', file);
@@ -226,12 +215,6 @@ const resolvers = {
         }
         // const client = new NFTStorage({ token: nftStorageToken})
         // recipeNFT = await client.store(nftMetadata)
-        // royalties on the whole contract
-        const contract = sdk.getEdition(deployedAddress);
-        contract.royalties.setDefaultRoyaltyInfo({
-          seller_fee_basis_points: 500, // 5%
-          fee_recipient: "0x7B9C880E5118A96Eeb6734E7f6C3f17f7fa2EEE2"
-        });
         const metadataWithSupply = {
           nftMetadata,
           supply: 1,
@@ -457,7 +440,7 @@ const resolvers = {
         recipeID: args.recipeID,
         specialtyTags: args.specialtyTags,
         comments: args.comments,
-        signature: args.signature
+        userID: args.userID
       };
       try {
         await mongoClient.connect();
@@ -534,12 +517,13 @@ const resolvers = {
       }
     },
     addExternalRecipe: async (_, args, context, info) => {
+      if (args.userID === '0x0') throw new AuthenticationError('Cannot add external recipe without a userID');
       let externalRecipeID;
       const newExternalRecipe = {
         name: args.name,
         recipeUrl: args.recipeUrl,
         userID: args.userID,
-        signature: args.signature
+        notes : args.notes
       };
       try {
         await mongoClient.connect();
@@ -606,6 +590,28 @@ const resolvers = {
           success: false,
           message: 'User does not exist',
           userID: args.address
+        }
+      }
+    },
+    addContestEntry: async (_, args, context, info) => {
+      let contestEntryID;
+      const newContestEntry = {
+        userID: args.userID,
+        recipeID: args.recipeID,
+        prompt: args.prompt,
+        signature: args.signature,
+      };
+      try {
+        await mongoClient.connect();
+        contestEntryID = await db.collection('contestEntries').insertOne(newContestEntry);
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return {
+          success: contestEntryID.acknowledged ? true : false,
+          message: contestEntryID.acknowledged ? 'Contest entry added successfully' : 'Error adding contest entry',
+          contestEntryID: contestEntryID.insertedId
         }
       }
     }

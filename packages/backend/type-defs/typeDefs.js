@@ -27,12 +27,6 @@ const typeDefs = gql`
     tasteProfile: [Int]!
     signature: String!
   }
-  type ExternalRecipe {
-    _id: ID
-    name: String
-    recipeUrl: String
-    userID: String
-  }
   type Ingredient {
     _id: ID
     name: String!
@@ -68,22 +62,29 @@ const typeDefs = gql`
     umami: Int
     userID: String
   }
+  type ExternalRecipe {
+    _id: ID
+    name: String
+    recipeUrl: String
+    notes: String
+    userID: String
+  }
   type ChefsMeta {
     _id: ID
-    recipeID: ID
-    specialtyTags: [String]
-    comments: [String]
-    signature: String
+    recipeID: String
+    specialtyTags: String
+    comments: String
+    userID: String
   }
   type Cookbook {
     address: String
     name: String
     description: String
     recipes: [Recipe]
-    externalRecipes: [ExternalRecipe]
     ingredients: [Ingredient]
     steps: [Step]
     tasteProfiles: [TasteProfile]
+    externalRecipes: [ExternalRecipe]
     chefsMetas: [ChefsMeta]
     user: User
     signature: String
@@ -148,7 +149,7 @@ const typeDefs = gql`
     tasteProfiles: [TasteProfile]
     tasteProfileByID(id: ID!): [TasteProfile]
     tasteProfilesByUserID(userID: String!): [TasteProfile]
-    chefsMetaByRecipeID(recipeID: String!): ChefsMeta
+    chefsMetaByUserID(userID: String!): [ChefsMeta]
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
     user(userID: String!): User
@@ -206,8 +207,8 @@ const typeDefs = gql`
       name: String!
       imageCid: String
       description: String
-      ingredientIDs: [ID]!
-      stepIDs: [ID]!
+      ingredientIDs: [ID]
+      stepIDs: [ID]
       tasteProfileID: ID!
       qualityTags: String
       equipment: String
@@ -234,24 +235,25 @@ const typeDefs = gql`
       signature: String!
     ): RecipeResponse!
     addChefsMeta(
-      recipeID: ID!
-      specialtyTags: [String]
-      comments: [String]
-      signature: String
+      recipeID: String
+      specialtyTags: String
+      comments: String
+      userID: String
     ): ChefsMetaResponse!
     deleteChefsMeta(
-      recipeCid: String!
+      recipeID: String!
       signature: String!
     ): ChefsMetaResponse!
     updateChefsMeta(
-      recipeCid: String!
-      specialtyTags: [String]
-      comments: [String]
+      recipeID: String!
+      specialtyTags: String
+      comments: String
     ): ChefsMetaResponse!
     addExternalRecipe(
       name: String
       recipeUrl: String
       userID: String
+      notes: String
       signature: String
     ): ExternalRecipeResponse
     addUser(

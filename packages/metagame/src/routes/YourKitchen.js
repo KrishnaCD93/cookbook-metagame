@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Divider, Grid, GridItem, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Skeleton, Text, Textarea, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Container, Divider, Grid, GridItem, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Skeleton, Text, Textarea, useDisclosure } from '@chakra-ui/react';
 import { gql, useQuery } from '@apollo/client';
 import { useAccount, useEnsName } from 'wagmi';
 import useApolloMutations from '../hooks/useApolloMutations';
 import { FaComment } from 'react-icons/fa';
 import CreateRecipe from '../CreateRecipe';
+
+// TODO: test uploads and mutation refetch
 
 export const GET_USER_COOKBOOK = gql`
   query UserCookbook($userID: String!) {
@@ -15,9 +17,6 @@ export const GET_USER_COOKBOOK = gql`
         name
         imageCid
         description
-        ingredientIDs
-        stepIDs
-        tasteProfileID
         qualityTags
         equipment
         signature
@@ -51,13 +50,15 @@ export const GET_USER_COOKBOOK = gql`
       chefsMetas {
         _id
         recipeID
-        comments
         specialtyTags
+        comments
+        userID
       }
       externalRecipes {
         _id
         name
         recipeUrl
+        notes
       }
       user {
         userID
@@ -69,11 +70,11 @@ export const GET_USER_COOKBOOK = gql`
   }
 `;
 
-const ViewCookbook = () => {
+const MetaKitchen = () => {
   const { address } = useAccount();
   const { data: ensName } = useEnsName({ address });
   const [userID, setUserID] = useState('');
-  const [uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
+  const [, , , , , uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
   const { data: cookbookData, loading: cookbookLoading, error: cookbookError, refetch } = useQuery(GET_USER_COOKBOOK, 
     { variables: { userID: `${userID}` }});
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -83,10 +84,12 @@ const ViewCookbook = () => {
   const [showIngredients, setShowIngredients] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
   const [showTasteProfiles, setShowTasteProfiles] = useState(false);
+  const [shortAddress, setShortAddress] = useState('');
 
   useEffect(() => {
+    setShortAddress((address ? address.substring(0, 6) + '...' + address.substring(address.length - 4) : '0x0'));
     setUserID(address ? address : '0x0');
-  }, [address]);
+  }, [address, ensName]);
   
   const cookbookMemo = useMemo(() => {
     if (cookbookData) {
@@ -99,7 +102,7 @@ const ViewCookbook = () => {
 
   return (
     <Box>
-      <Text>{ensName ? ensName : userID}'s Cookbook</Text>
+      <Text>{ensName ? ensName : shortAddress}'s Kitchen</Text>
       <Skeleton isLoaded={cookbookLoading ? false : true}>
         {cookbookMemo && 
         <Grid gap={4} templateColumns='repeat(2, 1fr)'>
@@ -114,7 +117,6 @@ const ViewCookbook = () => {
               >{cookbookMemo.steps.length} step(s)</Text>}
               {cookbookMemo.tasteProfiles && <Text onClick={() => setShowTasteProfiles(!showTasteProfiles)} _hover={{ cursor: 'pointer' }}
               >{cookbookMemo.tasteProfiles.length} taste profile(s)</Text>}
-              {cookbookMemo.chefsMetas && <Text>{cookbookMemo.chefsMetas.length} chefs meta(s)</Text>}
               {cookbookMemo.externalRecipes && <Text onClick={() => setShowExternalRecipes(!showExternalRecipes)} _hover={{ cursor: 'pointer' }}
               >{cookbookMemo.externalRecipes.length} external recipe(s)</Text>}
             </Box>
@@ -123,23 +125,15 @@ const ViewCookbook = () => {
             {showRecipes && !showExternalRecipes && !showIngredients && !showSteps && !showTasteProfiles &&
             <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
               {cookbookMemo.recipes && cookbookMemo.recipes.map((recipe, index) => (
-                <GridItem key={index} _hover={{ cursor: 'pointer' }}>
+                <GridItem key={index}>
                   <RecipeInfo cookbook={cookbookMemo} recipe={recipe} uploadChefsMeta={uploadChefsMeta} />
-                </GridItem>
-              ))}
-            </Grid>}
-            {showExternalRecipes && !showRecipes && !showIngredients && !showSteps && !showTasteProfiles &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.externalRecipes && cookbookMemo.externalRecipes.map((recipe, index) => (
-                <GridItem key={index} _hover={{ cursor: 'pointer' }}>
-                  <RecipeInfo recipe={recipe} cookbook={cookbookMemo} uploadExternalRecipe={uploadExternalRecipe} />
                 </GridItem>
               ))}
             </Grid>}
             {showIngredients && !showRecipes && !showExternalRecipes && !showSteps && !showTasteProfiles &&
             <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
               {cookbookMemo.ingredients && cookbookMemo.ingredients.map((ingredient, index) => (
-                <GridItem key={index} _hover={{ cursor: 'pointer' }}>
+                <GridItem key={index}>
                   {ingredient.name && <Text>{ingredient.name}</Text>}
                 </GridItem>
               ))}
@@ -147,7 +141,7 @@ const ViewCookbook = () => {
             {showSteps && !showRecipes && !showExternalRecipes && !showIngredients && !showTasteProfiles &&
             <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
               {cookbookMemo.steps && cookbookMemo.steps.map((step, index) => (
-                <GridItem key={index} _hover={{ cursor: 'pointer' }}>
+                <GridItem key={index}>
                   {step.stepName && <Text>{step.stepName}</Text>}
                 </GridItem>
               ))}
@@ -155,7 +149,7 @@ const ViewCookbook = () => {
             {showTasteProfiles && !showRecipes && !showExternalRecipes && !showIngredients && !showSteps &&
             <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
               {cookbookMemo.tasteProfiles && cookbookMemo.tasteProfiles.map((taste, index) => (
-                <GridItem key={index} _hover={{ cursor: 'pointer' }}>
+                <GridItem key={index}>
                   {taste.salt && <Text>{taste.salt}</Text>}
                   {taste.sweet && <Text>{taste.sweet}</Text>}
                   {taste.sour && <Text>{taste.sour}</Text>}
@@ -165,17 +159,33 @@ const ViewCookbook = () => {
                 </GridItem>
               ))}
             </Grid>}
+            {showExternalRecipes && !showRecipes && !showIngredients && !showSteps && !showTasteProfiles &&
+            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+              {cookbookMemo.externalRecipes && cookbookMemo.externalRecipes.map((recipe, index) => (
+                <GridItem key={index}>
+                  {recipe.name && <Text>{recipe.name}</Text>}
+                  {recipe.recipeUrl && <Text onClick={() => window.open(recipe.recipeUrl, '_blank')} _hover={{ cursor: 'pointer' }}>{recipe.recipeUrl}</Text>}
+                  {recipe.notes && <Text>{recipe.notes}</Text>}
+                </GridItem>
+              ))}
+            </Grid>}
           </GridItem>
         </Grid>
         }
       </Skeleton>
-      <Button m={4} p={4} onClick={onOpen}>Create Recipe</Button>
-      <CreateRecipe isOpen={isOpen} onClose={onClose} />
-      <Divider />
-      <Text>Or</Text>
-      <Divider />
-      <Button m={4} p={4} onClick={externalOnOpen}>Create External Recipe</Button>
-      <AddExternalRecipe uploadExternalRecipe={uploadExternalRecipe} isOpen={externalIsOpen} onClose={externalOnClose} />
+      <Container>
+        <Button m={4} p={4} onClick={onOpen}>Create Recipe</Button>
+        <CreateRecipe isOpen={isOpen} onClose={onClose} />
+        {(userID !== '0x0') && <>
+        <HStack>
+          <Divider />
+          <Text>Or</Text>
+          <Divider />
+        </HStack>
+          <Button m={4} p={4} onClick={externalOnOpen}>Add Recipe Link</Button>
+          <AddExternalRecipe uploadExternalRecipe={uploadExternalRecipe} isOpen={externalIsOpen} onClose={externalOnClose} userID={userID} />
+          </>}
+      </Container>
     </Box>
   );
 }
@@ -184,35 +194,38 @@ const ViewCookbook = () => {
 const RecipeInfo = ({ recipe, cookbook, uploadChefsMeta }) => {
   const [recipeChefsMeta, setRecipeChefsMeta] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showMetas, setShowMetas] = useState(false);
 
   const handleClick = () => {
     if (cookbook.chefsMetas && cookbook.chefsMetas.find(chefsMeta => chefsMeta.recipeID === recipe._id)) {
       setRecipeChefsMeta(cookbook.chefsMetas.filter(meta => meta.recipeID === recipe._id));
     }
+    setShowMetas(!showMetas);
   }
 
   return (
-    <Box onClick={handleClick}>
-      <Text>{recipe.name}<IconButton size='sm' ml={2} icon={<FaComment />} onClick={() => setShowForm(!showForm)} /></Text>
-      {recipeChefsMeta && recipeChefsMeta.map((meta, index) => (
+    <Box>
+      <Text onClick={handleClick}>{recipe.name}</Text>
+      <IconButton size='sm' ml={2} icon={<FaComment />} onClick={() => setShowForm(!showForm)} />
+      {recipeChefsMeta && showMetas && recipeChefsMeta.map((meta, index) => (
         <Box key={index}>
           <Text>{meta.comments}</Text>
           <Text>{meta.specialtyTags}</Text>
         </Box>
       ))}
-    {showForm && <AddChefsMeta recipe={recipe} uploadChefsMeta={uploadChefsMeta}/>}
+    {showForm && <AddChefsMeta recipe={recipe} uploadChefsMeta={uploadChefsMeta} />}
     </Box>
   );
 }
 
 const AddChefsMeta = ({ recipe, uploadChefsMeta }) => {
-  const comments = [];
-  const specialtyTags = [];
+  const [comments, setComments] = useState('');
+  const [specialtyTags, setSpecialtyTags] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     setUploading(true);
-    const chefsMeta = { recipeID: recipe._id, comments, specialtyTags };
+    const chefsMeta = { recipeID: recipe._id, comments, specialtyTags, userID: recipe.userID };
     console.log('chefs meta', chefsMeta);
     await uploadChefsMeta(chefsMeta);
     setUploading(false);
@@ -222,26 +235,27 @@ const AddChefsMeta = ({ recipe, uploadChefsMeta }) => {
     <Box>
       <form onSubmit={handleSubmit}>
         <Text>Comments</Text>
-        <Textarea type="text" value={comments} onChange={e => comments.push(e.target.value)} />
-        <Input type="text" value={specialtyTags} onChange={e => specialtyTags.push(e.target.value)} />
+        <Textarea type="text" value={comments} onChange={e => setComments(e.target.value)} />
+        <Input type="text" value={specialtyTags} onChange={e => setSpecialtyTags(e.target.value)} />
         <Button type="submit" isDisabled={uploading}>Submit</Button>
       </form>
     </Box>
   );
 }
 
-const AddExternalRecipe = ({ uploadExternalRecipe, isOpen, onClose }) => {
+const AddExternalRecipe = ({ uploadExternalRecipe, isOpen, onClose, userID }) => {
   const [name, setName] = useState('');
   const [recipeUrl, setRecipeUrl] = useState('');
+  const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     setUploading(true);
-    const externalRecipe = { name, recipeUrl };
-    console.log('external recipe', externalRecipe);
+    const externalRecipe = { name, recipeUrl, userID, notes };
     await uploadExternalRecipe(externalRecipe);
     setName('');
     setRecipeUrl('');
+    setNotes('');
     setUploading(false);
   }
 
@@ -254,10 +268,12 @@ const AddExternalRecipe = ({ uploadExternalRecipe, isOpen, onClose }) => {
         <ModalBody>
           <form onSubmit={handleSubmit}>
             <Text>Name</Text>
-            <Input type="text" value={name} onChange={e => setName(e.target.value)} />
+            <Input onChange={e => setName(e.target.value)} />
             <Text>Recipe URL</Text>
-            <Input type="text" value={recipeUrl} onChange={e => setRecipeUrl(e.target.value)} />
-            <Button type="submit" isDisabled={uploading}>Submit</Button>
+            <Input onChange={e => setRecipeUrl(e.target.value)} />
+            <Text>Recipe Notes</Text>
+            <Textarea onChange={e => setNotes(e.target.value)} />
+            <Button mt={2} type="submit" isDisabled={uploading}>Submit</Button>
           </form>
         </ModalBody>
       </ModalContent>
@@ -267,4 +283,4 @@ const AddExternalRecipe = ({ uploadExternalRecipe, isOpen, onClose }) => {
 
 
 
-export default ViewCookbook;
+export default MetaKitchen;

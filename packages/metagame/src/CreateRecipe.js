@@ -6,21 +6,24 @@ import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/rea
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "./hooks/useApolloMutations";
-import useNFTStorage from "./hooks/useNFTStorage";
+// import useNFTStorage from "./hooks/useNFTStorage";
 import { useAccount, useSignMessage } from "wagmi"; 
-import { useSigner } from 'wagmi';
+// import { useSigner } from 'wagmi';
 import { verifyMessage } from 'ethers/lib/utils';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
-const CreateRecipe = ({ isOpen, onClose }) => {
-  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe] = useApolloMutations();
-  const [uploadRecipeNFT] = useNFTStorage();
+// TODO: Upload recipe NFT
+
+const CreateRecipe = ({ isOpen, onClose, setRecipeCreated }) => {
+  const [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, , , uploadContestEntry] = useApolloMutations();
+  // const [uploadRecipeNFT] = useNFTStorage();
   const [uploading, setUploading] = useState(false);
   const [userID, setUserID] = useState('');
+  const [mintNFT, setMintNFT] = useState(false);
   const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
   const { isConnected, address: accountInfo } = useAccount();
-  const { data: signer, isError: signerError, isLoading: signerLoading } = useSigner();
+  // const { data: signer, isError: signerError, isLoading: signerLoading } = useSigner();
   const recoveredAddress = useRef('')
   const { data: signatureData, signMessage } = useSignMessage({
     onSuccess(data, variables) {
@@ -31,30 +34,22 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   })
 
   const onSubmit = async (data) => {
+    setUploading(true)
     console.log(data);
     try {
       let signature;
-      let nftCid = '';
       let imageCid = '';
       const date = new Date().toISOString();
-      setUploading(true)
-      if (isConnected) {
-        const sign = (message) => 
-        new Promise((resolve, reject) => {
+      if (isConnected || accountInfo) {
+        const sign = async (message) => 
+        new Promise((resolve) => {
           signMessage({ message })
           resolve(signatureData)
-          reject(new Error('Signature rejected'))
         })
         signature = await sign(`Create recipe ${data.name} on ${date}`)
         setUserID(accountInfo);
         console.log('userID', userID);
         console.log('signature', signature);
-        if (data.recipeImage[0] && data.mintNFT && signer) {
-          const image = data.recipeImage[0];
-          const nftUploadData = { image, userID: userID, name: data.name, description: data.description, tasteProfile: data.tasteProfile, qualityTags: data.qualityTags, signer }
-          nftCid = await uploadRecipeNFT(nftUploadData);
-        }
-        if (nftCid) console.log('nftCid', nftCid);
       } else if (!isConnected) {
         setUserID('0x0');
       }
@@ -65,6 +60,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       }
       console.log(data.recipeImage[0], imageCid);
       async function addIngredients() {
+        if (isConnected && !signature) return null;
         const names = [];
         const quantities = [];
         const comments = [];
@@ -87,6 +83,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         return ingredientIDs;
       }
       async function addSteps() {
+        if (isConnected && !signature) return null;
         const stepNames = [];
         const actions = [];
         const triggers = [];
@@ -117,6 +114,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         return stepIDs;
       }
       async function addTasteProfile() {
+        if (isConnected && !signature) return null;
         const tasteProfile = {
           salt: data.tasteProfile.salt,
           sweet: data.tasteProfile.sweet,
@@ -132,6 +130,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         return tasteProfileID;
       }
       async function addRecipe(ingredientIDs, stepIDs, tasteProfileID) {
+        if (isConnected && !signature) return null;
         const recipe = {
           name: data.name,
           imageCid: imageCid,
@@ -150,7 +149,19 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         const recipeID = uploadedRecipe.recipeID;
         return recipeID;
       }
-      const ingredientIDs = await addIngredients();
+      async function createNFT() {
+        if (isConnected && !signature) return null;
+        if (data.recipeImage[0] && mintNFT) {
+          const nftUploadData = { userID: userID, recipeID, prompt: "What's for lunch?", signature }
+          const nftCid = await uploadContestEntry(nftUploadData);
+          if (nftCid) return nftCid;
+        }
+        return null;
+      }
+      let ingredientIDs;
+      if (data.ingredients) {
+        ingredientIDs = await addIngredients();
+      }
       if (ingredientIDs) {
         toast({
           title: 'Ingredients added',
@@ -158,7 +169,10 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           duration: 1000,
         })
       }
-      const stepIDs = await addSteps();
+      let stepIDs;
+      if (data.steps) {
+      stepIDs = await addSteps();
+      }
       if (stepIDs) {
         toast({
           title: 'Steps added',
@@ -175,8 +189,9 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         })
       }
       const recipeID = await addRecipe(ingredientIDs, stepIDs, tasteProfileID);
+      const nftCid = await createNFT();
       setUploading(false);
-      if (recipeID) {
+      if (recipeID && !mintNFT) {
         console.log('recipeID', recipeID);
         toast({
           title: 'Recipe uploaded successfully!',
@@ -184,10 +199,27 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           duration: 9000,
           isClosable: true,
         })
+        setRecipeCreated(true);
         onClose();
-      } else {
+      } else if (!recipeID) {
         toast({
           title: 'Recipe upload failed, please try again.',
+          status: 'error',
+          duration: 9000,
+          isClosable: true,
+        })
+      }
+      if (mintNFT && nftCid) {
+        toast({
+          title: 'NFT minted successfully!',
+          status: 'success',
+          duration: 9000,
+          isClosable: true,
+        })
+        onClose();
+      } else if (mintNFT && !nftCid) {
+        toast({
+          title: 'NFT mint failed, please try again.',
           status: 'error',
           duration: 9000,
           isClosable: true,
@@ -197,9 +229,6 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       console.log('error: ', error)
     }
   }
-
-  if (signerLoading) return <div>Loading</div>
-  if (signerError) console.log(signerError);
 
   return (
     <>
@@ -253,12 +282,13 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   </TabPanels>
                 </Tabs>
                 <FormLabel htmlFor="mintNFT">
-                  <GetMintNFT />
+                  <GetMintNFT setMintNFT={setMintNFT} />
                 </FormLabel>
               </FormControl>
-              {accountInfo ? <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
+              {(mintNFT && !accountInfo) ? <Button w='100%'><ConnectButton /></Button> : 
+              <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
                 Create Recipe
-              </Button> : <Button w='100%'><ConnectButton /></Button>}
+              </Button>}
             </form>
           </FormProvider>
         </ModalBody>
@@ -523,9 +553,9 @@ const GetSteps = () => {
   function GetTrigger({ index }) {
     return (
       <Tooltip label="What triggers the next step of the recipe?">
-        <Textarea py={2} px={2} placeholder="...trigger, eg. stir until contents are mixed well" variant={'flushed'} isInvalid={false}
+        <Input py={2} px={2} placeholder="...trigger, eg. stir until contents are mixed well" variant={'flushed'} isInvalid={false}
           {...register(`steps[${index}].trigger`, 
-          {maxLength: {value: 280, message: 'Trigger must be less than 280 characters'}})} />
+          {maxLength: {value: 140, message: 'Trigger must be less than 140 characters'}})} />
       </Tooltip>
     )
   }
@@ -804,8 +834,7 @@ function GetQualityTags() {
 }
 
 // Function to check whether the user wants to mint an NFT
-function GetMintNFT() {
-  const { register } = useFormContext();
+function GetMintNFT({ setMintNFT }) {
   return (
     <Container p={2} m={2} centerContent>
       <Text as='u' mb={2} align='center' fontSize={'large'}>Mint NFT</Text>
@@ -813,7 +842,7 @@ function GetMintNFT() {
         <Checkbox
           label="Mint NFT"
           isInvalid={false}
-          {...register('mintNFT')}
+          onChange={(e) => setMintNFT(e.target.checked)}
         />
       </Tooltip>
     </Container>

@@ -72,7 +72,7 @@ const MenuLinks = ({ isOpen }) => {
         <MenuItem to='/'>Home</MenuItem>
         <MenuItem to='/about'>About</MenuItem>
         <MenuItem to='/recipes'>Recipes</MenuItem>
-        <MenuItem to='/cookbook'>Your Cookbook</MenuItem>
+        <MenuItem to='/kitchen'>Your Kitchen</MenuItem>
       </Stack>
     </Box>
   )

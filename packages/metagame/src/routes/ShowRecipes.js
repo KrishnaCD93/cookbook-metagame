@@ -7,6 +7,8 @@ import { scale } from "@cloudinary/url-gen/actions/resize";
 import { FaSignature } from 'react-icons/fa';
 import { Cloudinary } from '@cloudinary/url-gen';
 
+// TODO: add recipe page with recipeID
+
 const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {
     recipeWithData(recipeID: $recipeID) {
@@ -70,15 +72,16 @@ export const GET_RECIPES = gql`
   }
 `;
 
+const cld = new Cloudinary({
+  cloud: {
+    cloudName: 'cookbook-social'
+  }
+})
+
 const ShowRecipes = () => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
 
-  const cld = new Cloudinary({
-    cloud: {
-      cloudName: 'cookbook-social'
-    }
-  })
 
   // Ensure all recipes are loaded and memoize recipe ordered by createdAt
   const recipesMemo = useMemo(() => {
@@ -112,7 +115,7 @@ const ShowRecipes = () => {
   );
 }
 
-const RecipeCard = ({ recipe, cld }) => {
+const RecipeCard = ({ recipe }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [recipeID, setRecipeID] = useState('');
   const [getRecipeWithData, { data: recipeWithData, loading: recipeWithLoading, error: recipeWithError }] = useLazyQuery(GET_RECIPE_WITH_DATA, { 

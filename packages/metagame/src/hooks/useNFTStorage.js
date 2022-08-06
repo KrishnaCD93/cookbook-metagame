@@ -2,21 +2,15 @@ import { ThirdwebSDK } from '@thirdweb-dev/sdk';
 import Resizer from 'react-image-file-resizer';
 import { File } from 'nft.storage';
 
+// TODO: Fix NFT upload, broken on the last step of the upload process.
+
 const useNFTStorage = () => {
 
   const uploadRecipeNFT = async (props) => {
     console.log('uploadRecipeNFT', props);
     const { image, userID, name, description, tasteProfile, signer } = props;
-    const sdk = ThirdwebSDK.fromSigner(signer, 'mumbai')
-    const contractAddress = await sdk.deployer.deployEdition({
-      name: `${name} NFT`,
-      primary_sale_recipient: userID,
-    });
-    const contract = sdk.getEdition(contractAddress);
-    contract.royalties.setDefaultRoyaltyInfo({
-      seller_fee_basis_points: 100, // 1%
-      fee_recipient: "0x7B9C880E5118A96Eeb6734E7f6C3f17f7fa2EEE2"
-    });
+    const sdk = ThirdwebSDK.fromSigner(signer, 'polygon')
+    const contract = sdk.getEdition('0x66B1733805cbe2307C657c5A68da8835469096Da');
     const tasteProfileArray = [];
     tasteProfileArray[0] = parseInt(tasteProfile.salt);
     tasteProfileArray[1] = parseInt(tasteProfile.sweet);
@@ -41,7 +35,7 @@ const useNFTStorage = () => {
       });
     const imageUri = await resizeFile(image);
     const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
-    const metadata = {
+    const nftMetadata = {
       image: file,
       name: name,
       description: description,
@@ -78,19 +72,40 @@ const useNFTStorage = () => {
         }
       ]
     }
-    const metadataWithSupply = {
-      metadata,
-      supply: 1,
-    }
-    const tx = await contract.mintTo(userID, metadataWithSupply);
+    // const metadataWithSupply = {
+    //   metadata,
+    //   supply: 1,
+    // }
+    const startTime = new Date();
+    const endTime = new Date(Date.now() + 60 * 60 * 24 * 1000);
+    const payload = {
+      metadata: nftMetadata, // The NFT to mint
+      to: userID, // Who will receive the NFT (or AddressZero for anyone)
+      quantity: 1, // the quantity of NFTs to mint
+      price: 0.0, // the price per NFT
+      currencyAddress: "0x0000000000000000000000000000000000001010", // the currency to pay with
+      mintStartTime: startTime, // can mint anytime from now
+      mintEndTime: endTime, // to 24h from now
+      royaltyRecipient: "0x7B9C880E5118A96Eeb6734E7f6C3f17f7fa2EEE2", // custom royalty recipient for this NFT
+      royaltyBps: 100, // custom royalty fees for this NFT (in bps)
+      primarySaleRecipient: userID, // custom sale recipient for this NFT
+    };
+
+    const signedPayload = await contract.signature.generate(payload);
+    const tx = await contract.signature.mint(signedPayload);
     const receipt = tx.receipt;
     const tokenId = tx.id;
     const nftCid = await tx.data();
     console.log('receipt', receipt);
     console.log('tokenId', tokenId);
     console.log('uploaded NFT', nftCid);
-    return contractAddress;
+    return nftCid;
   }
+
+  // const prepRecipeNFT = async (props) => {
+  //   console.log('prepRecipeNFT', props);
+  //   const { image, userID, name, description, tasteProfile } = props;
+
   return [uploadRecipeNFT]
 }
 
