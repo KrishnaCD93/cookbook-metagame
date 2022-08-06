@@ -26,7 +26,6 @@ const Home = () => {
     </GridItem>
     <Divider />
     <GridItem>
-      {<AspectRatio maxW='1080px'>
       <iframe
       src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
       width="600px"
@@ -34,7 +33,6 @@ const Home = () => {
       frameborder="0"
       title='Cookbook Social Silver Spoon'
       ></iframe>
-      </AspectRatio>}
     </GridItem>
     <GridItem>
       <ShowRecipes />
