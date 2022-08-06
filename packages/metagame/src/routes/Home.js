@@ -20,14 +20,13 @@ const Home = () => {
           <Text>A community for foodies to contribute tastes and discover recipes.</Text>
           <Text>Welcome to the social metagame!</Text>
         </Box>
-        <Button onClick={recipeOnOpen}>Add A Recipe</Button>
+        <Button onClick={recipeOnOpen}>What's for Lunch</Button>
         <CreateRecipe isOpen={recipeIsOpen} onClose={recipeOnClose} setRecipeCreated={setRecipeCreated} />
       </VStack>
     </GridItem>
     <Divider />
     <GridItem>
-      {recipeCreated &&
-      <AspectRatio maxW='1080px'>
+      {<AspectRatio maxW='1080px'>
       <iframe
       src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
       width="600px"
