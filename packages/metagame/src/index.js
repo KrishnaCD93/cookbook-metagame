@@ -2,7 +2,7 @@ import { ChakraProvider, ColorModeScript, theme } from '@chakra-ui/react';
 import React, { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import App from './App';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorker from './serviceWorker';
 
@@ -72,7 +72,7 @@ root.render(
       <ChakraProvider theme={theme}>
         <WagmiConfig client={wagmiClient}>
           <RainbowKitProvider chains={chains}>
-            <HashRouter>
+            <BrowserRouter>
               <Routes>
                 <Route path="/" element={<App />}>
                   <Route index element={<Home />} />
@@ -89,7 +89,7 @@ root.render(
                   />
                 </Route>
               </Routes>
-            </HashRouter>
+            </BrowserRouter>
           </RainbowKitProvider>
         </WagmiConfig>
       </ChakraProvider>
