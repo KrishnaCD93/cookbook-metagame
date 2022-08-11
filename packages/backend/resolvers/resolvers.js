@@ -17,9 +17,9 @@ const userCollection = db.collection('users');
 
 const { File } = require('nft.storage');
 
-const privateKey = process.env.COOKBOOK_PRIV_KEY;
-const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
-const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
+// const privateKey = process.env.COOKBOOK_PRIV_KEY;
+// const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
+// const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
 
 const resolvers = {
   Query: {
@@ -188,52 +188,52 @@ const resolvers = {
     }
   },
   Mutation: {
-    addRecipeNFT: async (_, args, context, info) => {
-      const { imageUri, userID, name, description, tasteProfile, signature } = args;
-      let nftCid;
-      try {
-        const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
-        console.log('file', file);
-        const nftMetadata = {
-          image: file,
-          name: name,
-          description: description,
-          properties: {
-            type: 'recipe',
-            chef: userID,
-            name: name,
-            tasteProfile: {
-              salt: tasteProfile[0],
-              sweet: tasteProfile[1],
-              sour: tasteProfile[2],
-              bitter: tasteProfile[3],
-              spice: tasteProfile[4],
-              umami: tasteProfile[5]
-            },
-            signature: signature
-          }
-        }
-        // const client = new NFTStorage({ token: nftStorageToken})
-        // recipeNFT = await client.store(nftMetadata)
-        const metadataWithSupply = {
-          nftMetadata,
-          supply: 1,
-        }
-        const tx = await contract.mintTo(userID, metadataWithSupply);
-        const receipt = await tx.receipt;
-        const tokenId = tx.id;
-        nftCid = await tx.data();
-        console.log('uploaded NFT', nftCid)
-      } catch (error) {
-        console.log('error', error)
-      } finally {
-        return {
-          success: recipeNFT? true : false,
-          message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
-          nftCid: contractAddress? contractAddress : null
-        }
-      }
-    },
+//     addRecipeNFT: async (_, args, context, info) => {
+//       const { imageUri, userID, name, description, tasteProfile, signature } = args;
+//       let nftCid;
+//       try {
+//         const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
+//         console.log('file', file);
+//         const nftMetadata = {
+//           image: file,
+//           name: name,
+//           description: description,
+//           properties: {
+//             type: 'recipe',
+//             chef: userID,
+//             name: name,
+//             tasteProfile: {
+//               salt: tasteProfile[0],
+//               sweet: tasteProfile[1],
+//               sour: tasteProfile[2],
+//               bitter: tasteProfile[3],
+//               spice: tasteProfile[4],
+//               umami: tasteProfile[5]
+//             },
+//             signature: signature
+//           }
+//         }
+//         // const client = new NFTStorage({ token: nftStorageToken})
+//         // recipeNFT = await client.store(nftMetadata)
+//         const metadataWithSupply = {
+//           nftMetadata,
+//           supply: 1,
+//         }
+//         const tx = await contract.mintTo(userID, metadataWithSupply);
+//         const receipt = await tx.receipt;
+//         const tokenId = tx.id;
+//         nftCid = await tx.data();
+//         console.log('uploaded NFT', nftCid)
+//       } catch (error) {
+//         console.log('error', error)
+//       } finally {
+//         return {
+//           success: recipeNFT? true : false,
+//           message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
+//           nftCid: contractAddress? contractAddress : null
+//         }
+//       }
+//     },
     addIngredients: async (_, args, context, info) => {
       // if (!args.signature) throw new AuthenticationError('Please sign message.');
       const { names, quantities, nutritions, comments, imageCids, userID } = args;
