@@ -2,11 +2,12 @@ import { ChakraProvider, ColorModeScript, theme } from '@chakra-ui/react';
 import React, { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import App from './App';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 import * as serviceWorker from './serviceWorker';
 
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 
 import MetaKitchen from './routes/YourKitchen';
 
@@ -56,10 +57,20 @@ const link = new HttpLink({
   }
 });
 
+const authLink = setContext((_, { headers }) => {
+  const signature = localStorage.getItem('signature');
+  return {
+    headers: {
+      ...headers,
+      authorization: signature ? `Bearer ${signature}` : '',
+    },
+  };
+});
+
 const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
   credentials: 'include',
-  link
+  link: authLink.concat(link),
 });
 
 const container = document.getElementById('root');
@@ -72,7 +83,7 @@ root.render(
       <ChakraProvider theme={theme}>
         <WagmiConfig client={wagmiClient}>
           <RainbowKitProvider chains={chains}>
-            <BrowserRouter>
+            <HashRouter>
               <Routes>
                 <Route path="/" element={<App />}>
                   <Route index element={<Home />} />
@@ -89,7 +100,7 @@ root.render(
                   />
                 </Route>
               </Routes>
-            </BrowserRouter>
+            </HashRouter>
           </RainbowKitProvider>
         </WagmiConfig>
       </ChakraProvider>

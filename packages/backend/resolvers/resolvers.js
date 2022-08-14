@@ -14,12 +14,14 @@ const externalRecipeCollection = db.collection('externalRecipes');
 const chefsMetaCollection = db.collection('chefsMeta');
 const cookbookCollection = db.collection('cookbook');
 const userCollection = db.collection('users');
+const requestCollection = db.collection('requests');
 
 const { File } = require('nft.storage');
+const { verifyMessage } = require('ethers/lib/utils');
 
-const privateKey = process.env.COOKBOOK_PRIV_KEY;
-const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
-const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
+// const privateKey = process.env.COOKBOOK_PRIV_KEY;
+// const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
+// const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
 
 const resolvers = {
   Query: {
@@ -141,7 +143,7 @@ const resolvers = {
       await mongoClient.close();
       return cookbooks;
     },
-    cookbookByUserID: async (_, args, context, info) => {
+    cookbookByUserID: async (_, { userID }, context, info) => {
       const cookbook = {
         recipes: [],
         ingredients: [],
@@ -149,29 +151,17 @@ const resolvers = {
         tasteProfiles: [],
         chefsMetas: [],
         externalRecipes: [],
-        user: {
-          userID: '',
-        }
+        user: {}
       };
       try {
       await mongoClient.connect();
-      cookbook.user.userID = args.userID;
-      const recipes = await recipeCollection.find({ userID: args.userID }).toArray();
-      for (const recipe of recipes) {
-        cookbook.recipes.push(recipe);
-        for (const ingredient of recipe.ingredientIDs) {
-          const ingredientData = await ingredientCollection.findOne({ _id: new ObjectId(ingredient) });
-          cookbook.ingredients.push(ingredientData);
-        }
-        for (const step of recipe.stepIDs) {
-          const stepData = await stepCollection.findOne({ _id: new ObjectId(step) });
-          cookbook.steps.push(stepData);
-        }
-        const tasteProfile = await tasteProfileCollection.findOne({ _id: new ObjectId(recipe.tasteProfileID) });
-        cookbook.tasteProfiles.push(tasteProfile);
-      }
-      cookbook.externalRecipes = await externalRecipeCollection.find({ userID: args.userID }).toArray();
-      cookbook.chefsMetas = await chefsMetaCollection.find({ userID: args.userID }).toArray();
+      cookbook.recipes = await recipeCollection.find({ userID: userID }).toArray();
+      cookbook.ingredients = await ingredientCollection.find({ userID: userID }).toArray();
+      cookbook.steps = await stepCollection.find({ userID: userID }).toArray();
+      cookbook.tasteProfiles = await tasteProfileCollection.find({ userID: userID }).toArray();
+      cookbook.chefsMetas = await chefsMetaCollection.find({ userID: userID }).toArray();
+      cookbook.externalRecipes = await externalRecipeCollection.find({ userID: userID }).toArray();
+      cookbook.user = await userCollection.findOne({ userID: userID });
     } catch (error) {
         throw new Error(error);
       } finally {
@@ -180,62 +170,62 @@ const resolvers = {
       }
     },
     user: async (_, args, context, info) => {
-      if (!context.user) return null;
       await mongoClient.connect();
-      const user = await userCollection.findOne({ address: args.address });
+      const user = await userCollection.findOne({ userID: args.userID });
       await mongoClient.close();
       return user;
     }
   },
   Mutation: {
-    addRecipeNFT: async (_, args, context, info) => {
-      const { imageUri, userID, name, description, tasteProfile, signature } = args;
-      let nftCid;
-      try {
-        const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
-        console.log('file', file);
-        const nftMetadata = {
-          image: file,
-          name: name,
-          description: description,
-          properties: {
-            type: 'recipe',
-            chef: userID,
-            name: name,
-            tasteProfile: {
-              salt: tasteProfile[0],
-              sweet: tasteProfile[1],
-              sour: tasteProfile[2],
-              bitter: tasteProfile[3],
-              spice: tasteProfile[4],
-              umami: tasteProfile[5]
-            },
-            signature: signature
-          }
-        }
-        // const client = new NFTStorage({ token: nftStorageToken})
-        // recipeNFT = await client.store(nftMetadata)
-        const metadataWithSupply = {
-          nftMetadata,
-          supply: 1,
-        }
-        const tx = await contract.mintTo(userID, metadataWithSupply);
-        const receipt = await tx.receipt;
-        const tokenId = tx.id;
-        nftCid = await tx.data();
-        console.log('uploaded NFT', nftCid)
-      } catch (error) {
-        console.log('error', error)
-      } finally {
-        return {
-          success: recipeNFT? true : false,
-          message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
-          nftCid: contractAddress? contractAddress : null
-        }
-      }
-    },
+    // addRecipeNFT: async (_, args, context, info) => {
+    //   const { imageUri, userID, name, description, tasteProfile, signature } = args;
+    //   let nftCid;
+    //   try {
+    //     const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
+    //     console.log('file', file);
+    //     const nftMetadata = {
+    //       image: file,
+    //       name: name,
+    //       description: description,
+    //       properties: {
+    //         type: 'recipe',
+    //         chef: userID,
+    //         name: name,
+    //         tasteProfile: {
+    //           salt: tasteProfile[0],
+    //           sweet: tasteProfile[1],
+    //           sour: tasteProfile[2],
+    //           bitter: tasteProfile[3],
+    //           spice: tasteProfile[4],
+    //           umami: tasteProfile[5]
+    //         },
+    //         signature: signature
+    //       }
+    //     }
+    //     // const client = new NFTStorage({ token: nftStorageToken})
+    //     // recipeNFT = await client.store(nftMetadata)
+    //     const metadataWithSupply = {
+    //       nftMetadata,
+    //       supply: 1,
+    //     }
+    //     const tx = await contract.mintTo(userID, metadataWithSupply);
+    //     const receipt = await tx.receipt;
+    //     const tokenId = tx.id;
+    //     nftCid = await tx.data();
+    //     console.log('uploaded NFT', nftCid)
+    //   } catch (error) {
+    //     console.log('error', error)
+    //   } finally {
+    //     return {
+    //       success: recipeNFT? true : false,
+    //       message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
+    //       nftCid: contractAddress? contractAddress : null
+    //     }
+    //   }
+    // },
     addIngredients: async (_, args, context, info) => {
-      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const address = verifyMessage(args.signatureMessage, context.signature); 
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { names, quantities, nutritions, comments, imageCids, userID } = args;
       const newIngredients = [];
       names.forEach((name, index) => {
@@ -268,7 +258,8 @@ const resolvers = {
       }
     },
     addSteps: async (_, args, context, info) => {
-      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = args;
       const newSteps = [];
       actions.forEach((action, index) => {
@@ -303,7 +294,8 @@ const resolvers = {
       }
     },
     addTasteProfile: async (_, args, context, info) => {
-      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { salt, sweet, sour, bitter, spice, umami, userID } = args;
       const newTasteProfile = {
         salt: salt,
@@ -330,7 +322,8 @@ const resolvers = {
       }
     },
     addRecipe: async (_, args, context, info) => {
-      // if (!args.signature) throw new AuthenticationError('Please sign message.');
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt } = args;
       let addedRecipe;
       const newRecipe = {
@@ -361,7 +354,8 @@ const resolvers = {
       }
     },
     deleteRecipe: async (_, args, context, info) => {
-      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to delete a recipe.');
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       if (recipeCollection.find(recipe => recipe._id === args.id)) {
         try {
           await mongoClient.connect();
@@ -394,7 +388,8 @@ const resolvers = {
       }
     },
     updateRecipe: async (_, args, context, info) => {
-      if (!args.signature) throw new AuthenticationError('Please sign with Ethereum to update a recipe.');
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       let updated = false;
       let newRecipeList = [];
       let recipeToUpdate = {}
@@ -517,7 +512,6 @@ const resolvers = {
       }
     },
     addExternalRecipe: async (_, args, context, info) => {
-      if (args.userID === '0x0') throw new AuthenticationError('Cannot add external recipe without a userID');
       let externalRecipeID;
       const newExternalRecipe = {
         name: args.name,
@@ -540,10 +534,12 @@ const resolvers = {
       }
     },
     addUser: async (_, args, context, info) => {
-      const { address, name, email, image, signature } = args;
+      const address = verifyMessage(args.message, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      const { userID, name, email, image, signature } = args;
       let addedUser;
       const newUser = {
-        address: address,
+        userID: userID,
         signature: signature,
         name: name,
         email: email,
@@ -551,7 +547,7 @@ const resolvers = {
       };
       try {
         await mongoClient.connect();
-        addedUser = await db.collection('users').insertOne(newUser);
+        addedUser = await userCollection.insertOne(newUser);
       } catch (error) {
         throw new Error(error);
       } finally {
@@ -564,6 +560,8 @@ const resolvers = {
       }
     },
     updateUser: async (_, args, context, info) => {
+      const address = verifyMessage(args.message, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       let userToUpdate = {};
       let updatedUser;
       if (db.collection('users').find(user => user.address === args.address)) {
@@ -590,6 +588,36 @@ const resolvers = {
           success: false,
           message: 'User does not exist',
           userID: args.address
+        }
+      }
+    },
+    addRecipeRequest: async (_, args, context, info) => {
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      let recipeRequestID;
+      const newRecipeRequest = {
+        name: args.name,
+        description: args.description,
+        imageCid: args.imageCid,
+        tasteProfileID: args.tasteProfileID,
+        nutritionalRequirements: args.nutritionalRequirements,
+        dietaryRequirements: args.dietaryRequirements,
+        qualityTags: args.qualityTags,
+        equipment: args.equipment,
+        user: { userID: args.userID },
+        createdAt: args.date
+      }
+      try {
+        await mongoClient.connect();
+        recipeRequestID = await requestCollection.insertOne(newRecipeRequest);
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return {
+          success: recipeRequestID.acknowledged ? true : false,
+          message: recipeRequestID.acknowledged ? 'Recipe request added successfully' : 'Error adding recipe request',
+          recipeRequestID: recipeRequestID.insertedId
         }
       }
     },

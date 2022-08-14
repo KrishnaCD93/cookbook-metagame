@@ -1,14 +1,15 @@
 import { Box, Button, Container, Divider, GridItem, Image, Text, useColorModeValue, useDisclosure, VStack } from '@chakra-ui/react';
-import React, { useState } from 'react';
-import CreateRecipe from '../CreateRecipe';
+import React from 'react';
+import CreateRecipe from '../components/CreateRecipe';
 import ShowRecipes from './ShowRecipes';
 
 import wordmark from '../assets/wordmark.svg';
 import altWordmark from '../assets/alt-wordmark.svg';
+import CreateRequest from '../components/CreateRequest';
 
 const Home = () => {
   const { isOpen: recipeIsOpen, onOpen: recipeOnOpen, onClose: recipeOnClose } = useDisclosure();
-  const [recipeCreated, setRecipeCreated] = useState(false);
+  const { isOpen: requestRecipeIsOpen, onOpen: requestRecipeOnOpen, onClose: requestRecipeOnClose } = useDisclosure();
 
   const wordmarkLogo = useColorModeValue(wordmark, altWordmark);
   return ( 
@@ -20,8 +21,10 @@ const Home = () => {
           <Text>A community for foodies to contribute tastes and discover recipes.</Text>
           <Text>Welcome to the social metagame!</Text>
         </Box>
-        <Button onClick={recipeOnOpen}>What's for Lunch</Button>
-        <CreateRecipe isOpen={recipeIsOpen} onClose={recipeOnClose} setRecipeCreated={setRecipeCreated} />
+        <Button onClick={recipeOnOpen}>Add Recipe</Button>
+        <CreateRecipe isOpen={recipeIsOpen} onClose={recipeOnClose} />
+        <Button onClick={requestRecipeOnOpen}>Request Recipe</Button>
+        <CreateRequest isOpen={requestRecipeIsOpen} onClose={requestRecipeOnClose} />
       </VStack>
     </GridItem>
     <Divider />
@@ -31,7 +34,8 @@ const Home = () => {
         src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
         width="600px"
         height="600px"
-        frameborder="0"
+        style={{maxWidth:"100%"}}
+        frameBorder="0"
         title='Cookbook Social Silver Spoon'
         ></iframe>
       </Container>

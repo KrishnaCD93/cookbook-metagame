@@ -1,42 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Container, Divider, Grid, GridItem, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Skeleton, Text, Textarea, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Container, Divider, Grid, GridItem, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Spinner, Text, Textarea, useDisclosure } from '@chakra-ui/react';
 import { gql, useQuery } from '@apollo/client';
 import { useAccount, useEnsName } from 'wagmi';
 import useApolloMutations from '../hooks/useApolloMutations';
 import { FaComment } from 'react-icons/fa';
-import CreateRecipe from '../CreateRecipe';
+import CreateRecipe from '../components/CreateRecipe';
 
 // TODO: test uploads and mutation refetch
 
 export const GET_USER_COOKBOOK = gql`
   query UserCookbook($userID: String!) {
     cookbookByUserID(userID: $userID) {
+      address
+      name
       description
       recipes {
         _id
         name
-        imageCid
-        description
-        qualityTags
-        equipment
-        signature
-        createdAt
+        ingredientIDs
+        stepIDs
+        tasteProfileID
       }
-      ingredients {
-        _id
+      user {
+        userID
         name
-        quantity
-        comments
-        imageCid
-      }
-      steps {
-        _id
-        stepName
-        action
-        trigger
-        comments
-        actionImageCid
-        triggerImageCid
       }
       tasteProfiles {
         _id
@@ -47,12 +34,23 @@ export const GET_USER_COOKBOOK = gql`
         spice
         umami
       }
-      chefsMetas {
+      ingredients {
         _id
-        recipeID
-        specialtyTags
+        name
+        nutrition {
+          calories
+          fat
+          protien
+          carbs
+        }
         comments
-        userID
+      }
+      steps {
+        _id
+        stepName
+        action
+        trigger
+        comments
       }
       externalRecipes {
         _id
@@ -60,11 +58,11 @@ export const GET_USER_COOKBOOK = gql`
         recipeUrl
         notes
       }
-      user {
-        userID
-        name
-        image
-        email
+      chefsMetas {
+        _id
+        recipeID
+        specialtyTags
+        comments
       }
     }
   }
@@ -74,105 +72,130 @@ const MetaKitchen = () => {
   const { address } = useAccount();
   const { data: ensName } = useEnsName({ address });
   const [userID, setUserID] = useState('');
-  const [, , , , , uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
+  const [, , , , uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
   const { data: cookbookData, loading: cookbookLoading, error: cookbookError, refetch } = useQuery(GET_USER_COOKBOOK, 
     { variables: { userID: `${userID}` }});
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: externalIsOpen, onOpen: externalOnOpen, onClose: externalOnClose } = useDisclosure();
-  const [showRecipes, setShowRecipes] = useState(true);
-  const [showExternalRecipes, setShowExternalRecipes] = useState(false);
-  const [showIngredients, setShowIngredients] = useState(false);
-  const [showSteps, setShowSteps] = useState(false);
-  const [showTasteProfiles, setShowTasteProfiles] = useState(false);
-  const [shortAddress, setShortAddress] = useState('');
+  const [showItems, setShowItems] = useState(null);
 
   useEffect(() => {
-    setShortAddress((address ? address.substring(0, 6) + '...' + address.substring(address.length - 4) : '0x0'));
     setUserID(address ? address : '0x0');
   }, [address, ensName]);
   
   const cookbookMemo = useMemo(() => {
     if (cookbookData) {
       refetch({ userID: userID });
-      return cookbookData.cookbookByUserID;
+      const cookbook = cookbookData.cookbookByUserID;
+      // remove duplicate ingredients by name
+      const ingredients = cookbook.ingredients.reduce((acc, curr) => {
+        if (!acc.find(ingredient => ingredient.name === curr.name)) {
+          acc.push(curr);
+        }
+        return acc;
+      } , []);
+      // remove duplicate steps by stepName
+      const steps = cookbook.steps.reduce((acc, curr) => {
+        if (!acc.find(step => step.stepName === curr.stepName)) {
+          acc.push(curr);
+        }
+        return acc;
+      } , []);
+
+      return {
+        ...cookbook,
+        ingredients,
+        steps
+      };
     }
   }, [cookbookData, refetch, userID]);
+
+  const handleSwitch = (item) => {
+    setShowItems(item);
+  }
 
   if (cookbookError) console.log('cookbook error', cookbookError);
 
   return (
     <Box>
-      <Text>{ensName ? ensName : shortAddress}'s Kitchen</Text>
-      <Skeleton isLoaded={cookbookLoading ? false : true}>
-        {cookbookMemo && 
-        <Grid gap={4} templateColumns='repeat(2, 1fr)'>
-          <GridItem>
-            <Box>
-              {cookbookMemo.description && <Text>{cookbookMemo.description}</Text>}
-              {cookbookMemo.recipes && <Text onClick={() => setShowRecipes(!showRecipes)} _hover={{ cursor: 'pointer' }}
-              >{cookbookMemo.recipes.length} recipe(s)</Text>}
-              {cookbookMemo.ingredients && <Text onClick={() => setShowIngredients(!showIngredients)} _hover={{ cursor: 'pointer' }}
-              >{cookbookMemo.ingredients.length} ingredient(s)</Text>}
-              {cookbookMemo.steps && <Text onClick={() => setShowSteps(!showSteps)} _hover={{ cursor: 'pointer' }}
-              >{cookbookMemo.steps.length} step(s)</Text>}
-              {cookbookMemo.tasteProfiles && <Text onClick={() => setShowTasteProfiles(!showTasteProfiles)} _hover={{ cursor: 'pointer' }}
-              >{cookbookMemo.tasteProfiles.length} taste profile(s)</Text>}
-              {cookbookMemo.externalRecipes && <Text onClick={() => setShowExternalRecipes(!showExternalRecipes)} _hover={{ cursor: 'pointer' }}
-              >{cookbookMemo.externalRecipes.length} external recipe(s)</Text>}
-            </Box>
-          </GridItem>
-          <GridItem>
-            {showRecipes && !showExternalRecipes && !showIngredients && !showSteps && !showTasteProfiles &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.recipes && cookbookMemo.recipes.map((recipe, index) => (
-                <GridItem key={index}>
-                  <RecipeInfo cookbook={cookbookMemo} recipe={recipe} uploadChefsMeta={uploadChefsMeta} />
-                </GridItem>
-              ))}
-            </Grid>}
-            {showIngredients && !showRecipes && !showExternalRecipes && !showSteps && !showTasteProfiles &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.ingredients && cookbookMemo.ingredients.map((ingredient, index) => (
-                <GridItem key={index}>
-                  {ingredient.name && <Text>{ingredient.name}</Text>}
-                </GridItem>
-              ))}
-            </Grid>}
-            {showSteps && !showRecipes && !showExternalRecipes && !showIngredients && !showTasteProfiles &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.steps && cookbookMemo.steps.map((step, index) => (
-                <GridItem key={index}>
-                  {step.stepName && <Text>{step.stepName}</Text>}
-                </GridItem>
-              ))}
-            </Grid>}
-            {showTasteProfiles && !showRecipes && !showExternalRecipes && !showIngredients && !showSteps &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.tasteProfiles && cookbookMemo.tasteProfiles.map((taste, index) => (
-                <GridItem key={index}>
-                  {taste.salt && <Text>{taste.salt}</Text>}
-                  {taste.sweet && <Text>{taste.sweet}</Text>}
-                  {taste.sour && <Text>{taste.sour}</Text>}
-                  {taste.bitter && <Text>{taste.bitter}</Text>}
-                  {taste.spicy && <Text>{taste.spicy}</Text>}
-                  {taste.umami && <Text>{taste.umami}</Text>}
-                </GridItem>
-              ))}
-            </Grid>}
-            {showExternalRecipes && !showRecipes && !showIngredients && !showSteps && !showTasteProfiles &&
-            <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-              {cookbookMemo.externalRecipes && cookbookMemo.externalRecipes.map((recipe, index) => (
-                <GridItem key={index}>
-                  {recipe.name && <Text>{recipe.name}</Text>}
-                  {recipe.recipeUrl && <Text onClick={() => window.open(recipe.recipeUrl, '_blank')} _hover={{ cursor: 'pointer' }}>{recipe.recipeUrl}</Text>}
-                  {recipe.notes && <Text>{recipe.notes}</Text>}
-                </GridItem>
-              ))}
-            </Grid>}
-          </GridItem>
-        </Grid>
-        }
-      </Skeleton>
+      {cookbookLoading && <Spinner />}
+      {cookbookMemo && 
+      <>
+      {cookbookMemo.user && <Text>{cookbookMemo.user.name}'s Kitchen</Text>}
+      <Grid gap={4} templateColumns='repeat(2, 1fr)'>
+        <GridItem>
+          <Box>
+            {cookbookMemo.description && <Text>{cookbookMemo.description}</Text>}
+            {cookbookMemo.recipes && <Text onClick={() => handleSwitch('recipes')} _hover={{ cursor: 'pointer' }}
+            >{cookbookMemo.recipes.length} recipe(s)</Text>}
+            {cookbookMemo.ingredients && <Text onClick={() => handleSwitch('ingredients')} _hover={{ cursor: 'pointer' }}
+            >{cookbookMemo.ingredients.length} ingredient(s)</Text>}
+            {cookbookMemo.steps && <Text onClick={() => handleSwitch('steps')} _hover={{ cursor: 'pointer' }}
+            >{cookbookMemo.steps.length} step(s)</Text>}
+            {cookbookMemo.tasteProfiles && <Text onClick={() => handleSwitch('tasteProfiles')} _hover={{ cursor: 'pointer' }}
+            >{cookbookMemo.tasteProfiles.length} taste profile(s)</Text>}
+            {cookbookMemo.externalRecipes && <Text onClick={() => handleSwitch('externalRecipes')} _hover={{ cursor: 'pointer' }}
+            >{cookbookMemo.externalRecipes.length} external recipe(s)</Text>}
+          </Box>
+        </GridItem>
+        <GridItem>
+          {(() => {
+            switch (showItems) {
+              case 'recipes':
+                return <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  {cookbookMemo.recipes && cookbookMemo.recipes.map((recipe, index) => (
+                    <GridItem key={index}>
+                      <RecipeInfo cookbook={cookbookMemo} recipe={recipe} uploadChefsMeta={uploadChefsMeta} />
+                    </GridItem>
+                  ))}
+                  </Grid>
+              case 'ingredients':
+                return <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  {cookbookMemo.ingredients && cookbookMemo.ingredients.map((ingredient, index) => (
+                    <GridItem key={index}>
+                      {ingredient.name && <Text>{ingredient.name}</Text>}
+                    </GridItem>
+                  ))}
+                </Grid>
+              case 'steps':
+                return <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  {cookbookMemo.steps && cookbookMemo.steps.map((step, index) => (
+                    <GridItem key={index}>
+                      {step.stepName && <Text>{step.stepName}</Text>}
+                    </GridItem>
+                  ))}
+                </Grid>
+              case 'tasteProfiles':
+                return <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  {cookbookMemo.tasteProfiles && cookbookMemo.tasteProfiles.map((taste, index) => (
+                    <GridItem key={index}>
+                      {taste.salt ? <Text>Salt: {taste.salt}</Text> : <Text>Salt: 0</Text>}
+                      {taste.sweet ? <Text>Sweet: {taste.sweet}</Text> : <Text>Sweet: 0</Text>}
+                      {taste.sour ? <Text>Sour: {taste.sour}</Text> : <Text>Sour: 0</Text>}
+                      {taste.bitter ? <Text>Bitter: {taste.bitter}</Text> : <Text>Bitter: 0</Text>}
+                      {taste.spicy ? <Text>Spicy: {taste.spicy}</Text> : <Text>Spicy: 0</Text>}
+                      {taste.umami ? <Text>Umami: {taste.umami}</Text> : <Text>Umami: 0</Text>}
+                    </GridItem>
+                  ))}
+                </Grid>
+              case 'externalRecipes':
+                return <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  {cookbookMemo.externalRecipes && cookbookMemo.externalRecipes.map((recipe, index) => (
+                    <GridItem key={index}>
+                      {recipe.name && <Text>{recipe.name}</Text>}
+                      {recipe.recipeUrl && <Text onClick={() => window.open(recipe.recipeUrl, '_blank')} _hover={{ cursor: 'pointer' }}>{recipe.recipeUrl}</Text>}
+                      {recipe.notes && <Text>{recipe.notes}</Text>}
+                    </GridItem>
+                  ))}
+                </Grid>
+              default:
+                return null;
+            }
+          })()}
+        </GridItem>
+      </Grid>
+      </>
+      }
       <Container>
         <Button m={4} p={4} onClick={onOpen}>Create Recipe</Button>
         <CreateRecipe isOpen={isOpen} onClose={onClose} />
@@ -182,7 +205,7 @@ const MetaKitchen = () => {
           <Text>Or</Text>
           <Divider />
         </HStack>
-          <Button m={4} p={4} onClick={externalOnOpen}>Add Recipe Link</Button>
+          <Button m={4} p={4} onClick={externalOnOpen}>Add External Recipe</Button>
           <AddExternalRecipe uploadExternalRecipe={uploadExternalRecipe} isOpen={externalIsOpen} onClose={externalOnClose} userID={userID} />
           </>}
       </Container>

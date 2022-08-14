@@ -1,12 +1,11 @@
 import { gql, useMutation } from '@apollo/client';
 import { useState } from 'react';
-import Resizer from 'react-image-file-resizer';
 import { GET_RECIPES } from '../routes/ShowRecipes';
 import { GET_USER_COOKBOOK } from '../routes/YourKitchen';
 
 const CREATE_INGREDIENTS = gql`
-  mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String, $signature: String) {
-    addIngredients(names: $names, quantities: $quantities, comments: $comments, imageCids: $imageCids, userID: $userID, signature: $signature) {
+  mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String!, $signatureMessage: String!) {
+    addIngredients(names: $names, quantities: $quantities, comments: $comments, imageCids: $imageCids, userID: $userID, signatureMessage: $signatureMessage) {
       success
       message
       ingredientIDs
@@ -15,8 +14,8 @@ const CREATE_INGREDIENTS = gql`
 `;
 
 const CREATE_STEPS = gql`
-  mutation Mutation($actions: [String]!, $stepNames: [String], $triggers: [String], $actionImageCids: [String], $triggerImageCids: [String], $comments: [String], $userID: String, $signature: String) {
-    addSteps(actions: $actions, stepNames: $stepNames, triggers: $triggers, actionImageCids: $actionImageCids, triggerImageCids: $triggerImageCids, comments: $comments, userID: $userID, signature: $signature) {
+  mutation Mutation($actions: [String]!, $userID: String!, $stepNames: [String], $triggers: [String], $actionImageCids: [String], $triggerImageCids: [String], $comments: [String], $signatureMessage: String!) {
+    addSteps(actions: $actions, userID: $userID, stepNames: $stepNames, triggers: $triggers, actionImageCids: $actionImageCids, triggerImageCids: $triggerImageCids, comments: $comments, signatureMessage: $signatureMessage) {
       success
       message
       stepIDs
@@ -25,8 +24,8 @@ const CREATE_STEPS = gql`
 `;
 
 const CREATE_TASTE_PROFILE = gql`
-  mutation Mutation($salt: Int!, $sweet: Int!, $sour: Int!, $bitter: Int!, $spice: Int!, $umami: Int, $userID: ID, $signature: String) {
-    addTasteProfile(salt: $salt, sweet: $sweet, sour: $sour, bitter: $bitter, spice: $spice, umami: $umami, userID: $userID, signature: $signature) {
+  mutation Mutation($salt: Int!, $sweet: Int!, $sour: Int!, $bitter: Int!, $spice: Int!, $umami: Int, $userID: String!, $signatureMessage: String!) {
+    addTasteProfile(salt: $salt, sweet: $sweet, sour: $sour, bitter: $bitter, spice: $spice, umami: $umami, userID: $userID, signatureMessage: $signatureMessage) {
       success
       message
       tasteProfileID
@@ -35,8 +34,8 @@ const CREATE_TASTE_PROFILE = gql`
 `;
 
 const CREATE_RECIPE = gql`
-  mutation Mutation($name: String!, $ingredientIDs: [ID], $stepIDs: [ID], $tasteProfileID: ID!, $imageCid: String, $description: String, $qualityTags: String, $equipment: String, $userID: String, $signature: String) {
-    addRecipe(name: $name, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, imageCid: $imageCid, description: $description, qualityTags: $qualityTags, equipment: $equipment, userID: $userID, signature: $signature) {
+  mutation Mutation($name: String!, $tasteProfileID: ID!, $userID: String!, $signatureMessage: String!, $imageCid: String, $description: String, $ingredientIDs: [ID], $stepIDs: [ID], $qualityTags: String, $equipment: String, $createdAt: String) {
+    addRecipe(name: $name, tasteProfileID: $tasteProfileID, userID: $userID, signatureMessage: $signatureMessage, imageCid: $imageCid, description: $description, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, qualityTags: $qualityTags, equipment: $equipment, createdAt: $createdAt) {
       success
       message
       recipeID
@@ -45,7 +44,7 @@ const CREATE_RECIPE = gql`
 `;
 
 const CREATE_EXTERNAL_RECIPE = gql`
-  mutation Mutation($name: String, $recipeUrl: String, $userID: String, $notes: String) {
+  mutation Mutation($name: String, $recipeUrl: String, $userID: String!, $notes: String) {
     addExternalRecipe(name: $name, recipeUrl: $recipeUrl, userID: $userID, notes: $notes) {
       success
       message
@@ -55,7 +54,7 @@ const CREATE_EXTERNAL_RECIPE = gql`
 `;
 
 const CREATE_CHEFS_META = gql`
-  mutation Mutation($recipeID: ID!, $specialtyTags: [String], $comments: [String], $userID: String) {
+  mutation Mutation($recipeID: ID!, $specialtyTags: [String], $comments: [String], $userID: String!) {
     addChefsMeta(recipeID: $recipeID, specialtyTags: $specialtyTags, comments: $comments, userID: $userID) {
       success
       message
@@ -65,7 +64,7 @@ const CREATE_CHEFS_META = gql`
 `;
 
 const PREPARE_RECIPE_NFT = gql`
-  mutation Mutation($userID: ID, $recipeID: ID, $nftCid: String, $prompt: String, $signature: String) {
+  mutation Mutation($userID: ID!, $recipeID: ID, $nftCid: String, $prompt: String, $signature: String) {
     addContestEntry(userID: $userID, recipeID: $recipeID, nftCid: $nftCid, prompt: $prompt, signature: $signature) {
       success
       message
@@ -74,13 +73,17 @@ const PREPARE_RECIPE_NFT = gql`
   }
 `;
 
-const cloudinaryUploadEndpoint = 'https://api.cloudinary.com/v1_1/cookbook-social/auto/upload';
+const CREATE_RECIPE_REQUEST = gql`
+  mutation Mutation($name: String!, $description: String!, $userID: String!, $imageCid: String, $tasteProfileID: ID!, $nutritionalRequirements: String, $dietaryRequirements: String, $qualityTags: String, $equipment: String, $createdAt: String, $signatureMessage: String!) {
+    addRecipeRequest(name: $name, description: $description, userID: $userID, imageCid: $imageCid, tasteProfileID: $tasteProfileID, nutritionalRequirements: $nutritionalRequirements, dietaryRequirements: $dietaryRequirements, qualityTags: $qualityTags, equipment: $equipment, createdAt: $createdAt, signatureMessage: $signatureMessage) {
+      success
+      message
+      recipeRequestID
+    }
+  }
+`;
 
 const useApolloMutations = () => {
-  const ingredientsData = {};
-  const stepsData = {};
-  const tasteProfileData = {};
-  const recipeData = {};
   const [userID, setUserID] = useState('');
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
   const [addSteps] = useMutation(CREATE_STEPS);
@@ -97,41 +100,47 @@ const useApolloMutations = () => {
   const [addContestEntry] = useMutation(PREPARE_RECIPE_NFT, {
     refetchQueries: [{ query: GET_RECIPES }]
   });
-
+  const [addRecipeRequest] = useMutation(CREATE_RECIPE_REQUEST)
+  
   const uploadIngredients = async (props) => {
-    const { names, quantities, comments, imageCids, userID } = props;
-    await addIngredients({ variables: { names, quantities, comments, imageCids, userID } })
-      .then((data) => {
-        console.log('uploadIngredients', data);
-        ingredientsData.success = data.data.addIngredients.success;
-        ingredientsData.message = data.data.addIngredients.message;
-        ingredientsData.ingredientIDs = data.data.addIngredients.ingredientIDs;
-        console.log('uploadIngredients', ingredientsData);
-      })
-      .catch((error) => {
-        console.log('uploadIngredients error', error);
-      })
+    const { names, quantities, comments, imageCids, userID, signatureMessage } = props;
+    const ingredientsData = {};
+    await addIngredients({ variables: { names, quantities, comments, imageCids, userID, signatureMessage } })
+    .then((data) => {
+      console.log('uploadIngredients', data);
+      ingredientsData.success = data.data.addIngredients.success;
+      ingredientsData.message = data.data.addIngredients.message;
+      ingredientsData.ingredientIDs = data.data.addIngredients.ingredientIDs;
+      console.log('uploadIngredients', ingredientsData);
+    })
+    .catch((error) => {
+      console.log('uploadIngredients error', error);
+    })
     return ingredientsData;
   }
-
+  
   const uploadSteps = async (props) => {
-    const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = props;
-    await addSteps({ variables: { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } })
-      .then((data) => {
-        console.log('uploadSteps', data);
-        stepsData.success = data.data.addSteps.success;
-        stepsData.message = data.data.addSteps.message;
-        stepsData.stepIDs = data.data.addSteps.stepIDs;
-        console.log('uploadSteps', stepsData);
-      })
-      .catch((error) => {
-        console.log('uploadSteps error', error);
-      });
+    console.log('uploadSteps props', props);
+    const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID, signatureMessage } = props;
+    const stepsData = {};
+    await addSteps({ variables: { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID, signatureMessage } })
+    .then((data) => {
+      console.log('uploadSteps', data);
+      stepsData.success = data.data.addSteps.success;
+      stepsData.message = data.data.addSteps.message;
+      stepsData.stepIDs = data.data.addSteps.stepIDs;
+      console.log('uploadSteps', stepsData);
+    })
+    .catch((error) => {
+      console.log('uploadSteps error', error);
+    });
     return stepsData;
   }
-
+  
   const uploadTasteProfile = async (props) => {
-    const { salt, sweet, sour, bitter, spice, umami, userID } = props;
+    const { salt, sweet, sour, bitter, spice, umami, userID, signatureMessage } = props;
+    console.log('uploadTasteProfile', props);
+    const tasteProfileData = {};
     await addTasteProfile({ 
       variables: { 
         salt: parseInt(salt),
@@ -140,62 +149,30 @@ const useApolloMutations = () => {
         bitter: parseInt(bitter),
         spice: parseInt(spice),
         umami: parseInt(umami),
-        userID 
+        userID,
+        signatureMessage 
       } 
     })
-      .then((data) => {
-        console.log('uploadTasteProfile', data);
-        tasteProfileData.success = data.data.addTasteProfile.success;
-        tasteProfileData.message = data.data.addTasteProfile.message;
-        tasteProfileData.tasteProfileID = data.data.addTasteProfile.tasteProfileID;
-        console.log('uploadTasteProfile', tasteProfileData);
-      })
-      .catch((error) => {
-        console.log('uploadTasteProfile error', error);
-      })
+    .then((data) => {
+      console.log('uploadTasteProfile', data);
+      tasteProfileData.success = data.data.addTasteProfile.success;
+      tasteProfileData.message = data.data.addTasteProfile.message;
+      tasteProfileData.tasteProfileID = data.data.addTasteProfile.tasteProfileID;
+      console.log('uploadTasteProfile', tasteProfileData);
+    })
+    .catch((error) => {
+      console.log('uploadTasteProfile error', error);
+    })
     return tasteProfileData;
   }
-
-  const uploadRecipeImage = async (props) => {
-    try {
-      const resizeFile = (file) =>
-      new Promise((resolve) => {
-        Resizer.imageFileResizer(
-          file,
-          1080,
-          1080,
-          "JPEG",
-          100,
-          0,
-          (uri) => {
-            resolve(uri);
-          },
-          "base64"
-        );
-      });
-      const resizedFile = await resizeFile(props);
-      const formData = new FormData();
-      formData.append('file', resizedFile);
-      formData.append('upload_preset', 'jvcboirw');
-      const options = {
-        method: 'POST',
-        body: formData
-      };
-      const response = await fetch(cloudinaryUploadEndpoint, options);
-      const data = await response.json();
-      console.log('uploadRecipeImage', data);
-      return data.public_id;
-    } catch (error) {
-      console.log('uploadRecipeImage error', error);
-    }
-  }
-
+    
   const uploadRecipe = async (props) => {
     const { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, createdAt, signatureMessage 
     } = props;
+    const recipeData = {};
     await addRecipe({ variables: { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, createdAt, signatureMessage 
     } })
       .then((data) => {
         console.log('uploadRecipe', data);
@@ -262,7 +239,24 @@ const useApolloMutations = () => {
     return contestEntryData;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipeImage, uploadRecipe, uploadExternalRecipe, uploadChefsMeta, uploadContestEntry];
+  const uploadRecipeRequest = async (props) => {
+    console.log('uploadRecipeRequest', props);
+    const { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signatureMessage } = props;
+    const recipeRequestData = {};
+    await addRecipeRequest({ variables: { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signatureMessage } })
+      .then((data) => {
+        recipeRequestData.success = data.data.addRecipeRequest.success;
+        recipeRequestData.message = data.data.addRecipeRequest.message;
+        recipeRequestData.recipeRequestID = data.data.addRecipeRequest.recipeRequestID;
+        console.log('uploadRecipeRequest', recipeRequestData);
+      }
+      ).catch((error) => {
+        console.log('uploadRecipeRequest error', error);
+      })
+    return recipeRequestData;
+  }
+
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadExternalRecipe, uploadChefsMeta, uploadContestEntry, uploadRecipeRequest];
 }
 
 export default useApolloMutations;

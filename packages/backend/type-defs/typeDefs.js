@@ -14,7 +14,7 @@ const typeDefs = gql`
     tasteProfileID: ID!
     qualityTags: String
     equipment: String
-    userID: String
+    userID: String!
     signature: String
     createdAt: String
     updatedAt: String
@@ -34,7 +34,7 @@ const typeDefs = gql`
     nutrition: Nutrition
     comments: String
     imageCid: String
-    userID: String
+    userID: String!
   }
   type Nutrition {
     calories: Int
@@ -50,7 +50,7 @@ const typeDefs = gql`
     comments: String
     actionImageCid: String
     triggerImageCid: String
-    userID: String
+    userID: String!
   }
   type TasteProfile {
     _id: ID
@@ -60,21 +60,21 @@ const typeDefs = gql`
     bitter: Int!
     spice: Int!
     umami: Int
-    userID: String
+    userID: String!
   }
   type ExternalRecipe {
     _id: ID
     name: String
     recipeUrl: String
     notes: String
-    userID: String
+    userID: String!
   }
   type ChefsMeta {
     _id: ID
     recipeID: String
     specialtyTags: String
     comments: String
-    userID: String
+    userID: String!
   }
   type Cookbook {
     address: String
@@ -86,16 +86,30 @@ const typeDefs = gql`
     tasteProfiles: [TasteProfile]
     externalRecipes: [ExternalRecipe]
     chefsMetas: [ChefsMeta]
-    user: User
+    user: User!
     signature: String
   }
   type User {
-    userID: String! # This is the user's Ethereum address
+    userID: String! # User's Ethereum address
     signature: String
     name: String
     image: String
     email: String
-    recipes: [Recipe]
+  }
+  type RecipeRequest {
+    _id: ID
+    name: String!
+    description: String!
+    imageCid: String
+    tasteProfileID: ID!
+    nutritionalRequirements: String
+    dietaryRequirements: String
+    qualityTags: String
+    equipment: String
+    user: User!
+    createdAt: String
+    completedOn: String
+    signatureMessage: String
   }
   type ContestEntry {
     _id: ID
@@ -131,14 +145,21 @@ const typeDefs = gql`
   }
   type Vote {
     _id: ID
-    userID: ID
+    userID: ID!
     recipeID: ID
     signature: String
   }
+  type RecipeData {
+    recipe: Recipe
+    ingredients: [Ingredient]
+    steps: [Step]
+    tasteProfile: TasteProfile
+  }
   type Query {
     recipes: [Recipe]
+    recipeSearch(name: String): [Recipe]
     recipesByUserID(userID: String!): [Recipe]
-    recipeWithData(recipeID: ID!): RecipeDataResponse
+    recipeWithData(recipeID: ID!): RecipeData
     recipeNFTs: [RecipeNFT]
     ingredients: [Ingredient]
     ingredientByID(id: ID!): Ingredient
@@ -153,13 +174,10 @@ const typeDefs = gql`
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
     user(userID: String!): User
+    recipeRequestsByUserID(userID: String!): [RecipeRequest]
+    recipeRequestByID(id: ID!): RecipeRequest
+    recipeRequests: [RecipeRequest]
     contests: [Contest]
-  }
-  type RecipeDataResponse {
-    recipe: Recipe
-    ingredients: [Ingredient]
-    steps: [Step]
-    tasteProfile: TasteProfile
   }
   type Mutation {
     addRecipeNFT(
@@ -176,8 +194,8 @@ const typeDefs = gql`
       nutritions: [Int]
       comments: [String]
       imageCids: [String]
-      userID: String
-      signature: String
+      userID: String!
+      signatureMessage: String!
     ): IngredientResponse!
     addSteps(
       stepNames: [String]
@@ -186,8 +204,8 @@ const typeDefs = gql`
       actionImageCids: [String]
       triggerImageCids: [String]
       comments: [String]
-      userID: String
-      signature: String
+      userID: String!
+      signatureMessage: String!
     ): StepResponse!
     addTasteProfile(
       recipeCid: String
@@ -197,8 +215,8 @@ const typeDefs = gql`
       bitter: Int!
       spice: Int!
       umami: Int
-      userID: ID
-      signature: String
+      userID: String!
+      signatureMessage: String!
     ): TasteProfileResponse!
     addRecipe(
       recipeCid: String
@@ -212,13 +230,13 @@ const typeDefs = gql`
       tasteProfileID: ID!
       qualityTags: String
       equipment: String
-      userID: String
-      signature: String
+      userID: String!
+      signatureMessage: String!
       createdAt: String
     ): RecipeResponse!
     deleteRecipe(
       id: ID!
-      signature: String!
+      signatureMessage: String!
     ): RecipeResponse!
     updateRecipe(
       id: ID!
@@ -232,13 +250,13 @@ const typeDefs = gql`
       equipment: String
       cookbookToken: String
       userID: String!
-      signature: String!
+      signatureMessage: String!
     ): RecipeResponse!
     addChefsMeta(
       recipeID: String
       specialtyTags: String
       comments: String
-      userID: String
+      userID: String!
     ): ChefsMetaResponse!
     deleteChefsMeta(
       recipeID: String!
@@ -252,28 +270,41 @@ const typeDefs = gql`
     addExternalRecipe(
       name: String
       recipeUrl: String
-      userID: String
+      userID: String!
       notes: String
-      signature: String
+      signatureMessage: String
     ): ExternalRecipeResponse
     addUser(
       userID: String!
-      signature: String!
+      signatureMessage: String!
       name: String
       image: String
       email: String
     ): UserResponse!
     deleteUser(
-      address: String!
-      signature: String!
+      userID: String!
+      signatureMessage: String!
     ): UserResponse!
     updateUser(
       userID: String!
-      signature: String!
+      signatureMessage: String!
       name: String
       image: String
       email: String
     ): UserResponse!
+    addRecipeRequest(
+      name: String!
+      description: String!
+      imageCid: String
+      tasteProfileID: ID!
+      nutritionalRequirements: String
+      dietaryRequirements: String
+      qualityTags: String
+      equipment: String
+      userID: String!
+      createdAt: String
+      signatureMessage: String!
+    ): RecipeRequestResponse!
     createContest(
       name: String
       description: String
@@ -283,28 +314,28 @@ const typeDefs = gql`
       votingStartDate: String
       votingEndDate: String
       prizes: [String]
-      signature: String
+      signatureMessage: String
     ): ContestResponse
     addContestEntry(
-      userID: ID
+      userID: ID!
       recipeID: ID
       nftCid: String
       prompt: String
-      signature: String
+      signatureMessage: String
     ): ContestEntryResponse
     addVote(
-      userID: ID
+      userID: ID!
       contestID: ID
       recipeID: ID
       numVotes: Int
-      signature: String
+      signatureMessage: String
     ): ContestVoteResponse
     addContestWinner(
-      userID: ID
+      userID: ID!
       contestID: ID
       recipeID: ID
       prompt: String
-      signature: String
+      signatureMessage: String
     ): ContestWinnerResponse
   }
   type NFTUploadResponse {
@@ -346,6 +377,11 @@ const typeDefs = gql`
     success: Boolean!
     message: String
     userID: String
+  }
+  type RecipeRequestResponse {
+    success: Boolean!
+    message: String
+    recipeRequestID: ID
   }
   type ContestResponse {
     success: Boolean

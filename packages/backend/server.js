@@ -3,6 +3,7 @@ const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./type-defs/typeDefs');
 const resolvers = require('./resolvers/resolvers');
+const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core');
 
 const server = new ApolloServer({
   typeDefs, 
@@ -10,7 +11,15 @@ const server = new ApolloServer({
   csrfPrevention: true,
   cache: "bounded",
   introspection: true,
-  cors: false
+  cors: false,
+  context: ({ req }) => {
+    const signatureBearer = req.headers.authorization || '';
+    const signature = signatureBearer.split(' ')[1];
+    return { signature };
+  },
+  plugins: [
+    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
+  ],
 });
 
 async function startApolloServer(server) {
