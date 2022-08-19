@@ -1,6 +1,13 @@
 const { gql } = require('apollo-server');
 
 const typeDefs = gql`
+  type CookbookNFT {
+    contract: String!
+    imageUri: String!
+    userID: String!
+    name: String!
+    description: String!
+  }
   type Recipe {
     _id: ID
     recipeCid: String
@@ -18,14 +25,6 @@ const typeDefs = gql`
     signature: String
     createdAt: String
     updatedAt: String
-  }
-  type RecipeNFT {
-    imageUri: String!
-    userID: String!
-    name: String!
-    description: String!
-    tasteProfile: [Int]!
-    signature: String!
   }
   type Ingredient {
     _id: ID
@@ -69,7 +68,7 @@ const typeDefs = gql`
     notes: String
     userID: String!
   }
-  type ChefsMeta {
+  type ChefsSpecial {
     _id: ID
     recipeID: String
     specialtyTags: String
@@ -85,15 +84,14 @@ const typeDefs = gql`
     steps: [Step]
     tasteProfiles: [TasteProfile]
     externalRecipes: [ExternalRecipe]
-    chefsMetas: [ChefsMeta]
+    chefsSpecials: [ChefsSpecial]
     user: User!
     signature: String
   }
   type User {
     userID: String! # User's Ethereum address
-    signature: String
     name: String
-    image: String
+    imageCid: String
     email: String
   }
   type RecipeRequest {
@@ -160,7 +158,7 @@ const typeDefs = gql`
     recipeSearch(name: String): [Recipe]
     recipesByUserID(userID: String!): [Recipe]
     recipeWithData(recipeID: ID!): RecipeData
-    recipeNFTs: [RecipeNFT]
+    cookbookNFTs: [CookbookNFT]
     ingredients: [Ingredient]
     ingredientByID(id: ID!): Ingredient
     ingredientsByUserID(userID: String!): [Ingredient]
@@ -170,7 +168,7 @@ const typeDefs = gql`
     tasteProfiles: [TasteProfile]
     tasteProfileByID(id: ID!): [TasteProfile]
     tasteProfilesByUserID(userID: String!): [TasteProfile]
-    chefsMetaByUserID(userID: String!): [ChefsMeta]
+    chefsSpecialByUserID(userID: String!): [ChefsSpecial]
     cookbooks: [Cookbook]
     cookbookByUserID(userID: String!): Cookbook
     user(userID: String!): User
@@ -180,13 +178,11 @@ const typeDefs = gql`
     contests: [Contest]
   }
   type Mutation {
-    addRecipeNFT(
+    addCookbookNFT(
       imageUri: String!
       userID: String!
       name: String!
       description: String
-      tasteProfile: [Int]!
-      signature: String!
     ): NFTUploadResponse!
     addIngredients(
       names: [String]!
@@ -252,21 +248,24 @@ const typeDefs = gql`
       userID: String!
       signatureMessage: String!
     ): RecipeResponse!
-    addChefsMeta(
+    addChefsSpecial(
       recipeID: String
       specialtyTags: String
       comments: String
       userID: String!
-    ): ChefsMetaResponse!
-    deleteChefsMeta(
+      signatureMessage: String!
+    ): ChefsSpecialResponse!
+    deleteChefsSpecial(
       recipeID: String!
-      signature: String!
-    ): ChefsMetaResponse!
-    updateChefsMeta(
+      signatureMessage: String!
+    ): ChefsSpecialResponse!
+    updateChefsSpecial(
       recipeID: String!
       specialtyTags: String
       comments: String
-    ): ChefsMetaResponse!
+      userID: String!
+      signatureMessage: String!
+    ): ChefsSpecialResponse!
     addExternalRecipe(
       name: String
       recipeUrl: String
@@ -278,7 +277,7 @@ const typeDefs = gql`
       userID: String!
       signatureMessage: String!
       name: String
-      image: String
+      imageCid: String
       email: String
     ): UserResponse!
     deleteUser(
@@ -363,10 +362,10 @@ const typeDefs = gql`
     message: String
     tasteProfileID: ID
   }
-  type ChefsMetaResponse {
+  type ChefsSpecialResponse {
     success: Boolean!
     message: String
-    chefsMetaID: ID
+    chefsSpecialID: ID
   }
   type ExternalRecipeResponse {
     success: Boolean!

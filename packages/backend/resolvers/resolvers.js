@@ -11,7 +11,7 @@ const ingredientCollection = db.collection('ingredients');
 const stepCollection = db.collection('steps');
 const tasteProfileCollection = db.collection('tasteProfiles');
 const externalRecipeCollection = db.collection('externalRecipes');
-const chefsMetaCollection = db.collection('chefsMeta');
+const chefsSpecialCollection = db.collection('chefsSpecial');
 const cookbookCollection = db.collection('cookbook');
 const userCollection = db.collection('users');
 const requestCollection = db.collection('requests');
@@ -131,11 +131,11 @@ const resolvers = {
       await mongoClient.close();
       return tasteProfiles;
     },
-    chefsMetaByUserID: async (_, args, context, info) => {
+    chefsSpecialByUserID: async (_, args, context, info) => {
       await mongoClient.connect();
-      const chefsMeta = await chefsMetaCollection.find({ userID: args.userID }).toArray();
+      const chefsSpecial = await chefsSpecialCollection.find({ userID: args.userID }).toArray();
       await mongoClient.close();
-      return chefsMeta;
+      return chefsSpecial;
     },
     cookbooks: async () => {
       await mongoClient.connect();
@@ -149,7 +149,7 @@ const resolvers = {
         ingredients: [],
         steps: [],
         tasteProfiles: [],
-        chefsMetas: [],
+        chefsSpecials: [],
         externalRecipes: [],
         user: {}
       };
@@ -159,7 +159,7 @@ const resolvers = {
       cookbook.ingredients = await ingredientCollection.find({ userID: userID }).toArray();
       cookbook.steps = await stepCollection.find({ userID: userID }).toArray();
       cookbook.tasteProfiles = await tasteProfileCollection.find({ userID: userID }).toArray();
-      cookbook.chefsMetas = await chefsMetaCollection.find({ userID: userID }).toArray();
+      cookbook.chefsSpecials = await chefsSpecialCollection.find({ userID: userID }).toArray();
       cookbook.externalRecipes = await externalRecipeCollection.find({ userID: userID }).toArray();
       cookbook.user = await userCollection.findOne({ userID: userID });
     } catch (error) {
@@ -177,52 +177,43 @@ const resolvers = {
     }
   },
   Mutation: {
-    // addRecipeNFT: async (_, args, context, info) => {
-    //   const { imageUri, userID, name, description, tasteProfile, signature } = args;
-    //   let nftCid;
-    //   try {
-    //     const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
-    //     console.log('file', file);
-    //     const nftMetadata = {
-    //       image: file,
-    //       name: name,
-    //       description: description,
-    //       properties: {
-    //         type: 'recipe',
-    //         chef: userID,
-    //         name: name,
-    //         tasteProfile: {
-    //           salt: tasteProfile[0],
-    //           sweet: tasteProfile[1],
-    //           sour: tasteProfile[2],
-    //           bitter: tasteProfile[3],
-    //           spice: tasteProfile[4],
-    //           umami: tasteProfile[5]
-    //         },
-    //         signature: signature
-    //       }
-    //     }
-    //     // const client = new NFTStorage({ token: nftStorageToken})
-    //     // recipeNFT = await client.store(nftMetadata)
-    //     const metadataWithSupply = {
-    //       nftMetadata,
-    //       supply: 1,
-    //     }
-    //     const tx = await contract.mintTo(userID, metadataWithSupply);
-    //     const receipt = await tx.receipt;
-    //     const tokenId = tx.id;
-    //     nftCid = await tx.data();
-    //     console.log('uploaded NFT', nftCid)
-    //   } catch (error) {
-    //     console.log('error', error)
-    //   } finally {
-    //     return {
-    //       success: recipeNFT? true : false,
-    //       message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
-    //       nftCid: contractAddress? contractAddress : null
-    //     }
-    //   }
-    // },
+    addCookbookNFT: async (_, args, context, info) => {
+      const { imageUri, userID, name, description, signatureMessage } = args;
+      let nftCid;
+      try {
+        const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
+        console.log('file', file);
+        const nftMetadata = {
+          image: file,
+          name: name,
+          description: description,
+          properties: {
+            type: 'recipe',
+            chef: userID,
+            name: name,
+          }
+        }
+        // const client = new NFTStorage({ token: nftStorageToken})
+        // recipeNFT = await client.store(nftMetadata)
+        const metadataWithSupply = {
+          nftMetadata,
+          supply: 1,
+        }
+        const tx = await contract.mintTo(userID, metadataWithSupply);
+        const receipt = await tx.receipt;
+        const tokenId = tx.id;
+        nftCid = await tx.data();
+        console.log('uploaded NFT', nftCid)
+      } catch (error) {
+        console.log('error', error)
+      } finally {
+        return {
+          success: recipeNFT? true : false,
+          message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
+          nftCid: contractAddress? contractAddress : null
+        }
+      }
+    },
     addIngredients: async (_, args, context, info) => {
       const address = verifyMessage(args.signatureMessage, context.signature); 
       if (address !== args.userID) throw new AuthenticationError('Invalid signature');
@@ -429,8 +420,10 @@ const resolvers = {
         }
       }
     },
-    addChefsMeta: async (_, args, context, info) => {
-      let chefsMeta;
+    addChefsSpecial: async (_, args, context, info) => {
+      const address = verifyMessage(args.signatureMessage, context.signature);
+      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      let chefsSpecial;
       const newSpecial = {
         recipeID: args.recipeID,
         specialtyTags: args.specialtyTags,
@@ -439,31 +432,31 @@ const resolvers = {
       };
       try {
         await mongoClient.connect();
-        chefsMeta = await db.collection('chefsMeta').insertOne(newSpecial);
+        chefsSpecial = await db.collection('chefsSpecial').insertOne(newSpecial);
       } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
         return {
-          success: chefsMeta.acknowledged ? true : false,
-          message: chefsMeta.acknowledged ? 'Chef special added successfully' : 'Error adding chef special',
-          chefsMetaID: chefsMeta.insertedId
+          success: chefsSpecial.acknowledged ? true : false,
+          message: chefsSpecial.acknowledged ? 'Chef special added successfully' : 'Error adding chef special',
+          chefsSpecialID: chefsSpecial.insertedId
         }
       }
     },
-    updateChefsMeta: async (_, args, context, info) => {
+    updateChefsSpecial: async (_, args, context, info) => {
       let updated = false;
-      let newChefsMetaID;
-      let chefsMetaToUpdate = {}
-      if (db.collection('chefsMeta').find(chefsMeta => chefsMeta.recipeID === args.recipeID)) {
-        chefsMetaToUpdate.recipeID = args.recipeID;
-        if (args.specialtyTags) chefsMetaToUpdate.specialtyTags.push(args.specialtyTags);
-          else chefsMetaToUpdate.specialtyTags = args.specialtyTags;
-        if (args.comments) chefsMetaToUpdate.comments = args.comments.push(args.comments);
-          else chefsMetaToUpdate.comments = args.comments;
+      let newChefsSpecialID;
+      let chefsSpecialToUpdate = {}
+      if (db.collection('chefsSpecial').find(chefsSpecial => chefsSpecial.recipeID === args.recipeID)) {
+        chefsSpecialToUpdate.recipeID = args.recipeID;
+        if (args.specialtyTags) chefsSpecialToUpdate.specialtyTags.push(args.specialtyTags);
+          else chefsSpecialToUpdate.specialtyTags = args.specialtyTags;
+        if (args.comments) chefsSpecialToUpdate.comments = args.comments.push(args.comments);
+          else chefsSpecialToUpdate.comments = args.comments;
         try {
           await mongoClient.connect();
-          newChefsMetaID = await db.collection('chefsMeta').updateOne({ recipeID: args.recipeID }, { $set: chefsMetaToUpdate });
+          newChefsSpecialID = await db.collection('chefsSpecial').updateOne({ recipeID: args.recipeID }, { $set: chefsSpecialToUpdate });
         } catch (error) {
           updated = false;
           throw new Error(error);
@@ -472,25 +465,25 @@ const resolvers = {
           return {
             success: updated ? true : false,
             message: updated ? 'Chef special updated successfully' : 'Error updating chef special',
-            chefsMetaID: newChefsMetaID.upsertedId
+            chefsSpecialID: newChefsSpecialID.upsertedId
           }
         }
       } else {
         return {
           success: false,
           message: 'Chef special does not exist',
-          chefsMetaID: newChefsMetaID
+          chefsSpecialID: newChefsSpecialID
         }
       }
     },
-    deleteChefsMeta: async (_, args, context, info) => {
+    deleteChefsSpecial: async (_, args, context, info) => {
       let deleted = false;
-      let chefsMetaList = [];
-      if (db.collection('chefsMeta').find(chefsMeta => chefsMeta.recipeCid === args.recipeCid)) {
+      let chefsSpecialList = [];
+      if (db.collection('chefsSpecial').find(chefsSpecial => chefsSpecial.recipeCid === args.recipeCid)) {
         try {
           await mongoClient.connect();
-          await db.collection('chefsMeta').deleteOne({ recipeCid: args.recipeCid });
-          chefsMetaList = await db.collection('chefsMeta').find({recipeCid: args.recipeCid}).toArray();
+          await db.collection('chefsSpecial').deleteOne({ recipeCid: args.recipeCid });
+          chefsSpecialList = await db.collection('chefsSpecial').find({recipeCid: args.recipeCid}).toArray();
           deleted = true;
         } catch (error) {
           deleted = false;
@@ -500,14 +493,14 @@ const resolvers = {
           return {
             success: deleted ? true : false,
             message: deleted ? 'Chef special deleted successfully' : 'Error deleting chef special',
-            chefsMetaList
+            chefsSpecialList
           }
         }
       } else {
         return {
           success: false,
           message: 'Chef special does not exist',
-          chefsMetaList
+          chefsSpecialList
         }
       }
     },
@@ -534,24 +527,29 @@ const resolvers = {
       }
     },
     addUser: async (_, args, context, info) => {
-      const address = verifyMessage(args.message, context.signature);
+      const address = verifyMessage(args.signatureMessage, context.signature);
       if (address !== args.userID) throw new AuthenticationError('Invalid signature');
-      const { userID, name, email, image, signature } = args;
       let addedUser;
-      const newUser = {
-        userID: userID,
-        signature: signature,
-        name: name,
-        email: email,
-        image: image,
-      };
       try {
         await mongoClient.connect();
+        const user = await db.collection('users').findOne({ userID: args.userID });
+        if (user) {
+          await mongoClient.close();
+          throw new AuthenticationError('User already exists');
+        }
+        const newUser = {
+          userID: args.userID,
+          name: args.name,
+          email: args.email,
+          imageCid: args.imageCid,
+        };
         addedUser = await userCollection.insertOne(newUser);
       } catch (error) {
+        await mongoClient.close();
         throw new Error(error);
       } finally {
         await mongoClient.close();
+        console.log(addedUser)
         return {
           success: addedUser.acknowledged ? true : false,
           message: addedUser.acknowledged ? 'User added successfully' : 'Error adding user',
@@ -560,7 +558,7 @@ const resolvers = {
       }
     },
     updateUser: async (_, args, context, info) => {
-      const address = verifyMessage(args.message, context.signature);
+      const address = verifyMessage(args.signatureMessage, context.signature);
       if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       let userToUpdate = {};
       let updatedUser;
@@ -572,7 +570,7 @@ const resolvers = {
         userToUpdate.image = args.image;
         try {
           await mongoClient.connect();
-          updatedUser = await db.collection('users').updateOne({ email: args.email }, { $set: userToUpdate });
+          updatedUser = await db.collection('users').updateOne({ userID: args.userID }, { $set: userToUpdate });
         } catch (error) {
           throw new Error(error);
         } finally {

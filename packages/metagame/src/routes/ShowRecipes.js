@@ -168,8 +168,8 @@ const RecipeCard = ({ recipe }) => {
         <Button variant='ghost' w='100%'>View Recipe</Button>
       </VStack>
     </Box>
-    {recipeData && ingredients && steps && tasteProfile && 
-      <Recipe isOpen={isOpen} onClose={onClose} recipeData={recipeData} ingredients={ingredients} steps={steps} tasteProfile={tasteProfile} />
+    {recipeData && tasteProfile && 
+      <Recipe isOpen={isOpen} onClose={onClose} recipeData={recipeData} ingredients={ingredients?ingredients:['']} steps={steps?steps:['']} tasteProfile={tasteProfile} />
     }
     </>
   );
@@ -189,6 +189,7 @@ const Recipe = (props) => {
         <ModalBody>
           <VStack spacing={4} align="center" divider={<Divider />}>
             {recipeData && recipeData.description && <Text fontSize="large">{recipeData.description}</Text>}
+            {tasteProfile && <TasteProfile tasteProfile={tasteProfile} />}
             {ingredients && <>
               <Text as='b' fontSize="large">Ingredients</Text>
               <Ingredients ingredients={ingredients} />
@@ -197,7 +198,6 @@ const Recipe = (props) => {
               <Text as='b' fontSize="large">Steps</Text>
               <Steps steps={steps} />
             </>}
-            {tasteProfile && <TasteProfile tasteProfile={tasteProfile} />}
             {recipeData && recipeData.equipment && <>
               <Text as='b' fontSize="large">Equipment</Text>
               {recipeData.equipment.split(',').map((equipment, index) => (

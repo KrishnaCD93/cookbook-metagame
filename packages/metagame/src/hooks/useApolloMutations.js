@@ -83,6 +83,16 @@ const CREATE_RECIPE_REQUEST = gql`
   }
 `;
 
+const CREATE_USER = gql`
+  mutation Mutation($userID: String!, $signatureMessage: String!, $name: String, $imageCid: String, $email: String) {
+    addUser(userID: $userID, signatureMessage: $signatureMessage, name: $name, imageCid: $imageCid, email: $email) {
+      success
+      message
+      userID
+    }
+  }
+`;
+
 const useApolloMutations = () => {
   const [userID, setUserID] = useState('');
   const [addIngredients] = useMutation(CREATE_INGREDIENTS);
@@ -101,6 +111,7 @@ const useApolloMutations = () => {
     refetchQueries: [{ query: GET_RECIPES }]
   });
   const [addRecipeRequest] = useMutation(CREATE_RECIPE_REQUEST)
+  const [addUser] = useMutation(CREATE_USER)
   
   const uploadIngredients = async (props) => {
     const { names, quantities, comments, imageCids, userID, signatureMessage } = props;
@@ -256,7 +267,23 @@ const useApolloMutations = () => {
     return recipeRequestData;
   }
 
-  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadExternalRecipe, uploadChefsMeta, uploadContestEntry, uploadRecipeRequest];
+  const uploadUser = async (props) => {
+    const { userID, name, email, imageCid, signatureMessage } = props;
+    const userData = {};
+    await addUser({ variables: { userID, name, email, imageCid, signatureMessage } })
+      .then((data) => {
+        userData.success = data.data.addUser.success;
+        userData.message = data.data.addUser.message;
+        userData.userID = data.data.addUser.userID;
+        console.log('uploadUser', userData);
+      }
+      ).catch((error) => {
+        console.log('uploadUser error', error);
+      })
+    return userData;
+  }
+
+  return [uploadIngredients, uploadSteps, uploadTasteProfile, uploadRecipe, uploadExternalRecipe, uploadChefsMeta, uploadContestEntry, uploadRecipeRequest, uploadUser];
 }
 
 export default useApolloMutations;

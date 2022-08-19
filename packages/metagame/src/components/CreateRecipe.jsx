@@ -435,7 +435,7 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Name of the ingredient">
         <Input py={2} px={2} placeholder="...name, eg. eggs" isInvalid={false}
-        {...register(`ingredients[${index}].name`)} />
+        {...register(`ingredients[${index}].name`, {required: 'Name of the ingredient'})} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].name && (
         <FormErrorMessage>
@@ -452,7 +452,7 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Add the quantity of the ingredient">
         <Input py={2} px={2} placeholder="...amount, eg. 2, large" isInvalid={false}
-        {...register(`ingredients[${index}].quantity`)} />
+        {...register(`ingredients[${index}].quantity`, {required: 'Add the quantity of the ingredient'})} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].quantity && (
         <FormErrorMessage>
@@ -541,7 +541,7 @@ const GetSteps = () => {
       <>
       <Tooltip label="Step title">
         <Input py={2} px={2} placeholder="...title, eg. prepare egg mix" isInvalid={false}
-        {...register(`steps[${index}].stepName`)} />
+        {...register(`steps[${index}].stepName`, {required: 'Step title'})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].name && (
         <FormErrorMessage>
@@ -558,8 +558,8 @@ const GetSteps = () => {
       <>
       <Tooltip label="What're the actions for this step of the recipe?">
         <Textarea py={2} px={2} placeholder="...action, eg. crack eggs into a bowl, use a fork to mix with salt and pepper" isInvalid={false}
-          {...register(`steps[${index}].action`, 
-          {maxLength: {value: 280, message: 'Action must be less than 280 characters'}})} />
+          {...register(`steps[${index}].action`, {required: 'What\'re the actions for this step of the recipe?', 
+          maxLength: {value: 280, message: 'Action must be less than 280 characters'}})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].action && (
       <FormErrorMessage>

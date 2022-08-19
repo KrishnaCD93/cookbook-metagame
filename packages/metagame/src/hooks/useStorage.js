@@ -138,7 +138,41 @@ const useStorage = () => {
       }
     }
 
-  return [uploadRecipeNFT, uploadRecipeImage]
+  const uploadUserImage = async (props) => {
+    try {
+      const resizeFile = (file) =>
+      new Promise((resolve) => {
+        Resizer.imageFileResizer(
+          file,
+          180,
+          180,
+          "JPEG",
+          100,
+          0,
+          (uri) => {
+            resolve(uri);
+          },
+          "base64"
+          );
+        });
+      const resizedFile = await resizeFile(props);
+      const formData = new FormData();
+      formData.append('file', resizedFile);
+      formData.append('upload_preset', 'jvcboirw');
+      const options = {
+        method: 'POST',
+        body: formData
+      };
+      const response = await fetch(cloudinaryUploadEndpoint, options);
+      const data = await response.json();
+      console.log('uploadUserImage', data);
+      return data.public_id;
+    } catch (error) {
+      console.log('uploadUserImage error', error);
+    }
+  }
+
+  return [uploadRecipeNFT, uploadRecipeImage, uploadUserImage];
 }
 
 export default useStorage;

@@ -1,7 +1,7 @@
-import { Box, Button, Container, Divider, GridItem, Image, Text, useColorModeValue, useDisclosure, VStack } from '@chakra-ui/react';
+import { Box, Button, Divider, GridItem, Image, Text, useColorModeValue, useDisclosure, VStack } from '@chakra-ui/react';
 import React from 'react';
 import CreateRecipe from '../components/CreateRecipe';
-import ShowRecipes from './ShowRecipes';
+import ShowCookbookTokens from '../components/ShowCookbookTokens';
 
 import wordmark from '../assets/wordmark.svg';
 import altWordmark from '../assets/alt-wordmark.svg';
@@ -29,19 +29,7 @@ const Home = () => {
     </GridItem>
     <Divider />
     <GridItem>
-      <Container centerContent>
-        <iframe
-        src="https://gateway.ipfscdn.io/ipfs/QmUfp6thZQTmNKS6tzijJpxdoBe9X7spHwzRjUh3RPTAwF/edition-drop.html?contract=0x0dBC9A0649EeCa0f6b2005d833A6456EC10090EE&chainId=137&tokenId=0"
-        width="600px"
-        height="600px"
-        style={{maxWidth:"100%"}}
-        frameBorder="0"
-        title='Cookbook Social Silver Spoon'
-        ></iframe>
-      </Container>
-    </GridItem>
-    <GridItem>
-      <ShowRecipes />
+      <ShowCookbookTokens />
     </GridItem>
     </>
   );
