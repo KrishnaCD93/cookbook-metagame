@@ -154,6 +154,16 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   const onSubmit = async (data) => {
     setUploading(true)
     console.log(data);
+    if (!isConnected) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your Ethereum wallet to authenticate your recipe submission.",
+        status: "error",
+        duration: 9000,
+        isClosable: true,
+      })
+      return;
+    }
     const date = new Date().toISOString();
     const signatureMessage = `Create recipe ${data.name} on ${date} by ${accountInfo}`;
     const signData = await signMessageAsync({ message: signatureMessage });
@@ -301,11 +311,11 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                     </TabPanel>
                   </TabPanels>
                 </Tabs>
-                <FormLabel htmlFor="mintNFT">
+                {/* <FormLabel htmlFor="mintNFT">
                   <GetMintNFT setMintNFT={setMintNFT} />
-                </FormLabel>
+                </FormLabel> */}
               </FormControl>
-              {(mintNFT && !accountInfo) ? <Button w='100%'><ConnectButton /></Button> : 
+              {!accountInfo ? <Button w='100%'><ConnectButton label="Connect UserID" /></Button> : 
               <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
                 Create Recipe
               </Button>}

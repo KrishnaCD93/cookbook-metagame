@@ -5,25 +5,36 @@ import { useAccount, useEnsName } from 'wagmi';
 import useApolloMutations from '../hooks/useApolloMutations';
 import { FaComment } from 'react-icons/fa';
 import CreateRecipe from '../components/CreateRecipe';
+import ShowCookbookTokens from '../components/ShowCookbookTokens';
 
 // TODO: test uploads and mutation refetch
 
 export const GET_USER_COOKBOOK = gql`
-  query UserCookbook($userID: String!) {
+  query CookbookByUserID($userID: String!) {
     cookbookByUserID(userID: $userID) {
-      address
-      name
-      description
       recipes {
         _id
         name
+        imageCid
+        description
         ingredientIDs
         stepIDs
+        qualityTags
         tasteProfileID
+        equipment
       }
-      user {
-        userID
+      ingredients {
+        _id
         name
+        quantity
+        comments
+      }
+      steps {
+        _id
+        stepName
+        action
+        trigger
+        comments
       }
       tasteProfiles {
         _id
@@ -34,35 +45,23 @@ export const GET_USER_COOKBOOK = gql`
         spice
         umami
       }
-      ingredients {
-        _id
-        name
-        nutrition {
-          calories
-          fat
-          protien
-          carbs
-        }
-        comments
-      }
-      steps {
-        _id
-        stepName
-        action
-        trigger
-        comments
-      }
       externalRecipes {
         _id
         name
         recipeUrl
         notes
       }
-      chefsMetas {
+      chefsSpecials {
         _id
         recipeID
         specialtyTags
         comments
+      }
+      user {
+        userID
+        name
+        imageCid
+        email
       }
     }
   }
@@ -80,7 +79,11 @@ const MetaKitchen = () => {
   const [showItems, setShowItems] = useState(null);
 
   useEffect(() => {
-    setUserID(address ? address : '0x0');
+    if (ensName) {
+      setUserID(ensName);
+    } else {
+      setUserID(address ? address : '0x0');
+    }
   }, [address, ensName]);
   
   const cookbookMemo = useMemo(() => {
@@ -209,6 +212,8 @@ const MetaKitchen = () => {
           <AddExternalRecipe uploadExternalRecipe={uploadExternalRecipe} isOpen={externalIsOpen} onClose={externalOnClose} userID={userID} />
           </>}
       </Container>
+      <Divider />
+      <ShowCookbookTokens />
     </Box>
   );
 }

@@ -13,7 +13,7 @@ const CreateRequest = ({ isOpen, onClose }) => {
   const [userID, setUserID] = useState('')
   const { signMessageAsync } = useSignMessage()
   const [, , uploadTasteProfile, , , , , uploadRecipeRequest] = useApolloMutations()
-  const { address } = useAccount()
+  const { address, isConnected } = useAccount()
   const toast = useToast()
   const [imageCid, setimageCid] = useState('');
   const [, uploadRecipeImage] = useStorage();
@@ -29,6 +29,16 @@ const CreateRequest = ({ isOpen, onClose }) => {
   const onSubmit = async (data) => {
     setUploading(true)
     console.log(data)
+    if (!isConnected) {
+      toast({
+        title: "Not connected to wallet",
+        description: "Please connect your Ethereum address to authenticate your request.",
+        status: "error",
+        duration: 9000,
+        isClosable: true,
+      })
+      return
+    }
     const date = new Date().toISOString()
     const signatureMessage = `Create request for ${data.name} on ${date} by ${address}`
     console.log(signatureMessage)

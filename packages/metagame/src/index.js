@@ -25,7 +25,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import ShowRecipes from './routes/ShowRecipes';
 import Home from './routes/Home';
-import Blogposts from './routes/blogposts/Blogposts';
+import About from './routes/About';
 import Cookbooks from './routes/Cookbooks';
 
 // TODO: add recipe page with recipeID
@@ -88,7 +88,7 @@ root.render(
               <Routes>
                 <Route path="/" element={<App />}>
                   <Route index element={<Home />} />
-                  <Route path="about" element={<Blogposts />} />
+                  <Route path="about" element={<About />} />
                   <Route path="recipes" element={<ShowRecipes />} />
                   <Route path="kitchen" element={<MetaKitchen />} />
                   <Route path="cookbooks" element={<Cookbooks />} />

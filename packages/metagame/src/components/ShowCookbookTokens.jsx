@@ -42,7 +42,7 @@ const ShowCookbookTokens = () => {
     {userSpoons && userSpoons.map((nft) => (
       <Box p={2} m={2} key={nft.id}>
         {nft.metadata.name} 
-        <Image src={nft.metadata.image} />
+        <Image boxSize='md' src={nft.metadata.image} />
         {nft.metadata.external_url}
       </Box>
     ))}
@@ -50,7 +50,7 @@ const ShowCookbookTokens = () => {
       <Box p={2} m={2} key={nft.id}>
         {nft.metadata.name}
         {nft.metadata.description}
-        <Image src={nft.metadata.image} />
+        <Image boxSize='md' src={nft.metadata.image} />
         {nft.metadata.external_url}
       </Box>
     ))}
@@ -58,7 +58,7 @@ const ShowCookbookTokens = () => {
       <Box p={2} m={2} key={nft.id}>
         {nft.metadata.name}
         {nft.metadata.description}
-        <Image src={nft.metadata.image} />
+        <Image boxSize='md' src={nft.metadata.image} />
         {nft.metadata.external_url}
       </Box>
     ))}
