@@ -6,12 +6,12 @@ const TheMetagame = () => {
     <Container textAlign='left'>
       <Container>
         <Text as='b'>
-          Welcome to the Cookbook Social metagame!
+          Welcome to Cookbook Social!
         </Text>
       </Container>
       <br />
       <Container>
-        Cookbook.Social is a metagame aimed at decentralizing our recipes and diversifying our Cookbooks. 
+        Cookbook Social is a metagame aimed at decentralizing our recipes and diversifying our Cookbooks. 
         The premise is this: as you try out new recipes, your metakitchen grows and curates to your taste profile. 
         The game's goal is to maximize the number of users contributing their tastes and sharing new recipes to the website.
       </Container>
@@ -107,8 +107,8 @@ const TheMetagame = () => {
         </Text>
         <Box>
           <UnorderedList>
-            <ListItem>Recipes must be about food.</ListItem>
-            <ListItem>Recipes must have a taste profile to be shared with the metaverse.</ListItem>
+            <ListItem>Recipes must be about food and drinks.</ListItem>
+            <ListItem>Recipes must have a taste profile.</ListItem>
             <ListItem>If you find new skills or strategies for making your recipes, you must add them to the Cookbook to share your learnings with the internet.</ListItem>
           </UnorderedList>
         </Box>
@@ -135,9 +135,9 @@ const TheMetagame = () => {
         </Text>
         <Box>
           <UnorderedList>
-            <ListItem>XP is earned by adding recipes to the Cookbook.</ListItem>
+            <ListItem>Earn XP by adding recipes to the Cookbook.</ListItem>
             <ListItem>Earn achievements by meeting your health targets.</ListItem>
-            <ListItem>Earn achievements by participating in competitions.</ListItem>
+            <ListItem>Win tokens by participating in competitions.</ListItem>
           </UnorderedList>
         </Box>
       </Container>

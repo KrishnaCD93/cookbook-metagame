@@ -93,6 +93,25 @@ const typeDefs = gql`
     name: String
     imageCid: String
     email: String
+    goals: [Goal]
+    achievements: [Achievement]
+    xp: Int
+  }
+  type Goal {
+    goalName: String!
+    goalDescription: String!
+    goalImageCid: String
+    goalType: String!
+    goalValue: Int!
+    goalProgress: Int!
+  }
+  type Achievement {
+    achievementName: String!
+    achievementDescription: String!
+    achievementImageCid: String
+    achievementType: String!
+    achievedOn: String!
+    nftCid: String
   }
   type RecipeRequest {
     _id: ID
@@ -108,44 +127,6 @@ const typeDefs = gql`
     createdAt: String
     completedOn: String
     signatureMessage: String
-  }
-  type ContestEntry {
-    _id: ID
-    contestID: ID
-    userID: ID
-    recipeID: ID
-    prompt: String
-    recpieNFTAddress: String
-    numVotes: Int
-    signature: String
-  }
-  type Contest {
-    _id: ID
-    name: String
-    description: String
-    prompts: [String]
-    submissions: [ContestEntry]
-    submissionStartDate: String
-    submissionEndDate: String
-    votingStartDate: String
-    votingEndDate: String
-    firstPrizeNFTAddresses: [String]
-    secondPrizeNFTAddresses: [String]
-    thirdPrizeNFTAddresses: [String]
-    prizes: [Prize]
-  }
-  type Prize {
-    _id: ID
-    name: String
-    description: String
-    imageCid: String
-    contractAddress: String
-  }
-  type Vote {
-    _id: ID
-    userID: ID!
-    recipeID: ID
-    signature: String
   }
   type RecipeData {
     recipe: Recipe
@@ -175,7 +156,6 @@ const typeDefs = gql`
     recipeRequestsByUserID(userID: String!): [RecipeRequest]
     recipeRequestByID(id: ID!): RecipeRequest
     recipeRequests: [RecipeRequest]
-    contests: [Contest]
   }
   type Mutation {
     addCookbookNFT(
@@ -304,38 +284,6 @@ const typeDefs = gql`
       createdAt: String
       signatureMessage: String!
     ): RecipeRequestResponse!
-    createContest(
-      name: String
-      description: String
-      prompts: [String]
-      submissionStartDate: String
-      submissionEndDate: String
-      votingStartDate: String
-      votingEndDate: String
-      prizes: [String]
-      signatureMessage: String
-    ): ContestResponse
-    addContestEntry(
-      userID: ID!
-      recipeID: ID
-      nftCid: String
-      prompt: String
-      signatureMessage: String
-    ): ContestEntryResponse
-    addVote(
-      userID: ID!
-      contestID: ID
-      recipeID: ID
-      numVotes: Int
-      signatureMessage: String
-    ): ContestVoteResponse
-    addContestWinner(
-      userID: ID!
-      contestID: ID
-      recipeID: ID
-      prompt: String
-      signatureMessage: String
-    ): ContestWinnerResponse
   }
   type NFTUploadResponse {
     success: Boolean!
@@ -381,26 +329,6 @@ const typeDefs = gql`
     success: Boolean!
     message: String
     recipeRequestID: ID
-  }
-  type ContestResponse {
-    success: Boolean
-    message: String
-    contestID: ID
-  }
-  type ContestEntryResponse {
-    success: Boolean
-    message: String
-    contestEntryID: ID
-  }
-  type ContestVoteResponse {
-    success: Boolean
-    message: String
-    contestVoteID: ID
-  }
-  type ContestWinnerResponse {
-    success: Boolean
-    message: String
-    contestWinnerID: ID
   }
 `;
 

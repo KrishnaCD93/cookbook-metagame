@@ -6,8 +6,9 @@ import { AdvancedImage } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import CreateUser from './container/CreateUser'
 import { useDisclosure } from '@chakra-ui/hooks';
-import { Box, IconButton } from '@chakra-ui/react';
+import { Box, Icon, IconButton } from '@chakra-ui/react';
 import { FaUserCircle, FaUserPlus } from 'react-icons/fa';
+import UpdateUser from './container/UpdateUser';
 
 const GET_USER = gql`
   query RecipeWithData($userID: String!) {
@@ -27,8 +28,10 @@ const cld = new Cloudinary({
 })
 
 const User = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const btnRef = useRef()
+  const { isOpen: createIsOpen, onOpen: createOnOpen, onClose: createOnClose } = useDisclosure()
+  const { isOpen: updateIsOpen, onOpen: updateOnOpen, onClose: updateOnClose } = useDisclosure()
+  const createBtnRef = useRef()
+  const updateBtnRef = useRef()
   const { address } = useAccount()
   const [user, setUser] = useState('0x0')
   const [image, setImage] = useState(null)
@@ -51,15 +54,18 @@ const User = () => {
   return ( 
     <>
     {(data && data.user) ? <>
-      {(data.user.imageCid && <Box borderRadius={50} overflow="hidden">
-        <AdvancedImage cldImg={image} /></Box>) || <FaUserCircle />} </> :
-    <>
-    <IconButton ref={btnRef} icon={<FaUserPlus />} onClick={onOpen}
-      _hover={{ bg: 'grey.300', boxShadow: 'md' }} />
-    <CreateUser isOpen={isOpen} onClose={onClose} btnRef={btnRef} />
+      <Box borderRadius={50} overflow="hidden" onClick={updateOnOpen} ref={updateBtnRef}
+      _hover={{ cursor: 'pointer', bg: 'grey.300' }}>
+        {data.user.imageCid ? <AdvancedImage cldImg={image} /> : <Icon as={FaUserCircle} mt={2} />} 
+      </Box>
+      <UpdateUser isOpen={updateIsOpen} onClose={updateOnClose} btnRef={updateBtnRef} /></> :
+      <>
+      <IconButton ref={createBtnRef} icon={<FaUserPlus />} onClick={createOnOpen}
+        _hover={{ bg: 'grey.300', cursor: 'pointer' }} />
+      <CreateUser isOpen={createIsOpen} onClose={createOnClose} btnRef={createBtnRef} />
     </>}
     </>
-   );
+  );
 }
 
 export default User;

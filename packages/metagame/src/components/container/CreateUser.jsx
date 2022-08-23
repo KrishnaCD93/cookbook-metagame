@@ -26,11 +26,12 @@ const CreateUser = ({ isOpen, onClose, btnRef }) => {
     setUploading(true)
     let imageCid;
     if (data.image[0]) {
-      imageCid = await uploadUserImage(data.image[0])
+      imageCid = await uploadUserImage(data.image[0]);
     }
-    const signatureMessage = `I am signing my one-time message to authenticate my cookbook account. ${userID}`
-    const signature = await signMessageAsync({message: signatureMessage})
-    localStorage.setItem('signature', signature)
+    const date = new Date().toISOString();
+    const signatureMessage = `I am signing my one-time message on ${date} to authenticate my cookbook account. - ${userID}`;
+    const signature = await signMessageAsync({message: signatureMessage});
+    localStorage.setItem('signature', signature);
     const userInfo = {
       userID: userID,
       signatureMessage: signatureMessage,

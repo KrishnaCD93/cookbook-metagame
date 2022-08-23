@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { ThirdwebSDK } from '@thirdweb-dev/sdk';
-import { Box, Image, Text } from '@chakra-ui/react';
+import { Grid, GridItem, Image, Text } from '@chakra-ui/react';
 import { useMemo } from 'react';
 
 const ShowCookbookTokens = () => {
@@ -35,33 +35,41 @@ const ShowCookbookTokens = () => {
 
   return ( 
     <>
-    Cookbook Tokens
+    Your Cookbook Tokens
     {userID === '0x0' && <Text>Connect your wallet to see your tokens.</Text>}
     {userID !== '0x0' && (!userSpoons.length && !userForks.length && !userKnives.length) && 
     <Text>You don't have any tokens yet.<br />Purchase a token to support your favourite chefs' cookbooks.</Text>}
+    <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={6}>
     {userSpoons && userSpoons.map((nft) => (
-      <Box p={2} m={2} key={nft.id}>
+      <GridItem boxSize='md' p={2} m={2} key={nft.id}>
         {nft.metadata.name} 
-        <Image boxSize='md' src={nft.metadata.image} />
-        {nft.metadata.external_url}
-      </Box>
+        <Image src={nft.metadata.image} />
+        {nft.metadata.attributes.map((attribute) => (
+          <Text key={attribute.trait_type}>{attribute.trait_type}: {attribute.value}</Text>
+        ))}
+      </GridItem>
     ))}
     {userForks && userForks.map((nft) => (
-      <Box p={2} m={2} key={nft.id}>
+      <GridItem p={2} m={2} key={nft.id}>
         {nft.metadata.name}
         {nft.metadata.description}
         <Image boxSize='md' src={nft.metadata.image} />
-        {nft.metadata.external_url}
-      </Box>
+        {nft.metadata.attributes.map((attribute) => (
+          <Text key={attribute.trait_type}>{attribute.trait_type}: {attribute.value}</Text>
+        ))}
+      </GridItem>
     ))}
     {userKnives && userKnives.map((nft) => (
-      <Box p={2} m={2} key={nft.id}>
+      <GridItem p={2} m={2} key={nft.id}>
         {nft.metadata.name}
         {nft.metadata.description}
         <Image boxSize='md' src={nft.metadata.image} />
-        {nft.metadata.external_url}
-      </Box>
+        {nft.metadata.attributes.map((attribute) => (
+          <Text key={attribute.trait_type}>{attribute.trait_type}: {attribute.value}</Text>
+        ))}
+      </GridItem>
     ))}
+    </Grid>
     </>
   );
 }

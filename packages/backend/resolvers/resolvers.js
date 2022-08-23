@@ -618,28 +618,6 @@ const resolvers = {
           recipeRequestID: recipeRequestID.insertedId
         }
       }
-    },
-    addContestEntry: async (_, args, context, info) => {
-      let contestEntryID;
-      const newContestEntry = {
-        userID: args.userID,
-        recipeID: args.recipeID,
-        prompt: args.prompt,
-        signature: args.signature,
-      };
-      try {
-        await mongoClient.connect();
-        contestEntryID = await db.collection('contestEntries').insertOne(newContestEntry);
-      } catch (error) {
-        throw new Error(error);
-      } finally {
-        await mongoClient.close();
-        return {
-          success: contestEntryID.acknowledged ? true : false,
-          message: contestEntryID.acknowledged ? 'Contest entry added successfully' : 'Error adding contest entry',
-          contestEntryID: contestEntryID.insertedId
-        }
-      }
     }
   }
 }
