@@ -1,4 +1,4 @@
-import { Box, Container, Divider, Flex, HStack, Spacer, VStack, Text, SimpleGrid } from '@chakra-ui/react';
+import { Box, Container, Divider, Flex, HStack, Spacer, VStack, Text, SimpleGrid, Grid, GridItem } from '@chakra-ui/react';
 import React from 'react';
 
 const WhatCookbook = (props) => {
@@ -32,40 +32,48 @@ const WhatCookbook = (props) => {
             </Text>
         </Box>
       <Spacer />
-      <SimpleGrid columns={{sm: 1, md: 3}}>
-        <Box>
-          <VStack spacing={4}>
+      <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={6}>
+        <GridItem>
+          <VStack>
             <Text fontSize='4xl'>Create</Text>
             <Divider />
             <Text fontSize='md' align={'center'}>
-              Use our visual builder to build beautiful recipe collections. Map out the ingredients, methods, and tools used.
+              Use our visual builder to build beautiful recipe collections.<br />
               Simplify complexity and capture nuance.
             </Text>
           </VStack>
-        </Box>
-        <br />
-        <Box>
-          <VStack spacing={4}>
+        </GridItem>
+        <GridItem>
+          <VStack>
+            <Text fontSize='4xl'>Play</Text>
+            <Divider />
+            <Text fontSize='md' align={'center'}>
+              Set goals and earn achievements.<br />
+              Track your progress on leaderboards.
+            </Text>
+          </VStack>
+        </GridItem>
+        <GridItem>
+          <VStack>
             <Text fontSize='4xl'>Discover</Text>
             <Divider />
             <Text fontSize='md' align={'center'}>
-              Discover new recipes and different cooking styles. 
-              Compose new meals and add your unique taste to the marketplace of ideas.
+              Discover new recipes and different cooking styles.<br />
+              Add your unique taste to the marketplace of ideas.
             </Text>
           </VStack>
-        </Box>
-        <br />
-        <Box>
-          <VStack spacing={4}>
+        </GridItem>
+        <GridItem>
+          <VStack>
             <Text fontSize='4xl'>Trade</Text>
             <Divider />
             <Text fontSize='md' align={'center'}>
-              Earn by finding recipes that work for you and share them with your community.
-              Trade your ideas and skills learned from experiences in the kitchen by filling out recipe requests. 
+              Earn creating recipes and sharing cookbooks.<br />
+              Trade your ideas and skills learned in the kitchen by filling out recipe requests. 
             </Text>
           </VStack>
-        </Box>
-      </SimpleGrid>
+        </GridItem>
+      </Grid>
       </VStack>
       </Flex>
     </Container>

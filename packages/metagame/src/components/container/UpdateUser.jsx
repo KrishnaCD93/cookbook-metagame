@@ -20,11 +20,11 @@ const UpdateUser = ({ isOpen, onClose, btnRef }) => {
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
-          <DrawerHeader>Create your account</DrawerHeader>
+          <DrawerHeader>Update your account</DrawerHeader>
             <FormProvider {...{ handleSubmit, register, errors, isSubmitting }}>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <DrawerBody>
-
+                  
                 </DrawerBody>
 
                 <DrawerFooter>
