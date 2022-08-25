@@ -26,12 +26,12 @@ import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import ShowRecipes from './routes/ShowRecipes';
 import Home from './routes/Home';
 import About from './routes/About';
-import Cookbooks from './routes/Cookbooks';
+import CookbookGoals from './routes/CookbookGoals';
 
 // TODO: add recipe page with recipeID
 
 const { chains, provider, webSocketProvider } = configureChains(
-  [chain.mainnet, chain.polygon, chain.polygonMumbai], 
+  [chain.mainnet, chain.polygon], 
   [
   alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
   publicProvider(),
@@ -50,7 +50,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors',
@@ -91,7 +91,7 @@ root.render(
                   <Route path="about" element={<About />} />
                   <Route path="recipes" element={<ShowRecipes />} />
                   <Route path="kitchen" element={<MetaKitchen />} />
-                  <Route path="cookbooks" element={<Cookbooks />} />
+                  <Route path="goals" element={<CookbookGoals />} />
                   <Route
                     path="*"
                     element={

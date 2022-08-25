@@ -1638,9 +1638,12 @@
       "runs": 200
     },
     "remappings": [
-      ":ds-test/=lib/forge-std/lib/ds-test/src/",
-      ":forge-std/=lib/forge-std/src/"
-    ]
+      ":ds-test/=lib/solmate/lib/ds-test/src/",
+      ":forge-std/=lib/forge-std/src/",
+      ":openzeppelin-contracts/=lib/openzeppelin-contracts/",
+      ":solmate/=lib/solmate/src/"
+    ],
+    "viaIR": true
   },
   "sources": {
     "lib/forge-std/src/Vm.sol": {
