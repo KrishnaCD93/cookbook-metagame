@@ -102,11 +102,11 @@ contract CookbookGoals is ERC721 {
             goal.name,
             ' -- NFT #: ',
             Strings.toString(_tokenId),
-            '", "description": This is a Cookbook Social goal NFT", "image": "',
+            '", "description": "This is a Cookbook Social goal NFT", "image": "',
             goal.imageURI,
-            '", "attributes": [ { "trait_type": "Goal Progress", "value": ', strProgress,', "max_value": ',
+            '", "external_url": "https://cookbook.social", "attributes": [ { "trait_type": "Goal Progress", "value": ', strProgress,', "max_value": ',
             strGoalTotal,'}, { "trait_type": "Reward XP", "value": ',
-            strRewardXP,'}, {"trait_type": "Goal Type", "value": ', strGoalType,'} ]}'
+            strRewardXP,'}, {"trait_type": "Goal Type", "value": "', strGoalType,'"} ]}'
             )
         );
         string memory output = string(

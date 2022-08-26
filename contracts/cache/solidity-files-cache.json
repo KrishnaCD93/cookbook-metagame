@@ -826,8 +826,8 @@
       }
     },
     "src/CookbookGoals.sol": {
-      "lastModificationDate": 1661382685941,
-      "contentHash": "e66d2504659b6ba9797e8f6a3affbcf1",
+      "lastModificationDate": 1661491061003,
+      "contentHash": "7d4e10a17d97f8fa9a1b57305bbbd861",
       "sourceName": "src/CookbookGoals.sol",
       "solcConfig": {
         "settings": {
@@ -878,8 +878,8 @@
       }
     },
     "test/CookbookGoals.t.sol": {
-      "lastModificationDate": 1661376303687,
-      "contentHash": "ac4bbe7d59211ef7ac2b75c169eebede",
+      "lastModificationDate": 1661490941371,
+      "contentHash": "dddf4d21054a3604bb19f86fd9c43c76",
       "sourceName": "test/CookbookGoals.t.sol",
       "solcConfig": {
         "settings": {

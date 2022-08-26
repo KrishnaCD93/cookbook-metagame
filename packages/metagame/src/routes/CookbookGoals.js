@@ -5,7 +5,7 @@ import cookbookGoals from '../utils/CookbookGoals.json';
 import { ethers } from 'ethers';
 import { Box, Button, Container, Grid, GridItem, Image, Text } from '@chakra-ui/react';
 
-const contractAddress = '0x0ed3152489dd43dcf9ae31719963fa468fe60853';
+const contractAddress = '0xe92db81b284583d8c02664ea0bf5772100e048f8';
 
 const CookbookGoals = () => {
   const { address } = useAccount();

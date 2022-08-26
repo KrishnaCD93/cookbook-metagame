@@ -17,7 +17,7 @@ contract CookbookGoalsTest is Test, ERC721Holder {
     function setUp() public {
         goalNames = ["Share 10 meals", "Learn 3 tricks", "Cook 5 recipes"];
         goalTypes = ["EATING", "LEARNING", "COOKING"];
-        goalImageURIs = ["https://imgur.com/i2FyfRP", "https://imgur.com/Bfd653K", "https://imgur.com/DxONkjH"];
+        goalImageURIs = ["https://imgur.com/i2FyfRP.png", "https://imgur.com/Bfd653K.png", "https://imgur.com/DxONkjH.png"];
         goalTotals = [10, 3, 5];
         goalRewards = [1000, 300, 500];
 
