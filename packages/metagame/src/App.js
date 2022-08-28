@@ -15,7 +15,7 @@ function App() {
     <Box textAlign="center" fontSize="xl">
       <Navbar>
         <Box mr={2}>
-          <ConnectButton label='Connect UserID' />
+          <ConnectButton label='Log In With Wallet' />
         </Box>
         <User />
         <ColorModeSwitcher />

@@ -68,7 +68,7 @@ const WhatCookbook = (props) => {
             <Text fontSize='4xl'>Trade</Text>
             <Divider />
             <Text fontSize='md' align={'center'}>
-              Earn creating recipes and sharing cookbooks.<br />
+              Earn tokens by creating recipes and sharing cookbooks.<br />
               Trade your ideas and skills learned in the kitchen by filling out recipe requests. 
             </Text>
           </VStack>
