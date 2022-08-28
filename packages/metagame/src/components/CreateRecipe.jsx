@@ -315,7 +315,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   <GetMintNFT setMintNFT={setMintNFT} />
                 </FormLabel> */}
               </FormControl>
-              {!accountInfo ? <Button w='100%'><ConnectButton label="Connect UserID" /></Button> : 
+              {!accountInfo ? <Button w='100%'><ConnectButton label="Login With Wallet" /></Button> : 
               <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
                 Create Recipe
               </Button>}
@@ -363,7 +363,7 @@ function GetRecipeName() {
     <Text as='u' align='center' fontSize={'large'}>Recipe Name</Text>
     <Container p={2} m={2} centerContent>
       <Editable
-        placeholder="...name, eg. Omelette"
+        placeholder="...click to add name, eg. Omellete"
         isPreviewFocusable={true}
         selectAllOnFocus={false}>
         <Tooltip label="Give your recipe a name.">
@@ -409,7 +409,7 @@ function GetDescription() {
     <Text as='u' align='center' fontSize={'large'}>Description</Text>
     <Container p={2} m={2} centerContent>
       <Editable
-        placeholder="...description, eg. Indian style omelette stuffed with cheese and tomatoes"
+        placeholder="...click to add description, eg. Indian style omelette stuffed with cheese and tomatoes"
         isPreviewFocusable={true}
         selectAllOnFocus={false}>
         <Tooltip label="Add a short description of the dish.">
@@ -492,8 +492,7 @@ const GetIngredients = () => {
 
     return (
       <>
-      <IconButton icon={<FaImage />} onClick={imageUpload} 
-        border='1px' />
+      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
       <Flex>
         <Input type='file' style={{ display: 'none'}} accept='image/jpeg' {...fields} 
           onChange={event => { 
@@ -514,7 +513,7 @@ const GetIngredients = () => {
     <Container p={2} m={2} centerContent>
     <Text as='u' align='center' fontSize={'large'}>Ingredients</Text>
     {Array.from({ length: numIngredients }, (_, index) => (
-      <Box border='1px' m={2} p={2}>
+      <Box m={2} p={2}>
         <Flex>
           <Box>
             <Text>Name</Text>
@@ -615,8 +614,7 @@ const GetSteps = () => {
     const imageUpload = event => { hiddenFileInput.current?.click() }
     return (
       <>
-      <IconButton icon={<FaImage />} onClick={imageUpload}
-        border='1px' />
+      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
       <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
         onChange={event => { 
           onChange(event)
@@ -639,8 +637,7 @@ const GetSteps = () => {
     const imageUpload = event => { hiddenFileInput.current.click() }
     return (
       <>
-      <IconButton icon={<FaImage />} onClick={imageUpload}
-        border='1px' />
+      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
       <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
         onChange={event => { 
           onChange(event)
@@ -660,7 +657,7 @@ return (
   <Text as='u' align='center' fontSize={'large'}>Steps</Text>
   <Wrap>
   {Array.from({ length: numSteps }, (_, index) => (
-    <WrapItem key={index} border='1px' borderRadius={2}>
+    <WrapItem key={index} borderRadius={2}>
       <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
         <Text as='u' align='center'>Step {index + 1}</Text>
         <Box>

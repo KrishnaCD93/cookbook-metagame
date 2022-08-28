@@ -31,7 +31,7 @@ import CookbookGoals from './routes/CookbookGoals';
 // TODO: add recipe page with recipeID
 
 const { chains, provider, webSocketProvider } = configureChains(
-  [chain.mainnet, chain.polygon], 
+  [chain.polygon], 
   [
   alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
   publicProvider(),

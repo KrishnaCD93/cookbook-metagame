@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Container, Divider, Grid, GridItem, HStack, IconButton, Input, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Spinner, Text, Textarea, useDisclosure } from '@chakra-ui/react';
-import { gql, useQuery } from '@apollo/client';
-import { useAccount, useEnsName } from 'wagmi';
+import { gql, useLazyQuery } from '@apollo/client';
+import { useAccount } from 'wagmi';
 import useApolloMutations from '../hooks/useApolloMutations';
 import { FaComment } from 'react-icons/fa';
 import CreateRecipe from '../components/CreateRecipe';
@@ -69,22 +69,23 @@ export const GET_USER_COOKBOOK = gql`
 
 const MetaKitchen = () => {
   const { address } = useAccount();
-  const { data: ensName } = useEnsName({ address });
   const [userID, setUserID] = useState('');
   const [, , , , uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
-  const { data: cookbookData, loading: cookbookLoading, error: cookbookError, refetch } = useQuery(GET_USER_COOKBOOK, 
+  const [getUserKitchen, { data: cookbookData, loading: cookbookLoading, error: cookbookError, refetch }] = useLazyQuery(GET_USER_COOKBOOK, 
     { variables: { userID: `${userID}` }});
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: externalIsOpen, onOpen: externalOnOpen, onClose: externalOnClose } = useDisclosure();
   const [showItems, setShowItems] = useState(null);
 
   useEffect(() => {
-    if (ensName) {
-      setUserID(ensName);
-    } else {
-      setUserID(address ? address : '0x0');
+    setUserID(address ? address : '0x0');
+  }, [address]);
+
+  useEffect(() => {
+    if (userID) {
+      getUserKitchen();
     }
-  }, [address, ensName]);
+  }, [userID, getUserKitchen]);
   
   const cookbookMemo = useMemo(() => {
     if (cookbookData) {

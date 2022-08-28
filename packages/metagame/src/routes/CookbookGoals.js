@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import cookbookGoals from '../utils/CookbookGoals.json';
 import { ethers } from 'ethers';
-import { Box, Button, Container, Grid, GridItem, Image, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Grid, GridItem, Image, Text, useToast } from '@chakra-ui/react';
 
 const contractAddress = '0xe92db81b284583d8c02664ea0bf5772100e048f8';
 
@@ -21,17 +21,21 @@ const CookbookGoals = () => {
 
   useEffect(() => {
     const fetchUserGoal = async () => {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const goalContract = new ethers.Contract(contractAddress, cookbookGoals.abi, signer);
-      console.log('goalContract', goalContract);
-      const txn = await goalContract.checkIfUserHasNFT();
-      console.log('txn', txn);
-      if (txn.name) {
-        console.log('User has NFT');
-        setUserGoal(transformGoalData(txn));
-      } else {
-        console.log('No NFT found');
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const goalContract = new ethers.Contract(contractAddress, cookbookGoals.abi, signer);
+        console.log('goalContract', goalContract);
+        const txn = await goalContract.checkIfUserHasNFT();
+        console.log('txn', txn);
+        if (txn.name) {
+          console.log('User has NFT');
+          setUserGoal(transformGoalData(txn));
+        } else {
+          console.log('No NFT found');
+        }
+      } catch (error) {
+        console.log('error', error);
       }
     };
 
@@ -52,6 +56,8 @@ const CookbookGoals = () => {
 const SelectGoal = ({ setUserGoal }) => {
   const [goals, setGoals] = useState([]);
   const [gameContract, setGameContract] = useState(null);
+  const [mintLoading, setMintLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     const { ethereum } = window;
@@ -59,6 +65,7 @@ const SelectGoal = ({ setUserGoal }) => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const gameContract = new ethers.Contract(contractAddress, cookbookGoals.abi, signer);
+      console.log('gameContract', gameContract);
       setGameContract(gameContract);
     } else {
       console.log('no ethereum object found');
@@ -84,6 +91,14 @@ const SelectGoal = ({ setUserGoal }) => {
         const userNFT = await gameContract.checkIfUserHasNFT();
         console.log('userNFT', userNFT);
         setUserGoal(transformGoalData(userNFT));
+        setMintLoading(false);
+        toast({
+          title: 'Goal Minted',
+          description: 'Your goal has been minted',
+          status: 'success',
+          duration: 5000,
+          isClosable: true
+        })
       }
     }
     if (gameContract) {
@@ -95,10 +110,11 @@ const SelectGoal = ({ setUserGoal }) => {
         gameContract.off('GoalNFTlMinted', onGoalMint);
       }
     }
-  }, [gameContract, setUserGoal]);
+  }, [gameContract, setUserGoal, toast]);
   
   const mintAGoal = async (goalID) => {
     try {
+      setMintLoading(true);
       const txn = await gameContract.mintGoalNFT(goalID);
       await txn.wait();
       console.log('txn', txn);
@@ -114,7 +130,7 @@ const SelectGoal = ({ setUserGoal }) => {
             <GridItem key={index}>
               <Text>{goal.name}</Text>
               <Image boxSize='150px' src={goal.imageURI} alt={goal.name} />
-              <Button onClick={() => mintAGoal(index)}>Claim</Button>
+              <Button isLoading={mintLoading} onClick={() => mintAGoal(index)}>Claim</Button>
             </GridItem>
           );
         })}

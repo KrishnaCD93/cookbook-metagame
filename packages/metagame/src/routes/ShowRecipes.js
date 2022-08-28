@@ -6,6 +6,7 @@ import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/re
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import { FaSignature } from 'react-icons/fa';
 import { Cloudinary } from '@cloudinary/url-gen';
+import CreateRecipe from '../components/CreateRecipe';
 
 // TODO: add recipe page with recipeID
 
@@ -81,7 +82,7 @@ const cld = new Cloudinary({
 const ShowRecipes = () => {
   const { data, loading, error } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
-
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Ensure all recipes are loaded and memoize recipe ordered by createdAt
   const recipesMemo = useMemo(() => {
@@ -100,18 +101,24 @@ const ShowRecipes = () => {
   if (error) console.log('recipe error', error)
   
   return (
-    <Skeleton isLoaded={loading ? false : true}>
-      <VStack spacing={2}>
-        <Spacer mt={4} />
-        <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
-          {recipesMemo && recipesMemo.map((recipe, index) => (
-            <GridItem key={index}>
-              <RecipeCard recipe={recipe} cld={cld} />
-            </GridItem>
-          ))}
-        </Grid>
-      </VStack>
-    </Skeleton>
+    <Box>
+      <Box>
+        <Button onClick={onOpen}>Add Recipe</Button>
+        <CreateRecipe isOpen={isOpen} onClose={onClose} />
+      </Box>
+      <Skeleton isLoaded={loading ? false : true}>
+        <VStack spacing={2}>
+          <Spacer mt={4} />
+          <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
+            {recipesMemo && recipesMemo.map((recipe, index) => (
+              <GridItem key={index}>
+                <RecipeCard recipe={recipe} cld={cld} />
+              </GridItem>
+            ))}
+          </Grid>
+        </VStack>
+      </Skeleton>
+    </Box>
   );
 }
 

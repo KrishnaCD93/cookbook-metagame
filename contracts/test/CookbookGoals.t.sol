@@ -46,4 +46,8 @@ contract CookbookGoalsTest is Test, ERC721Holder {
         console2.log("Token URI: ", cookbookGoals.tokenURI(1));
         assertEq(cookbookGoals.balanceOf(address(this)), 1);
     }
+
+    function testGetAllGoals() public {
+        assertEq(cookbookGoals.getAllGoals().length, 3);
+    }
 }
