@@ -1,6 +1,6 @@
 import { gql, useMutation } from '@apollo/client';
 import { useState } from 'react';
-import { GET_RECIPES } from '../routes/ShowRecipes';
+import { GET_RECIPES } from '../routes/recipes/ShowRecipes';
 import { GET_USER_COOKBOOK } from '../routes/YourKitchen';
 
 const CREATE_INGREDIENTS = gql`

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import { useAccount } from 'wagmi'
-import { Cloudinary } from '@cloudinary/url-gen';
+import { cld } from '../App';
 import { AdvancedImage } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import CreateUser from './container/CreateUser'
@@ -20,12 +20,6 @@ const GET_USER = gql`
     }
   }
 `;
-
-const cld = new Cloudinary({
-  cloud: {
-    cloudName: 'cookbook-social'
-  }
-})
 
 const User = () => {
   const { isOpen: createIsOpen, onOpen: createOnOpen, onClose: createOnClose } = useDisclosure()

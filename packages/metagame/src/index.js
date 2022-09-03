@@ -23,10 +23,12 @@ import { publicProvider } from 'wagmi/providers/public'
 
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import ShowRecipes from './routes/ShowRecipes';
+import ShowRecipes from './routes/recipes/ShowRecipes';
 import Home from './routes/Home';
 import About from './routes/About';
 import CookbookGoals from './routes/CookbookGoals';
+import RecipeDetail from './routes/recipes/RecipeDetail';
+import Recipes from './routes/recipes/Recipes';
 
 // TODO: add recipe page with recipeID
 
@@ -89,7 +91,10 @@ root.render(
                 <Route path="/" element={<App />}>
                   <Route index element={<Home />} />
                   <Route path="about" element={<About />} />
-                  <Route path="recipes" element={<ShowRecipes />} />
+                  <Route path="recipes" element={<Recipes />}>
+                    <Route index element={<ShowRecipes />} />
+                    <Route path=":recipeID" element={<RecipeDetail />} />
+                  </Route>
                   <Route path="kitchen" element={<MetaKitchen />} />
                   <Route path="goals" element={<CookbookGoals />} />
                   <Route
