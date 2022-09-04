@@ -1,5 +1,4 @@
-import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox } from "@chakra-ui/react";
-import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
+import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox, Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from "@chakra-ui/react";
 import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react'
@@ -272,33 +271,57 @@ const CreateRecipe = ({ isOpen, onClose }) => {
           <FormProvider {...{ handleSubmit, register, errors, isSubmitting }}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
-                <Tabs>
-                  <TabList>
-                    <Tab>Recipe{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}</Tab>
-                    <Tab>Recipe Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}</Tab>
-                  </TabList>
-                  <TabPanels>
-                    <TabPanel>
+                <Accordion defaultIndex={[0, 1, 2, 3]} allowMultiple>
+                  <AccordionItem>
+                    <h2><AccordionButton>
+                      <Box flex='1' textAlign='left'>
+                        Recipe{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton></h2>
+                    <AccordionPanel>
                       <FormLabel htmlFor="name">
                         <GetRecipeName />
                       </FormLabel>
                       <FormLabel htmlFor="description">
                         <GetDescription />
                       </FormLabel>
-                    </TabPanel>
-                    <TabPanel>
+                    </AccordionPanel>
+                  </AccordionItem>
+                  <AccordionItem>
+                    <h2><AccordionButton>
+                      <Box flex='1' textAlign='left'>
+                        Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton></h2>
+                    <AccordionPanel>
                       <FormLabel htmlFor="ingredients">
                         <GetIngredients />
                       </FormLabel>
-                    </TabPanel>
-                    <TabPanel>
-                      <FormLabel htmlFor="steps">
-                        <GetSteps />
-                      </FormLabel>
-                    </TabPanel>
-                    <TabPanel>
+                    </AccordionPanel>
+                  </AccordionItem>
+                  <AccordionItem>
+                    <h2><AccordionButton>
+                      <Box flex='1' textAlign='left'>
+                        Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton></h2>
+                      <AccordionPanel>
+                        <FormLabel htmlFor="steps">
+                          <GetSteps />
+                        </FormLabel>
+                      </AccordionPanel>
+                  </AccordionItem>
+                  <AccordionItem>
+                    <h2><AccordionButton>
+                      <Box flex='1' textAlign='left'>
+                        Recipe Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton></h2>
+                    <AccordionPanel>
                       <FormLabel htmlFor="tasteProfile">
                         <GetTasteProfile />
                       </FormLabel>
@@ -308,9 +331,9 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                       <FormLabel htmlFor="qualityTags">
                         <GetQualityTags />
                       </FormLabel>
-                    </TabPanel>
-                  </TabPanels>
-                </Tabs>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
                 {/* <FormLabel htmlFor="mintNFT">
                   <GetMintNFT setMintNFT={setMintNFT} />
                 </FormLabel> */}
@@ -360,7 +383,7 @@ function GetRecipeName() {
 
   return (
     <Container p={2} m={2} centerContent>
-    <Text as='u' align='center' fontSize={'large'}>Recipe Name</Text>
+    <Text align='center' fontSize={'large'}>Recipe Name<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
       <Editable
         placeholder="...click to add name, eg. Omellete"
@@ -406,7 +429,7 @@ function GetDescription() {
   const { register, errors } = useFormContext();
   return (
     <Container p={2} m={2} centerContent>
-    <Text as='u' align='center' fontSize={'large'}>Description</Text>
+    <Text align='center' fontSize={'large'}>Description<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
       <Editable
         placeholder="...click to add description, eg. Indian style omelette stuffed with cheese and tomatoes"
@@ -511,17 +534,17 @@ const GetIngredients = () => {
 
   return (
     <Container p={2} m={2} centerContent>
-    <Text as='u' align='center' fontSize={'large'}>Ingredients</Text>
+    <Text align='center' fontSize={'large'}>Ingredients</Text>
     {Array.from({ length: numIngredients }, (_, index) => (
       <Box m={2} p={2}>
         <Flex>
           <Box>
-            <Text>Name</Text>
+            <Text>Name<tspan>*</tspan></Text>
             <GetName index={index} />
             <GetIngredientImage index={index} />
           </Box>
           <Box>
-            <Text>Amount</Text>
+            <Text>Amount<tspan>*</tspan></Text>
             <GetAmount index={index} />
           </Box>
         </Flex>
@@ -550,7 +573,7 @@ const GetSteps = () => {
       <>
       <Tooltip label="Step title">
         <Input py={2} px={2} placeholder="...title, eg. prepare egg mix" isInvalid={false}
-        {...register(`steps[${index}].stepName`, {required: 'Step title'})} />
+        {...register(`steps[${index}].stepName`, {required: 'Add a step title'})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].name && (
         <FormErrorMessage>
@@ -654,31 +677,31 @@ const GetSteps = () => {
 
 return (
   <Container p={2} m={2} centerContent>
-  <Text as='u' align='center' fontSize={'large'}>Steps</Text>
+  <Text align='center' fontSize={'large'}>Steps</Text>
   <Wrap>
   {Array.from({ length: numSteps }, (_, index) => (
     <WrapItem key={index} borderRadius={2}>
       <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
-        <Text as='u' align='center'>Step {index + 1}</Text>
+        <Text align='center'>Step {index + 1}<tspan>*</tspan></Text>
         <Box>
           <GetStepName index={index} />
         </Box>
         <Box>
           <Box>
-            <Text mt={2} as='u'>Action</Text>
+            <Text mt={2}>Action<tspan>*</tspan></Text>
             <GetAction index={index} />
             <GetActionImage index={index} />
           </Box>
         </Box>
         <Box>
           <Box>
-            <Text mt={2} as='u'>Trigger</Text>
+            <Text mt={2}>Trigger</Text>
             <GetTrigger index={index} />
             <GetTriggerImage index={index} />
           </Box>
         </Box>
         <Box>
-          <Text mt={2} as='u'>Comments</Text>
+          <Text mt={2}>Comments</Text>
           <GetStepComments index={index} />
         </Box>
       </VStack>
@@ -785,7 +808,7 @@ function GetTasteProfile() {
   }
   return (
     <Container centerContent>
-      <Text align='center' as='u' fontSize={'large'}>Taste Profile</Text>
+      <Text align='center' fontSize={'large'}>Taste Profile<tspan>*</tspan></Text>
       <Grid templateColumns={'repeat(auto-fit, minmax(200px, 1fr))'} gap={2}>
         <GridItem>
           <GetSaltRating />
@@ -816,7 +839,7 @@ function GetEquipment() {
   
   return (
     <Container p={2} m={2} centerContent>
-      <Text as='u' align='center' fontSize={'large'}>Equipment</Text>
+      <Text align='center' fontSize={'large'}>Equipment</Text>
       <Tooltip label="List the equipment used, separated by commas.">
         <Input py={2} px={2} isInvalid={false} {...register('equipment')} />
       </Tooltip>
@@ -830,7 +853,7 @@ function GetQualityTags() {
 
   return (
     <Container p={2} m={2} centerContent>
-      <Text as='u' align='center' fontSize={'large'}>Quality Tags</Text>
+      <Text align='center' fontSize={'large'}>Quality Tags</Text>
       <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
         <Input py={2} px={2} isInvalid={false}
           {...register('qualityTags')} />
@@ -843,7 +866,7 @@ function GetQualityTags() {
 function GetMintNFT({ setMintNFT }) {
   return (
     <Container p={2} m={2} centerContent>
-      <Text as='u' mb={2} align='center' fontSize={'large'}>Mint NFT</Text>
+      <Text mb={2} align='center' fontSize={'large'}>Mint NFT</Text>
       <Tooltip label="Do you want to mint an NFT of the recipe?">
         <Checkbox
           label="Mint NFT"
