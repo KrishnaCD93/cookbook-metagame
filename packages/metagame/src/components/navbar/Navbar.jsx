@@ -27,7 +27,7 @@ const Navbar = ({ children, ...props}) => {
 function Logo(props) {
   return (
     <Link as={NavLink} to='/'>
-      <Box {...props}>
+      <Box m={2} {...props}>
         <Image src={props.logo} alt="Logo" />
       </Box>
     </Link>
