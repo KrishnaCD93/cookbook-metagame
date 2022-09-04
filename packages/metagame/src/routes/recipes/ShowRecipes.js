@@ -1,10 +1,10 @@
-import { Badge, Box, Button, Checkbox, Divider, Grid, GridItem, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Spinner, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Checkbox, Divider, Grid, GridItem, Heading, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Spinner, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
 import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
-import { FaExternalLinkAlt, FaSignature } from 'react-icons/fa';
+import { FaComment, FaExternalLinkAlt, FaSignature } from 'react-icons/fa';
 import { cld } from '../../App';
 import CreateRecipe from '../../components/CreateRecipe';
 import { Link } from 'react-router-dom';
@@ -96,6 +96,7 @@ const ShowRecipes = () => {
   
   return (
     <Box>
+      <Heading>Recipes</Heading>
       <Box>
         <Button m={2} onClick={onOpen}>Add Recipe</Button>
         <CreateRecipe isOpen={isOpen} onClose={onClose} />
@@ -228,7 +229,7 @@ export const Recipe = ({ recipeData, ingredients, steps, tasteProfile }) => {
   )
 }
 
-export const Ingredients = ({ ingredients }) => {
+const Ingredients = ({ ingredients }) => {
   return (
     <Grid templateColumns="repeat(auto-fit)" gap={4}>
     {ingredients && ingredients.map((ingredient, index) => (
@@ -236,9 +237,9 @@ export const Ingredients = ({ ingredients }) => {
       <Popover>
         <PopoverTrigger>
           <Box fontSize="md" m={2}>
-            {ingredient.comments && <Button variant='ghost' size='sm'>🔘</Button>}
             <Text>{ingredient.quantity}</Text>
             <Text>{ingredient.name}</Text>
+            {ingredient.comments && <Icon as={FaComment} />}
           </Box>
         </PopoverTrigger>
         {ingredient.comments && <PopoverContent>
@@ -258,7 +259,7 @@ export const Ingredients = ({ ingredients }) => {
   );
 }
 
-export const Steps = ({ steps }) => {
+const Steps = ({ steps }) => {
   return (
     <Wrap spacing={4}>
     {steps && steps.map((step, index) => (
@@ -281,7 +282,7 @@ export const Steps = ({ steps }) => {
   );
 }
 
-export const TasteProfile = ({ tasteProfile }) => {
+const TasteProfile = ({ tasteProfile }) => {
   return (
     <>
     {tasteProfile &&
