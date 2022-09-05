@@ -75,7 +75,7 @@ export const GET_RECIPES = gql`
 `;
 
 const ShowRecipes = () => {
-  const { data, loading, error } = useQuery(GET_RECIPES);
+  const { data, loading, error, client } = useQuery(GET_RECIPES);
   const [recipes, setRecipes] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -106,7 +106,13 @@ const ShowRecipes = () => {
           <Spacer mt={4} />
           <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
             {recipesMemo && recipesMemo.map((recipe, index) => (
-              <GridItem key={index}>
+              <GridItem key={index}
+              onMouseOver={() => 
+                client.query({
+                  query: GET_RECIPE_WITH_DATA,
+                  variables: { recipeID: recipe._id }
+                })
+              }>
                 <RecipeCard recipe={recipe} cld={cld} />
               </GridItem>
             ))}

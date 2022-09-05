@@ -1,5 +1,5 @@
-import { EditablePreview, useColorModeValue, IconButton, Input, useEditableControls, ButtonGroup, Editable, Tooltip, EditableInput, EditableTextarea, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox, Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from "@chakra-ui/react";
-import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
+import { IconButton, Input, ButtonGroup, Tooltip, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox, Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react'
 import React, { useState, useRef } from 'react';
@@ -351,26 +351,6 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   )
 }
 
-// Editable controls for recipe name and description
-function EditableControls() {
-    const {
-      isEditing,
-      getSubmitButtonProps,
-      getCancelButtonProps
-    } = useEditableControls();
-
-    return isEditing ? (
-      <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
-        <IconButton border='1px'
-          icon={<CheckIcon />} {...getSubmitButtonProps()} />
-        <IconButton border='1px'
-          icon={<CloseIcon boxSize={3} />}
-          {...getCancelButtonProps()}
-        />
-      </ButtonGroup>
-    ) : null;
-  }
-
 // Function to get recipe name
 function GetRecipeName() {
   const { register, errors } = useFormContext();
@@ -385,26 +365,13 @@ function GetRecipeName() {
     <Container p={2} m={2} centerContent>
     <Text align='center' fontSize={'large'}>Recipe Name<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
-      <Editable
-        placeholder="...click to add name, eg. Omellete"
-        isPreviewFocusable={true}
-        selectAllOnFocus={false}>
-        <Tooltip label="Give your recipe a name.">
-          <EditablePreview
-            py={2}
-            px={2}
-            _hover={{
-              background: useColorModeValue('gray.100', 'gray.700')
-            }}
-          />
-        </Tooltip>
-        <Input py={2} px={2} as={EditableInput} isInvalid={false}
+      <Tooltip label="Give your recipe a name.">
+        <Input py={2} px={2} isInvalid={false}
         {...register('name', {required: 'Give your recipe a name'})} />
-        <FormErrorMessage>
-          {errors.name && errors.name.message}
-        </FormErrorMessage>
-        <EditableControls />
-      </Editable>
+      </Tooltip>
+      <FormErrorMessage>
+        {errors.name && errors.name.message}
+      </FormErrorMessage>
     </Container>
     <IconButton icon={<FaImage />} onClick={imageUpload}
       border='1px' />
@@ -431,27 +398,13 @@ function GetDescription() {
     <Container p={2} m={2} centerContent>
     <Text align='center' fontSize={'large'}>Description<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
-      <Editable
-        placeholder="...click to add description, eg. Indian style omelette stuffed with cheese and tomatoes"
-        isPreviewFocusable={true}
-        selectAllOnFocus={false}>
-        <Tooltip label="Add a short description of the dish.">
-          <EditablePreview
-            py={2}
-            px={2}
-            color={'brand.600'}
-            _hover={{
-              background: useColorModeValue('gray.100', 'gray.700')
-            }}
-          />
-        </Tooltip>
-        <Input py={2} px={2} as={EditableTextarea} isInvalid={false}
+      <Tooltip label="Add a short description of the dish.">
+        <Input py={2} px={2} isInvalid={false}
           {...register('description', {required: 'Add a short description of the dish'})} />
-          <FormErrorMessage>
-            {errors.description && errors.description.message}
-          </FormErrorMessage>
-        <EditableControls />
-      </Editable>
+      </Tooltip>
+        <FormErrorMessage>
+          {errors.description && errors.description.message}
+        </FormErrorMessage>
     </Container>
     </Container>
   )

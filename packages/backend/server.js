@@ -3,7 +3,17 @@ const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./type-defs/typeDefs');
 const resolvers = require('./resolvers/resolvers');
-const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core');
+const {
+  ApolloServerPluginLandingPageProductionDefault,
+  ApolloServerPluginLandingPageLocalDefault
+} = require('apollo-server-core');
+
+let plugins = [];
+if (process.env.NODE_ENV === 'production') {
+  plugins = [ApolloServerPluginLandingPageProductionDefault({ embed: true, graphRef: 'myGraph@prod' })]
+} else {
+  plugins = [ApolloServerPluginLandingPageLocalDefault({ embed: true })]
+}
 
 const server = new ApolloServer({
   typeDefs, 
@@ -17,9 +27,7 @@ const server = new ApolloServer({
     const signature = signatureBearer.split(' ')[1];
     return { signature };
   },
-  plugins: [
-    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-  ],
+  plugins: plugins
 });
 
 async function startApolloServer(server) {
