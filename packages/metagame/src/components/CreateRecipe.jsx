@@ -1,7 +1,8 @@
-import { IconButton, Input, ButtonGroup, Tooltip, Container, CSSReset, Box, Text, Textarea, VStack, Grid, GridItem, Wrap, WrapItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox, Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from "@chakra-ui/react";
+import { IconButton, Input, ButtonGroup, Tooltip, Container, CSSReset, Box, Text, Textarea, Grid, GridItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox } from "@chakra-ui/react";
+import { Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from '@chakra-ui/react';
 import { CloseIcon } from "@chakra-ui/icons";
-import { useForm, FormProvider, useFormContext } from 'react-hook-form'
-import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react'
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react';
 import React, { useState, useRef } from 'react';
 import { FaImage } from 'react-icons/fa';
 import useApolloMutations from "../hooks/useApolloMutations";
@@ -20,7 +21,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   const [userID, setUserID] = useState('');
   const [imageCid, setimageCid] = useState('');
   const [mintNFT, setMintNFT] = useState(false);
-  const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
+  const { handleSubmit, register, getValues, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
   const { isConnected, address: accountInfo } = useAccount();
   const { data: signer } = useSigner();
@@ -268,14 +269,14 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         <ModalHeader>Create Recipe</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <FormProvider {...{ handleSubmit, register, errors, isSubmitting }}>
+          <FormProvider {...{ handleSubmit, register, getValues, errors, isSubmitting }}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
                 <Accordion defaultIndex={[0, 1, 2, 3]} allowMultiple>
                   <AccordionItem>
                     <h2><AccordionButton>
                       <Box flex='1' textAlign='left'>
-                        Recipe{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}
+                        Add Recipe Information{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -291,7 +292,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   <AccordionItem>
                     <h2><AccordionButton>
                       <Box flex='1' textAlign='left'>
-                        Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}
+                        Add Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -304,7 +305,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   <AccordionItem>
                     <h2><AccordionButton>
                       <Box flex='1' textAlign='left'>
-                        Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}
+                        Add Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -317,7 +318,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   <AccordionItem>
                     <h2><AccordionButton>
                       <Box flex='1' textAlign='left'>
-                        Recipe Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}
+                        Add Recipe Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -363,7 +364,7 @@ function GetRecipeName() {
 
   return (
     <Container p={2} m={2} centerContent>
-    <Text align='center' fontSize={'large'}>Recipe Name<tspan>*</tspan></Text>
+    <Text align='center'>Recipe Name<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
       <Tooltip label="Give your recipe a name.">
         <Input py={2} px={2} isInvalid={false}
@@ -396,7 +397,7 @@ function GetDescription() {
   const { register, errors } = useFormContext();
   return (
     <Container p={2} m={2} centerContent>
-    <Text align='center' fontSize={'large'}>Description<tspan>*</tspan></Text>
+    <Text align='center'>Description<tspan>*</tspan></Text>
     <Container p={2} m={2} centerContent>
       <Tooltip label="Add a short description of the dish.">
         <Input py={2} px={2} isInvalid={false}
@@ -414,6 +415,10 @@ function GetDescription() {
 const GetIngredients = () => {
   const { register, errors } = useFormContext();
   const [numIngredients, setNumIngredients] = useState(1);
+  const [ingredients, setIngredients] = useState([{
+    name: '',
+    quantity: ''
+  }]);
 
   // Function to get the name of the ingredient
   function GetName({ index }) {
@@ -421,7 +426,13 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Name of the ingredient">
         <Input py={2} px={2} placeholder="...name, eg. eggs" isInvalid={false}
-        {...register(`ingredients[${index}].name`, {required: 'Name of the ingredient'})} />
+        {...register(`ingredients[${index}].name`, {required: 'Name of the ingredient',
+          onChange: (event) => {
+            const newIngredients = [...ingredients];
+            newIngredients[index].name = event.target.value;
+            setIngredients(newIngredients);
+          }
+        })} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].name && (
         <FormErrorMessage>
@@ -438,7 +449,13 @@ const GetIngredients = () => {
       <>
       <Tooltip label="Add the quantity of the ingredient">
         <Input py={2} px={2} placeholder="...amount, eg. 2, large" isInvalid={false}
-        {...register(`ingredients[${index}].quantity`, {required: 'Add the quantity of the ingredient'})} />
+        {...register(`ingredients[${index}].quantity`, {required: 'Add the quantity of the ingredient',
+          onChange: (event) => {
+            const newIngredients = [...ingredients];
+            newIngredients[index].quantity = event.target.value;
+            setIngredients(newIngredients);
+          }
+        })} />
       </Tooltip>
       {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].quantity && (
         <FormErrorMessage>
@@ -452,10 +469,17 @@ const GetIngredients = () => {
   // Function to get the ingredient's meta: the effect on the recipe's taste
   function GetIngredientComments({ index }) {
     return (
+      <>
       <Tooltip label="Add any comments about the ingredient">
         <Textarea py={2} px={2} placeholder="...comments, eg. Organic free roam eggs" isInvalid={false}
-        {...register(`ingredients[${index}].comments`)} />
+        {...register(`ingredients[${index}].comments`, {
+          maxLength: {value: 280, message: 'comments must be less than 280 characters'}})} />
       </Tooltip>
+      {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].comments && (
+      <FormErrorMessage>
+        {errors.ingredients[index].comments && errors.ingredients[index].comments.message}
+      </FormErrorMessage>)}
+      </>
     )
   }
 
@@ -487,31 +511,60 @@ const GetIngredients = () => {
 
   return (
     <Container p={2} m={2} centerContent>
-    <Text align='center' fontSize={'large'}>Ingredients</Text>
-    {Array.from({ length: numIngredients }, (_, index) => (
-      <Box m={2} p={2}>
-        <Flex>
-          <Box>
-            <Text>Name<tspan>*</tspan></Text>
-            <GetName index={index} />
-            <GetIngredientImage index={index} />
-          </Box>
-          <Box>
-            <Text>Amount<tspan>*</tspan></Text>
-            <GetAmount index={index} />
-          </Box>
-        </Flex>
-        <Text>Comments</Text>
-        <GetIngredientComments index={index} />
+      <Text align='center'>Ingredients</Text>
+      {Array.from({ length: numIngredients }, (_, index) => (
+        <Box w='100%'>
+          <Accordion allowMultiple>
+            <AccordionItem>
+              {({ isExpanded }) => (
+              <>
+              <h2>
+              <AccordionButton color={(errors.ingredients && errors.ingredients[index]) ? 'red.500' : ''}>
+                <Box flex='1' textAlign='left'>
+                  {isExpanded ? <Text>Ingredient #{`${index+1}`}</Text> : 
+                  <Text>
+                    {(ingredients[index] && ingredients[index].name) ? `${ingredients[index].name}` : 
+                    `Ingredient #${index+1}`}
+                  </Text>}
+                </Box>
+                <Flex>
+                {isExpanded ? <Text>QTY</Text> : 
+                <Text>
+                  {(ingredients[index] && ingredients[index].quantity) ? 
+                  `${ingredients[index].quantity}` : 'QTY'}
+                </Text>}
+                <AccordionIcon />
+                </Flex>
+              </AccordionButton>
+              </h2>
+            <AccordionPanel>
+              <Box>
+                <Text>Name<tspan>*</tspan></Text>
+                <GetName index={index} />
+                <GetIngredientImage index={index} />
+              </Box>
+              <Box>
+                <Text>Amount<tspan>*</tspan></Text>
+                <GetAmount index={index} />
+              </Box>
+              <Box>
+                <Text>Comments</Text>
+                <GetIngredientComments index={index} />
+              </Box>
+            </AccordionPanel>
+              </>
+              )}
+            </AccordionItem>
+          </Accordion>
         </Box>
-    ))}
-    <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
-      <Button onClick={() => setNumIngredients(numIngredients + 1)}
-        border='1px' >＋ Ingredient</Button>
-      <IconButton icon={<CloseIcon boxSize={3} />} onClick={() => setNumIngredients(numIngredients - 1)} 
-        border='1px' />
-    </ButtonGroup>
-    </Container>
+      ))}
+      <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
+        <Button onClick={() => setNumIngredients(numIngredients + 1)}
+          border='1px' >＋ Ingredient</Button>
+        <IconButton icon={<CloseIcon boxSize={3} />} onClick={() => setNumIngredients(numIngredients - 1)} 
+          border='1px' />
+      </ButtonGroup>
+      </Container>
   )
 }
 
@@ -519,6 +572,10 @@ const GetIngredients = () => {
 const GetSteps = () => {
   const { register, errors } = useFormContext();
   const [numSteps, setNumSteps] = useState(1);
+  const [steps, setSteps] = useState([{
+    name: '',
+    action: '',
+  }]);
 
   // Function to get the name of the step
   function GetStepName({ index }) {
@@ -526,7 +583,13 @@ const GetSteps = () => {
       <>
       <Tooltip label="Step title">
         <Input py={2} px={2} placeholder="...title, eg. prepare egg mix" isInvalid={false}
-        {...register(`steps[${index}].stepName`, {required: 'Add a step title'})} />
+        {...register(`steps[${index}].stepName`, {required: 'Add a step title',
+          onChange: (event) => {
+            const newSteps = [...steps];
+            newSteps[index].stepName = event.target.value;
+            setSteps(newSteps);
+          }
+        })} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].name && (
         <FormErrorMessage>
@@ -544,7 +607,13 @@ const GetSteps = () => {
       <Tooltip label="What're the actions for this step of the recipe?">
         <Textarea py={2} px={2} placeholder="...action, eg. crack eggs into a bowl, use a fork to mix with salt and pepper" isInvalid={false}
           {...register(`steps[${index}].action`, {required: 'What\'re the actions for this step of the recipe?', 
-          maxLength: {value: 280, message: 'Action must be less than 280 characters'}})} />
+          maxLength: {value: 280, message: 'Action must be less than 280 characters',
+            onChange: (event) => {
+              const newSteps = [...steps];
+              newSteps[index].action = event.target.value;
+              setSteps(newSteps);
+            }
+          }})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].action && (
       <FormErrorMessage>
@@ -572,7 +641,7 @@ const GetSteps = () => {
       <Tooltip label="How does the action(s) taken in this step affect the taste?">
         <Textarea py={2} px={2} placeholder="...comments, eg. replace pepper with red chilli powder to make it spicy" isInvalid={false}
           {...register(`steps[${index}].comments`, {
-          maxLength: {value: 280, message: 'Meta must be less than 280 characters'}})} />
+          maxLength: {value: 280, message: 'comments must be less than 280 characters'}})} />
       </Tooltip>
       {errors.steps && errors.steps[index] && errors.steps[index].comments && (
       <FormErrorMessage>
@@ -630,37 +699,55 @@ const GetSteps = () => {
 
 return (
   <Container p={2} m={2} centerContent>
-  <Text align='center' fontSize={'large'}>Steps</Text>
-  <Wrap>
+  <Text align='center'>Steps</Text>
   {Array.from({ length: numSteps }, (_, index) => (
-    <WrapItem key={index} borderRadius={2}>
-      <VStack justifyContent="space-between" alignItems="center" mt={4} p={2}>
-        <Text align='center'>Step {index + 1}<tspan>*</tspan></Text>
-        <Box>
-          <GetStepName index={index} />
-        </Box>
-        <Box>
-          <Box>
-            <Text mt={2}>Action<tspan>*</tspan></Text>
-            <GetAction index={index} />
-            <GetActionImage index={index} />
-          </Box>
-        </Box>
-        <Box>
-          <Box>
-            <Text mt={2}>Trigger</Text>
-            <GetTrigger index={index} />
-            <GetTriggerImage index={index} />
-          </Box>
-        </Box>
-        <Box>
-          <Text mt={2}>Comments</Text>
-          <GetStepComments index={index} />
-        </Box>
-      </VStack>
-    </WrapItem>
+    <Box w='100%'>
+      <Accordion allowMultiple>
+        <AccordionItem>
+          {({ isExpanded }) => (
+            <>
+            <h2>
+              <AccordionButton color={(errors.steps && errors.steps[index]) ? 'red.500' : ''}>
+                <Box flex='1' textAlign='left'>
+                  {isExpanded ? <Text>Step #{`${index+1}`}</Text> : 
+                  <Text>
+                    {(steps[index] && steps[index].name) ? `${steps[index].name}` : 
+                    `Step #${index+1}`}
+                  </Text>}
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel>
+              <Box>
+              <Text align='center'>Step Title<tspan>*</tspan></Text>
+                <GetStepName index={index} />
+              </Box>
+              <Box>
+                <Box>
+                  <Text mt={2}>Action<tspan>*</tspan></Text>
+                  <GetAction index={index} />
+                  <GetActionImage index={index} />
+                </Box>
+              </Box>
+              <Box>
+                <Box>
+                  <Text mt={2}>Trigger</Text>
+                  <GetTrigger index={index} />
+                  <GetTriggerImage index={index} />
+                </Box>
+              </Box>
+              <Box>
+                <Text mt={2}>Comments</Text>
+                <GetStepComments index={index} />
+              </Box>
+            </AccordionPanel>
+            </>
+          )}
+        </AccordionItem>
+      </Accordion>
+    </Box>
   ))}
-  </Wrap>
   <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
     <Button onClick={() => setNumSteps(numSteps + 1)}
     border='1px'>＋ Step</Button>
@@ -761,7 +848,7 @@ function GetTasteProfile() {
   }
   return (
     <Container centerContent>
-      <Text align='center' fontSize={'large'}>Taste Profile<tspan>*</tspan></Text>
+      <Text align='center'>Taste Profile<tspan>*</tspan></Text>
       <Grid templateColumns={'repeat(auto-fit, minmax(200px, 1fr))'} gap={2}>
         <GridItem>
           <GetSaltRating />
@@ -792,7 +879,7 @@ function GetEquipment() {
   
   return (
     <Container p={2} m={2} centerContent>
-      <Text align='center' fontSize={'large'}>Equipment</Text>
+      <Text align='center'>Equipment</Text>
       <Tooltip label="List the equipment used, separated by commas.">
         <Input py={2} px={2} isInvalid={false} {...register('equipment')} />
       </Tooltip>
@@ -806,7 +893,7 @@ function GetQualityTags() {
 
   return (
     <Container p={2} m={2} centerContent>
-      <Text align='center' fontSize={'large'}>Quality Tags</Text>
+      <Text align='center'>Quality Tags</Text>
       <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
         <Input py={2} px={2} isInvalid={false}
           {...register('qualityTags')} />
@@ -819,7 +906,7 @@ function GetQualityTags() {
 function GetMintNFT({ setMintNFT }) {
   return (
     <Container p={2} m={2} centerContent>
-      <Text mb={2} align='center' fontSize={'large'}>Mint NFT</Text>
+      <Text mb={2} align='center'>Mint NFT</Text>
       <Tooltip label="Do you want to mint an NFT of the recipe?">
         <Checkbox
           label="Mint NFT"

@@ -9,8 +9,6 @@ import * as serviceWorker from './serviceWorker';
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 
-import MetaKitchen from './routes/YourKitchen';
-
 import {
   WagmiConfig,
   createClient,
@@ -27,6 +25,7 @@ import ShowRecipes from './routes/recipes/ShowRecipes';
 import Home from './routes/Home';
 import About from './routes/About';
 import CookbookGoals from './routes/CookbookGoals';
+import MetaKitchen from './routes/YourKitchen';
 import RecipeDetail from './routes/recipes/RecipeDetail';
 import Recipes from './routes/recipes/Recipes';
 
