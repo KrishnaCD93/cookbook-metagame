@@ -6,12 +6,12 @@ import { AdvancedImage } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import CreateUser from './container/CreateUser'
 import { useDisclosure } from '@chakra-ui/hooks';
-import { Box, Icon, IconButton } from '@chakra-ui/react';
+import { Box, Icon, IconButton, Spinner } from '@chakra-ui/react';
 import { FaUserCircle, FaUserPlus } from 'react-icons/fa';
 import UpdateUser from './container/UpdateUser';
 
 const GET_USER = gql`
-  query RecipeWithData($userID: String!) {
+  query UserData($userID: String!) {
     user(userID: $userID) {
       userID
       name
@@ -29,7 +29,7 @@ const User = () => {
   const { address } = useAccount()
   const [user, setUser] = useState('0x0')
   const [image, setImage] = useState(null)
-  const { error, data } = useQuery(GET_USER, { variables: { userID: `${user}` } });
+  const { loading, error, data } = useQuery(GET_USER, { variables: { userID: `${user}` } });
   useEffect(() => {
     if (address) {
       setUser(address)
@@ -37,11 +37,17 @@ const User = () => {
   }, [address])
   useEffect(() => {
     if (data && data.user && data.user.imageCid) {
-      const img = cld.image(data.user.imageCid)
-      img.resize(scale().width(50).height(50));
-      setImage(img)
+      try{
+        const img = cld.image(data.user.imageCid)
+        img.resize(scale().width(50).height(50));
+        setImage(img)
+      } catch(e) {
+        console.log(e)
+      }
     }
   }, [data])
+
+  if (loading) return <Spinner />
 
   if (error) console.log('user error', error)
 

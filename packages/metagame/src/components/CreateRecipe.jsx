@@ -21,7 +21,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   const [userID, setUserID] = useState('');
   const [imageCid, setimageCid] = useState('');
   const [mintNFT, setMintNFT] = useState(false);
-  const { handleSubmit, register, getValues, formState: { errors, isSubmitting } } = useForm()
+  const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
   const toast = useToast()
   const { isConnected, address: accountInfo } = useAccount();
   const { data: signer } = useSigner();
@@ -269,7 +269,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         <ModalHeader>Create Recipe</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <FormProvider {...{ handleSubmit, register, getValues, errors, isSubmitting }}>
+          <FormProvider {...{ handleSubmit, register, errors, isSubmitting }}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
                 <Accordion defaultIndex={[0, 1, 2, 3]} allowMultiple>
@@ -514,7 +514,7 @@ const GetIngredients = () => {
       <Text align='center'>Ingredients</Text>
       {Array.from({ length: numIngredients }, (_, index) => (
         <Box w='100%'>
-          <Accordion allowMultiple>
+          <Accordion defaultIndex={[0]} allowMultiple>
             <AccordionItem>
               {({ isExpanded }) => (
               <>
@@ -702,7 +702,7 @@ return (
   <Text align='center'>Steps</Text>
   {Array.from({ length: numSteps }, (_, index) => (
     <Box w='100%'>
-      <Accordion allowMultiple>
+      <Accordion defaultIndex={[0]} allowMultiple>
         <AccordionItem>
           {({ isExpanded }) => (
             <>
@@ -766,7 +766,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How salty is this recipe? 0 = not salty, 5 = very salty">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Salt Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Salt Rating 0-5, eg. 1'
           {...register('tasteProfile.salt', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.salt && errors.tasteProfile.salt.message && (
@@ -780,7 +780,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How sweet is this recipe? 0 = not sweet, 5 = very sweet">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sweet Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sweet Rating 0-5, eg. 2'
           {...register('tasteProfile.sweet', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.sweet && errors.tasteProfile.sweet.message && (
@@ -794,7 +794,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How sour is this recipe? 0 = not sour, 5 = very sour">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sour Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sour Rating 0-5, eg. 3'
           {...register('tasteProfile.sour', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.sour && errors.tasteProfile.sour.message && (
@@ -808,7 +808,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How bitter is this recipe? 0 = not bitter, 5 = very bitter">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Bitter Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Bitter Rating 0-5, eg. 4'
           {...register('tasteProfile.bitter', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.bitter && errors.tasteProfile.bitter.message && (
@@ -822,7 +822,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How spicy is this recipe? 0 = not spicy, 5 = very spicy">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Spice Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Spice Rating 0-5, eg. 5'
           {...register('tasteProfile.spice', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.spice && errors.tasteProfile.spice.message && (
@@ -836,7 +836,7 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How umami is this recipe? 0 = not umami, 5 = very umami">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Umami Rating'
+        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Umami Rating 0-5, eg. 0'
           {...register('tasteProfile.umami', {min: 0, max: 5})} />
       </Tooltip>
       {errors.tasteProfile && errors.tasteProfile.umami && errors.tasteProfile.umami.message && (
@@ -881,7 +881,8 @@ function GetEquipment() {
     <Container p={2} m={2} centerContent>
       <Text align='center'>Equipment</Text>
       <Tooltip label="List the equipment used, separated by commas.">
-        <Input py={2} px={2} isInvalid={false} {...register('equipment')} />
+        <Input py={2} px={2} isInvalid={false} placeholder='Equipment, eg. oven, pot, pan'
+        {...register('equipment')} />
       </Tooltip>
     </Container>
   )
@@ -895,7 +896,7 @@ function GetQualityTags() {
     <Container p={2} m={2} centerContent>
       <Text align='center'>Quality Tags</Text>
       <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
-        <Input py={2} px={2} isInvalid={false}
+        <Input py={2} px={2} isInvalid={false} placeholder='Quality Tags, eg. easy, tasty, serve with rice'
           {...register('qualityTags')} />
       </Tooltip>
     </Container>

@@ -1,15 +1,14 @@
-import { Badge, Box, Button, Checkbox, Divider, Grid, GridItem, Heading, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spacer, Spinner, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
+import { Badge, Box, Button, Grid, GridItem, Heading, Icon, Spacer, Spinner, Text, VStack } from '@chakra-ui/react';
 import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { gql, useLazyQuery, useQuery } from '@apollo/client';
 import { AdvancedImage, responsive, lazyload, placeholder } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
-import { FaComment, FaExternalLinkAlt, FaSignature } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaSignature } from 'react-icons/fa';
 import { cld } from '../../App';
 import CreateRecipe from '../../components/CreateRecipe';
 import { Link } from 'react-router-dom';
-
-// TODO: add recipe page with recipeID
+import { Recipe } from './RecipeDetail';
 
 export const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {
@@ -104,7 +103,7 @@ const ShowRecipes = () => {
       {loading ? <Spinner  /> :
         <VStack spacing={2}>
           <Spacer mt={4} />
-          <Grid templateColumns={{md: 'repeat(3, 1fr)', base: 'repeat(1, 1fr)'}}>
+          <Grid templateColumns={{base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)'}}>
             {recipesMemo && recipesMemo.map((recipe, index) => (
               <GridItem key={index}
               onMouseOver={() => 
@@ -161,14 +160,14 @@ const RecipeCard = ({ recipe }) => {
   
   return (
     <>
-    <Box p={2} m={2} boxShadow='md' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', bg: 'gray.400' }}>
+    <Box mt={2} mb={2} boxShadow='inner' borderRadius={4} onClick={() => showRecipe(recipe)} _hover={{ cursor: 'pointer', bg: 'gray.400' }}>
       <VStack spacing={4} align="center">
-        <Text fontSize="large">{recipe.name}
-          {recipe.signature && <Icon as={FaSignature} size="1.5em" color='blue' ml={2} mb={2} />}
-        </Text>
         {recipe.imageCid && <AdvancedImage cldImg={image} 
         plugins={[lazyload(), responsive(100), placeholder()]} 
         />}
+        <Text fontSize="large">{recipe.name}
+          {recipe.signature && <Icon as={FaSignature} size="1.5em" color='blue' ml={2} mb={2} />}
+        </Text>
         {recipe.description && <Text fontSize='md'>{recipe.description}</Text>}
         {recipe.qualityTags && recipe.qualityTags.split(',').map((tag, index) => (
           <Badge key={index} colorScheme='teal' variant='subtle'>{tag}</Badge>
@@ -191,8 +190,7 @@ const RecipeModal = (props) => {
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          {recipeData && recipeData.name &&
-          <Link to={`/recipes/${recipeData._id}`}><FaExternalLinkAlt /></Link>}
+          <Link to={`/recipes/${recipeData._id}`}><Icon as={FaExternalLinkAlt} /></Link>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -200,111 +198,6 @@ const RecipeModal = (props) => {
         </ModalBody>
       </ModalContent>
     </Modal>
-  );
-}
-
-export const Recipe = ({ recipeData, ingredients, steps, tasteProfile }) => {
-  return (
-    <VStack spacing={4} align="center" divider={<Divider />}>
-      {recipeData && recipeData.description && <Text fontSize="large">{recipeData.description}</Text>}
-      {tasteProfile && <TasteProfile tasteProfile={tasteProfile} />}
-      {ingredients && <>
-        <Text as='b' fontSize="large">Ingredients</Text>
-        <Ingredients ingredients={ingredients} />
-      </>}
-      {steps && <>
-        <Text as='b' fontSize="large">Steps</Text>
-        <Steps steps={steps} />
-      </>}
-      {recipeData && recipeData.equipment && <>
-        <Text as='b' fontSize="large">Equipment</Text>
-        {recipeData.equipment.split(',').map((equipment, index) => (
-          <Text key={index}>{equipment}</Text>
-        ))}
-      </>}
-      {recipeData && recipeData.qualityTags && 
-        <>
-        <Text as='b' fontSize="large">Quality Tags</Text>
-        {recipeData.qualityTags.split(',').map((tag, index) => (
-        <Text key={index}>{tag}</Text>
-        ))}
-        </>}
-      {recipeData && recipeData.userID && <Text>Created by {recipeData.userID}</Text>}
-      {recipeData && recipeData.createdAt && <Text fontSize="md">Created On: {recipeData.createdAt.split("T")[0]}</Text>}
-    </VStack>
-  )
-}
-
-const Ingredients = ({ ingredients }) => {
-  return (
-    <Grid templateColumns="repeat(auto-fit)" gap={4}>
-    {ingredients && ingredients.map((ingredient, index) => (
-    <GridItem key={index} spacing={4} align="center" boxShadow='md' borderRadius={2} _hover={{ cursor: 'pointer', boxShadow: 'dark-lg' }}>
-      <Popover>
-        <PopoverTrigger>
-          <Box fontSize="md" m={2}>
-            <Text>{ingredient.quantity}</Text>
-            <Text>{ingredient.name}</Text>
-            {ingredient.comments && <Icon as={FaComment} />}
-          </Box>
-        </PopoverTrigger>
-        {ingredient.comments && <PopoverContent>
-          <PopoverArrow />
-          <PopoverCloseButton />
-          <PopoverHeader>
-            <Text fontSize="md">{ingredient.name}</Text>
-          </PopoverHeader>
-          <PopoverBody>
-            <Text fontSize="md">Comments: {ingredient.comments}</Text>
-          </PopoverBody>
-        </PopoverContent>}
-      </Popover>
-    </GridItem>
-    ))}
-    </Grid>
-  );
-}
-
-const Steps = ({ steps }) => {
-  return (
-    <Wrap spacing={4}>
-    {steps && steps.map((step, index) => (
-    <WrapItem key={index} spacing={4} alignItems="center" boxShadow="sm" justifyContent="center" align='center'>
-      <Box>
-        <Text fontSize="md">{index + 1}</Text>
-        {step.stepName && <Text fontSize="md">{step.stepName}</Text>}
-        <Checkbox />
-      </Box>
-      <Box m={2} p={2}>
-        <Text fontSize='md'>{step.action}</Text>
-      {step.trigger && 
-        <Text fontSize='md'>{step.trigger}</Text>}
-      {step.comments && 
-        <Text fontSize='md'>{step.comments}</Text>}
-      </Box>
-    </WrapItem>
-    ))}
-    </Wrap>
-  );
-}
-
-const TasteProfile = ({ tasteProfile }) => {
-  return (
-    <>
-    {tasteProfile &&
-    <>
-      <Text as='b' fontSize="large">Taste Profile</Text>
-      <Grid gridTemplateColumns={['1fr', '1fr 1fr']} gridGap={4}>
-        <GridItem><Text fontSize="md">Salt: {tasteProfile.salt}</Text></GridItem>
-        <GridItem><Text fontSize="md">Sweet: {tasteProfile.sweet}</Text></GridItem>
-        <GridItem><Text fontSize="md">Sour: {tasteProfile.sour}</Text></GridItem>
-        <GridItem><Text fontSize="md">Bitter: {tasteProfile.bitter}</Text></GridItem>
-        <GridItem><Text fontSize="md">Spice: {tasteProfile.spice}</Text></GridItem>
-        <GridItem><Text fontSize="md">Umami: {tasteProfile.umami ? tasteProfile.umami : 0}</Text></GridItem>
-      </Grid>
-    </>
-    }
-    </>
   );
 }
 
