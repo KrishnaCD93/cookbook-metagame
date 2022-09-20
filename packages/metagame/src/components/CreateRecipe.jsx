@@ -1,6 +1,5 @@
-import { IconButton, Input, ButtonGroup, Tooltip, Container, CSSReset, Box, Text, Textarea, Grid, GridItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox } from "@chakra-ui/react";
+import { IconButton, Input, Tooltip, Container, CSSReset, Box, Text, Grid, GridItem, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Flex, Checkbox, useColorModeValue } from "@chakra-ui/react";
 import { Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel } from '@chakra-ui/react';
-import { CloseIcon } from "@chakra-ui/icons";
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { FormErrorMessage, FormLabel, FormControl, Button } from '@chakra-ui/react';
 import React, { useState, useRef } from 'react';
@@ -11,6 +10,8 @@ import { useAccount, useSignMessage } from "wagmi";
 import { useSigner } from 'wagmi';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect } from "react";
+import GetIngredients from "./create-recipe-container/Ingredients";
+import GetSteps from "./create-recipe-container/Steps";
 
 // TODO: Upload recipe NFT
 
@@ -21,12 +22,12 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   const [userID, setUserID] = useState('');
   const [imageCid, setimageCid] = useState('');
   const [mintNFT, setMintNFT] = useState(false);
-  const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm()
+  const { handleSubmit, register, control, clearErrors, formState: { errors, isSubmitting } } = useForm({ mode: 'onChange', reValidateMode: 'onSubmit'});
   const toast = useToast()
   const { isConnected, address: accountInfo } = useAccount();
   const { data: signer } = useSigner();
   const { signMessageAsync } = useSignMessage()
-
+  
   // Upload the ingredients to the database and return database ID, return null is user's wallet is not connected
   // @param ingredients: array of ingredients from the form. Includes names, quantities, comments, image IDs, and signature message
   async function addIngredients(ingredients, signatureMessage) {
@@ -51,7 +52,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     console.log(addedIngredients);
     return addedIngredients;
   }
-
+  
   // Upload the steps to the database and return database ID, return null is user's wallet is not connected
   // @param steps: array of steps from the form, includes actions, action image ID, triggers, trigger image IDs, and comments
   async function addSteps(steps, signatureMessage) {
@@ -84,7 +85,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     console.log(addedSteps);
     return addedSteps;
   }
-
+  
   // Upload the taste profile to the database and return database ID, return null is user's wallet is not connected
   // @param tasteProfile: taste profile of the recipe. Salt, sweet, sour, bitter, spice, umami.
   async function addTasteProfile(tasteProfile, signatureMessage) {
@@ -103,7 +104,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     console.log(addedTasteProfile);
     return addedTasteProfile;
   }
-
+  
   // Upload the recipe to the database and return database ID, return null is user's wallet is not connected
   // @param recipeData: recipe object from the form. Includes name, description, quality tags, and equipment
   async function addRecipe(recipeData, ingredientIDs, stepIDs, tasteProfileID, date, signatureMessage) {
@@ -124,7 +125,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     console.log(uploadedRecipe);
     return uploadedRecipe;
   }
-
+  
   // Upload the recipe NFT to the database and return NFT content address, return null is user's wallet is not connected
   // @param recipeData: recipe name, description, image, and taste profile
   async function createNFT(recipeData) {
@@ -260,6 +261,9 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     onClose();
   }
 
+  const boxTextColor = useColorModeValue('#3c4751', '#c9b68e')
+  const boxColor = useColorModeValue('#c9b68e', '#3c4751')
+
   return (
     <>
     <CSSReset />
@@ -269,14 +273,14 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         <ModalHeader>Create Recipe</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <FormProvider {...{ handleSubmit, register, errors, isSubmitting }}>
+          <FormProvider {...{ handleSubmit, control, clearErrors, register, errors, isSubmitting }}>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <FormControl isInvalid={errors} as='fieldset' isDisabled={uploading}>
+              <FormControl as='fieldset' isDisabled={uploading}>
                 <Accordion defaultIndex={[0, 1, 2, 3]} allowMultiple>
                   <AccordionItem>
-                    <h2><AccordionButton>
-                      <Box flex='1' textAlign='left'>
-                        Add Recipe Information{errors && (errors.name || errors.description) ? <Text color='red'>*</Text> : null}
+                    <h2><AccordionButton bg={(errors && (errors.name || errors.description)) ? 'red.500' : boxColor}>
+                      <Box flex='1' textAlign='left' color={boxTextColor}>
+                        Add Recipe Information
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -290,35 +294,43 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                     </AccordionPanel>
                   </AccordionItem>
                   <AccordionItem>
-                    <h2><AccordionButton>
-                      <Box flex='1' textAlign='left'>
-                        Add Ingredients{errors && errors.ingredients ? <Text color='red'>*</Text> : null}
+                    <h2><AccordionButton bg={(errors?.ingredients) ? 'red.500' : boxColor}>
+                      <Box flex='1' textAlign='left' color={boxTextColor}>
+                        Add Ingredients
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
                     <AccordionPanel>
                       <FormLabel htmlFor="ingredients">
-                        <GetIngredients />
+                        <GetIngredients 
+                          useFormContext={useFormContext} 
+                          boxColor={boxColor} 
+                          boxTextColor={boxTextColor} 
+                        />
                       </FormLabel>
                     </AccordionPanel>
                   </AccordionItem>
                   <AccordionItem>
-                    <h2><AccordionButton>
-                      <Box flex='1' textAlign='left'>
-                        Add Steps{errors && errors.steps ? <Text color='red'>*</Text> : null}
+                    <h2><AccordionButton bg={(errors?.steps) ? 'red.500' : boxColor}>
+                      <Box flex='1' textAlign='left' color={boxTextColor}>
+                        Add Steps
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
                       <AccordionPanel>
                         <FormLabel htmlFor="steps">
-                          <GetSteps />
+                          <GetSteps 
+                            useFormContext={useFormContext} 
+                            boxColor={boxColor} 
+                            boxTextColor={boxTextColor} 
+                          />
                         </FormLabel>
                       </AccordionPanel>
                   </AccordionItem>
                   <AccordionItem>
-                    <h2><AccordionButton>
-                      <Box flex='1' textAlign='left'>
-                        Add Recipe Tags{errors && errors.tasteProfile ? <Text color='red'>*</Text> : null}
+                    <h2><AccordionButton bg={(errors?.tasteProfile) ? 'red.500' : boxColor}>
+                      <Box flex='1' textAlign='left' color={boxTextColor}>
+                        Add Recipe Tags
                       </Box>
                       <AccordionIcon />
                     </AccordionButton></h2>
@@ -364,10 +376,10 @@ function GetRecipeName() {
 
   return (
     <Container p={2} m={2} centerContent>
-    <Text align='center'>Recipe Name<tspan>*</tspan></Text>
+    <Text align='center'>Recipe Name*</Text>
     <Container p={2} m={2} centerContent>
       <Tooltip label="Give your recipe a name.">
-        <Input py={2} px={2} isInvalid={false}
+        <Input py={2} px={2} isInvalid={errors.name}
         {...register('name', {required: 'Give your recipe a name'})} />
       </Tooltip>
       <FormErrorMessage>
@@ -397,10 +409,10 @@ function GetDescription() {
   const { register, errors } = useFormContext();
   return (
     <Container p={2} m={2} centerContent>
-    <Text align='center'>Description<tspan>*</tspan></Text>
+    <Text align='center'>Description*</Text>
     <Container p={2} m={2} centerContent>
       <Tooltip label="Add a short description of the dish.">
-        <Input py={2} px={2} isInvalid={false}
+        <Input py={2} px={2} isInvalid={errors.description}
           {...register('description', {required: 'Add a short description of the dish'})} />
       </Tooltip>
         <FormErrorMessage>
@@ -411,353 +423,6 @@ function GetDescription() {
   )
 }
 
-// Function to get the ingredients in the recipe
-const GetIngredients = () => {
-  const { register, errors } = useFormContext();
-  const [numIngredients, setNumIngredients] = useState(1);
-  const [ingredients, setIngredients] = useState([{
-    name: '',
-    quantity: ''
-  }]);
-
-  // Function to get the name of the ingredient
-  function GetName({ index }) {
-    return (
-      <>
-      <Tooltip label="Name of the ingredient">
-        <Input py={2} px={2} placeholder="...name, eg. eggs" isInvalid={false}
-        {...register(`ingredients[${index}].name`, {required: 'Name of the ingredient',
-          onChange: (event) => {
-            const newIngredients = [...ingredients];
-            newIngredients[index].name = event.target.value;
-            setIngredients(newIngredients);
-          }
-        })} />
-      </Tooltip>
-      {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].name && (
-        <FormErrorMessage>
-          {errors.ingredients[index].name && errors.ingredients[index].name.message}
-        </FormErrorMessage>
-      )}
-      </>
-    )
-  }
-
-  // Function to get the amount of ingredients
-  function GetAmount({ index }) {
-    return (
-      <>
-      <Tooltip label="Add the quantity of the ingredient">
-        <Input py={2} px={2} placeholder="...amount, eg. 2, large" isInvalid={false}
-        {...register(`ingredients[${index}].quantity`, {required: 'Add the quantity of the ingredient',
-          onChange: (event) => {
-            const newIngredients = [...ingredients];
-            newIngredients[index].quantity = event.target.value;
-            setIngredients(newIngredients);
-          }
-        })} />
-      </Tooltip>
-      {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].quantity && (
-        <FormErrorMessage>
-          {errors.ingredients[index].quantity && errors.ingredients[index].quantity.message}
-        </FormErrorMessage>
-      )}
-      </>
-      )
-  }
-
-  // Function to get the ingredient's meta: the effect on the recipe's taste
-  function GetIngredientComments({ index }) {
-    return (
-      <>
-      <Tooltip label="Add any comments about the ingredient">
-        <Textarea py={2} px={2} placeholder="...comments, eg. Organic free roam eggs" isInvalid={false}
-        {...register(`ingredients[${index}].comments`, {
-          maxLength: {value: 280, message: 'comments must be less than 280 characters'}})} />
-      </Tooltip>
-      {errors.ingredients && errors.ingredients[index] && errors.ingredients[index].comments && (
-      <FormErrorMessage>
-        {errors.ingredients[index].comments && errors.ingredients[index].comments.message}
-      </FormErrorMessage>)}
-      </>
-    )
-  }
-
-  // Function to get a picture of the ingredient
-  function GetIngredientImage({ index }) {
-    const { ref, onChange, ...fields } = register(`ingredients[${index}].image`)
-    const [ingredientImageName, setIngredientImageName] = useState(null);
-    const hiddenFileInput = useRef(null);
-    const imageUpload = event => { hiddenFileInput.current?.click() }
-
-    return (
-      <>
-      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
-      <Flex>
-        <Input type='file' style={{ display: 'none'}} accept='image/jpeg' {...fields} 
-          onChange={event => { 
-            onChange(event)
-            setIngredientImageName(event.target.files[0].name) 
-          }}
-          ref={(instance) => {
-            ref(instance)
-            hiddenFileInput.current = instance
-          }} />
-        {ingredientImageName && <Text>{ingredientImageName}</Text>}
-      </Flex>
-      </>
-    )
-  }
-
-  return (
-    <Container p={2} m={2} centerContent>
-      <Text align='center'>Ingredients</Text>
-      {Array.from({ length: numIngredients }, (_, index) => (
-        <Box w='100%'>
-          <Accordion defaultIndex={[0]} allowMultiple>
-            <AccordionItem>
-              {({ isExpanded }) => (
-              <>
-              <h2>
-              <AccordionButton color={(errors.ingredients && errors.ingredients[index]) ? 'red.500' : ''}>
-                <Box flex='1' textAlign='left'>
-                  {isExpanded ? <Text>Ingredient #{`${index+1}`}</Text> : 
-                  <Text>
-                    {(ingredients[index] && ingredients[index].name) ? `${ingredients[index].name}` : 
-                    `Ingredient #${index+1}`}
-                  </Text>}
-                </Box>
-                <Flex>
-                {isExpanded ? <Text>QTY</Text> : 
-                <Text>
-                  {(ingredients[index] && ingredients[index].quantity) ? 
-                  `${ingredients[index].quantity}` : 'QTY'}
-                </Text>}
-                <AccordionIcon />
-                </Flex>
-              </AccordionButton>
-              </h2>
-            <AccordionPanel>
-              <Box>
-                <Text>Name<tspan>*</tspan></Text>
-                <GetName index={index} />
-                <GetIngredientImage index={index} />
-              </Box>
-              <Box>
-                <Text>Amount<tspan>*</tspan></Text>
-                <GetAmount index={index} />
-              </Box>
-              <Box>
-                <Text>Comments</Text>
-                <GetIngredientComments index={index} />
-              </Box>
-            </AccordionPanel>
-              </>
-              )}
-            </AccordionItem>
-          </Accordion>
-        </Box>
-      ))}
-      <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
-        <Button onClick={() => setNumIngredients(numIngredients + 1)}
-          border='1px' >＋ Ingredient</Button>
-        <IconButton icon={<CloseIcon boxSize={3} />} onClick={() => setNumIngredients(numIngredients - 1)} 
-          border='1px' />
-      </ButtonGroup>
-      </Container>
-  )
-}
-
-// Function to get the steps in the recipe
-const GetSteps = () => {
-  const { register, errors } = useFormContext();
-  const [numSteps, setNumSteps] = useState(1);
-  const [steps, setSteps] = useState([{
-    name: '',
-    action: '',
-  }]);
-
-  // Function to get the name of the step
-  function GetStepName({ index }) {
-    return (
-      <>
-      <Tooltip label="Step title">
-        <Input py={2} px={2} placeholder="...title, eg. prepare egg mix" isInvalid={false}
-        {...register(`steps[${index}].stepName`, {required: 'Add a step title',
-          onChange: (event) => {
-            const newSteps = [...steps];
-            newSteps[index].stepName = event.target.value;
-            setSteps(newSteps);
-          }
-        })} />
-      </Tooltip>
-      {errors.steps && errors.steps[index] && errors.steps[index].name && (
-        <FormErrorMessage>
-          {errors.steps[index].name && errors.steps[index].name.message}
-        </FormErrorMessage>
-      )}
-      </>
-    )
-  }
-
-  // Function to get the action of each step in the recipe
-  function GetAction({ index }) {
-    return (
-      <>
-      <Tooltip label="What're the actions for this step of the recipe?">
-        <Textarea py={2} px={2} placeholder="...action, eg. crack eggs into a bowl, use a fork to mix with salt and pepper" isInvalid={false}
-          {...register(`steps[${index}].action`, {required: 'What\'re the actions for this step of the recipe?', 
-          maxLength: {value: 280, message: 'Action must be less than 280 characters',
-            onChange: (event) => {
-              const newSteps = [...steps];
-              newSteps[index].action = event.target.value;
-              setSteps(newSteps);
-            }
-          }})} />
-      </Tooltip>
-      {errors.steps && errors.steps[index] && errors.steps[index].action && (
-      <FormErrorMessage>
-        {errors.steps[index].action && errors.steps[index].action.message}
-      </FormErrorMessage>)}
-      </>
-    )
-  }
-
-// Function to get the trigger for the next step in the recipe
-  function GetTrigger({ index }) {
-    return (
-      <Tooltip label="What triggers the next step of the recipe?">
-        <Input py={2} px={2} placeholder="...trigger, eg. stir until contents are mixed well" isInvalid={false}
-          {...register(`steps[${index}].trigger`, 
-          {maxLength: {value: 140, message: 'Trigger must be less than 140 characters'}})} />
-      </Tooltip>
-    )
-  }
-
-  // Function to get the meta of the step
-  function GetStepComments({ index }) {
-    return (
-      <>
-      <Tooltip label="How does the action(s) taken in this step affect the taste?">
-        <Textarea py={2} px={2} placeholder="...comments, eg. replace pepper with red chilli powder to make it spicy" isInvalid={false}
-          {...register(`steps[${index}].comments`, {
-          maxLength: {value: 280, message: 'comments must be less than 280 characters'}})} />
-      </Tooltip>
-      {errors.steps && errors.steps[index] && errors.steps[index].comments && (
-      <FormErrorMessage>
-        {errors.steps[index].comments && errors.steps[index].comments.message}
-      </FormErrorMessage>)}
-      </>
-    )
-  }
-
-  // Function to get the image of the action
-  function GetActionImage({ index }) {
-    const { ref, onChange, ...fields } = register(`steps[${index}].actionImage`)
-    const [actionImageName, setActionImageName] = useState(null);
-    const hiddenFileInput = useRef(null);
-    const imageUpload = event => { hiddenFileInput.current?.click() }
-    return (
-      <>
-      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
-      <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
-        onChange={event => { 
-          onChange(event)
-          setActionImageName(event.target.files[0].name) 
-        }}
-        ref={(instance) => {
-          ref(instance)
-          hiddenFileInput.current = instance
-        }} />
-      {actionImageName && <Text>{actionImageName}</Text>}
-      </>
-    )
-  }
-
-  // Function to get the image of the trigger
-  function GetTriggerImage({ index }) {
-    const { ref, onChange, ...fields } = register(`steps[${index}].triggerImage`)
-    const [triggerImageName, setTriggerImageName] = useState(null);
-    const hiddenFileInput = useRef(null);
-    const imageUpload = event => { hiddenFileInput.current.click() }
-    return (
-      <>
-      <IconButton icon={<FaImage />} onClick={imageUpload} mt={1} />
-      <Input type='file' style={{ display: 'none'}} accept='image/jpeg, video/*' {...fields} 
-        onChange={event => { 
-          onChange(event)
-          setTriggerImageName(event.target.files[0].name) 
-        }}
-        ref={(instance) => {
-          ref(instance)
-          hiddenFileInput.current = instance
-        }} />
-      {triggerImageName && <Text>{triggerImageName}</Text>}
-      </>
-    )
-  }
-
-return (
-  <Container p={2} m={2} centerContent>
-  <Text align='center'>Steps</Text>
-  {Array.from({ length: numSteps }, (_, index) => (
-    <Box w='100%'>
-      <Accordion defaultIndex={[0]} allowMultiple>
-        <AccordionItem>
-          {({ isExpanded }) => (
-            <>
-            <h2>
-              <AccordionButton color={(errors.steps && errors.steps[index]) ? 'red.500' : ''}>
-                <Box flex='1' textAlign='left'>
-                  {isExpanded ? <Text>Step #{`${index+1}`}</Text> : 
-                  <Text>
-                    {(steps[index] && steps[index].name) ? `${steps[index].name}` : 
-                    `Step #${index+1}`}
-                  </Text>}
-                </Box>
-                <AccordionIcon />
-              </AccordionButton>
-            </h2>
-            <AccordionPanel>
-              <Box>
-              <Text align='center'>Step Title<tspan>*</tspan></Text>
-                <GetStepName index={index} />
-              </Box>
-              <Box>
-                <Box>
-                  <Text mt={2}>Action<tspan>*</tspan></Text>
-                  <GetAction index={index} />
-                  <GetActionImage index={index} />
-                </Box>
-              </Box>
-              <Box>
-                <Box>
-                  <Text mt={2}>Trigger</Text>
-                  <GetTrigger index={index} />
-                  <GetTriggerImage index={index} />
-                </Box>
-              </Box>
-              <Box>
-                <Text mt={2}>Comments</Text>
-                <GetStepComments index={index} />
-              </Box>
-            </AccordionPanel>
-            </>
-          )}
-        </AccordionItem>
-      </Accordion>
-    </Box>
-  ))}
-  <ButtonGroup justifyContent="end" size="sm" w="full" spacing={2} mt={2}>
-    <Button onClick={() => setNumSteps(numSteps + 1)}
-    border='1px'>＋ Step</Button>
-    <IconButton icon={<CloseIcon boxSize={3} />} onClick={() => setNumSteps(numSteps - 1)}
-    border='1px' />
-  </ButtonGroup>
-  </Container>
-)
-}
-
 // Function to get the taste profile for the recipe
 function GetTasteProfile() {
   const { register, errors } = useFormContext();
@@ -766,12 +431,12 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How salty is this recipe? 0 = not salty, 5 = very salty">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Salt Rating 0-5, eg. 1'
+        <Input py={2} px={2} type='number' placeholder='Salt Rating 0-5, eg. 1' isInvalid={errors.tasteProfile?.salt}
           {...register('tasteProfile.salt', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.salt && errors.tasteProfile.salt.message && (
+      {errors.tasteProfile && errors.tasteProfile.salt?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.salt && errors.tasteProfile.salt.message}
+        {errors.tasteProfile.salt?.message}
       </FormErrorMessage>)}
       </>
     )
@@ -780,12 +445,12 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How sweet is this recipe? 0 = not sweet, 5 = very sweet">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sweet Rating 0-5, eg. 2'
+        <Input py={2} px={2} type='number' placeholder='Sweet Rating 0-5, eg. 2' isInvalid={errors.tasteProfile?.sweet}
           {...register('tasteProfile.sweet', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.sweet && errors.tasteProfile.sweet.message && (
+      {errors.tasteProfile && errors.tasteProfile.sweet?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.sweet && errors.tasteProfile.sweet.message}
+        {errors.tasteProfile.sweet?.message}
       </FormErrorMessage>)}
       </>
     )
@@ -794,12 +459,12 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How sour is this recipe? 0 = not sour, 5 = very sour">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Sour Rating 0-5, eg. 3'
+        <Input py={2} px={2} type='number' placeholder='Sour Rating 0-5, eg. 3' isInvalid={errors.tasteProfile?.sour}
           {...register('tasteProfile.sour', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.sour && errors.tasteProfile.sour.message && (
+      {errors.tasteProfile && errors.tasteProfile.sour?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.sour && errors.tasteProfile.sour.message}
+        {errors.tasteProfile.sour?.message}
       </FormErrorMessage>)}
       </>
     )
@@ -808,12 +473,12 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How bitter is this recipe? 0 = not bitter, 5 = very bitter">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Bitter Rating 0-5, eg. 4'
+        <Input py={2} px={2} type='number' placeholder='Bitter Rating 0-5, eg. 4' isInvalid={errors.tasteProfile?.bitter}
           {...register('tasteProfile.bitter', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.bitter && errors.tasteProfile.bitter.message && (
+      {errors.tasteProfile && errors.tasteProfile.bitter?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.bitter && errors.tasteProfile.bitter.message}
+        {errors.tasteProfile.bitter?.message}
       </FormErrorMessage>)}
       </>
     )
@@ -822,12 +487,12 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How spicy is this recipe? 0 = not spicy, 5 = very spicy">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Spice Rating 0-5, eg. 5'
+        <Input py={2} px={2} type='number' placeholder='Spice Rating 0-5, eg. 5' isInvalid={errors.tasteProfile?.spice}
           {...register('tasteProfile.spice', {required: 'Add a taste rating', min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.spice && errors.tasteProfile.spice.message && (
+      {errors.tasteProfile && errors.tasteProfile.spice?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.spice && errors.tasteProfile.spice.message}
+        {errors.tasteProfile.spice?.message}
       </FormErrorMessage>)}
       </>
     )
@@ -836,36 +501,42 @@ function GetTasteProfile() {
     return (
       <>
       <Tooltip label="How umami is this recipe? 0 = not umami, 5 = very umami">
-        <Input py={2} px={2} isInvalid={false} type='number' placeholder='Umami Rating 0-5, eg. 0'
+        <Input py={2} px={2} type='number' placeholder='Umami Rating 0-5, eg. 0' isInvalid={errors.tasteProfile?.umami}
           {...register('tasteProfile.umami', {min: 0, max: 5})} />
       </Tooltip>
-      {errors.tasteProfile && errors.tasteProfile.umami && errors.tasteProfile.umami.message && (
+      {errors.tasteProfile && errors.tasteProfile.umami?.message && (
         <FormErrorMessage>
-        {errors.tasteProfile.umami && errors.tasteProfile.umami.message}
+        {errors.tasteProfile.umami?.message}
       </FormErrorMessage>)}
       </>
     )
   }
   return (
-    <Container centerContent>
-      <Text align='center'>Taste Profile<tspan>*</tspan></Text>
-      <Grid templateColumns={'repeat(auto-fit, minmax(200px, 1fr))'} gap={2}>
+    <Container p={2} m={2} centerContent>
+      <Text align='center'>Taste Profile*</Text>
+      <Grid templateColumns={'repeat(auto-fit, minmax(200px, 1fr))'} gap={2} p={2} m={2}>
         <GridItem>
+          <Text align='center'>Salt</Text>
           <GetSaltRating />
         </GridItem>
         <GridItem>
+          <Text align='center'>Sweet</Text>
           <GetSweetRating />
         </GridItem>
         <GridItem>
+          <Text align='center'>Sour</Text>
           <GetSourRating />
         </GridItem>
-        <GridItem>
+        <GridItem> 
+          <Text align='center'>Bitter</Text>
           <GetBitterRating />
         </GridItem>
         <GridItem>
+          <Text align='center'>Spice</Text>
           <GetSpiceRating />
         </GridItem>
         <GridItem>
+          <Text align='center'>Umami</Text>
           <GetUmamiRating />
         </GridItem>
       </Grid>
@@ -881,7 +552,7 @@ function GetEquipment() {
     <Container p={2} m={2} centerContent>
       <Text align='center'>Equipment</Text>
       <Tooltip label="List the equipment used, separated by commas.">
-        <Input py={2} px={2} isInvalid={false} placeholder='Equipment, eg. oven, pot, pan'
+        <Input py={2} px={2} placeholder='Equipment, eg. oven, pot, pan'
         {...register('equipment')} />
       </Tooltip>
     </Container>
@@ -896,7 +567,7 @@ function GetQualityTags() {
     <Container p={2} m={2} centerContent>
       <Text align='center'>Quality Tags</Text>
       <Tooltip label="What're the qualities of this recipe? How does this recipe taste? What other recipes does it work well with?">
-        <Input py={2} px={2} isInvalid={false} placeholder='Quality Tags, eg. easy, tasty, serve with rice'
+        <Input py={2} px={2} placeholder='Quality Tags, eg. easy, tasty, serve with rice'
           {...register('qualityTags')} />
       </Tooltip>
     </Container>
@@ -911,7 +582,6 @@ function GetMintNFT({ setMintNFT }) {
       <Tooltip label="Do you want to mint an NFT of the recipe?">
         <Checkbox
           label="Mint NFT"
-          isInvalid={false}
           onChange={(e) => setMintNFT(e.target.checked)}
         />
       </Tooltip>

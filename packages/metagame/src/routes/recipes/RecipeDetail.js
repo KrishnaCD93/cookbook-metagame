@@ -1,22 +1,12 @@
-import { gql, useLazyQuery, useMutation } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import { Box, Checkbox, Container, Divider, Flex, Grid, GridItem, Icon, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, Spinner, Text, VStack, Wrap, WrapItem } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { GET_RECIPE_WITH_DATA } from './ShowRecipes';
 import { cld } from '../../App';
-import { scale } from '@cloudinary/url-gen/actions/resize';
 import { AdvancedImage } from '@cloudinary/react';
 import { FaComment } from 'react-icons/fa';
-
-const UPDATE_RECIPE = gql`
-  mutation Mutation($updateRecipeID: ID!, $userID: String!, $signatureMessage: String!, $name: String, $imageCid: String, $description: String, $ingredientIDs: [ID], $stepIDs: [ID], $tasteProfileID: ID, $qualityTags: String, $equipment: String) {
-  updateRecipe(id: $updateRecipeID, userID: $userID, signatureMessage: $signatureMessage, name: $name, imageCid: $imageCid, description: $description, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, qualityTags: $qualityTags, equipment: $equipment) {
-    success
-    message
-    recipeID
-  }
-}
-`
+import GoToTop from '../../components/GoToTop';
 
 const RecipeDetail = () => {
   const { recipeID } = useParams();
@@ -28,9 +18,6 @@ const RecipeDetail = () => {
   const [steps, setSteps] = useState([]);
   const [tasteProfile, setTasteProfile] = useState(null);
   const [image, setImage] = useState(null);
-
-  const [updateRecipe] = useMutation(UPDATE_RECIPE);
-  const [updateRecipeID, setUpdateRecipeID] = useState(null);
 
   useEffect(() => {
     const getRecipe = async () => {
@@ -56,7 +43,6 @@ const RecipeDetail = () => {
   useEffect(() => {
     if (recipeData) {
       const img = cld.image(recipeData.imageCid)
-      img.resize(scale().width(1080));
       setImage(img);
     }
   }, [recipeData]);
@@ -66,16 +52,17 @@ const RecipeDetail = () => {
   if (error) console.log('recipe error', error);
   
   if (recipeData) {
-    console.log(data)
     return ( 
       <Container>
         <Flex align="center" justify="space-between">
           <Text>{recipeData.name}</Text>
+          <Link to={`/recipes/${recipeData._id}/edit`}>Edit</Link>
         </Flex>
         <Box>
           <AdvancedImage cldImg={image} />
         </Box>
         <Recipe recipeData={recipeData} ingredients={ingredients} steps={steps} tasteProfile={tasteProfile} />
+        <GoToTop />
       </Container> 
     );
   }

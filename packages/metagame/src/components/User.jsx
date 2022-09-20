@@ -4,11 +4,11 @@ import { useAccount } from 'wagmi'
 import { cld } from '../App';
 import { AdvancedImage } from '@cloudinary/react';
 import { scale } from "@cloudinary/url-gen/actions/resize";
-import CreateUser from './container/CreateUser'
+import CreateUser from './user-container/CreateUser'
 import { useDisclosure } from '@chakra-ui/hooks';
 import { Box, Icon, IconButton, Spinner } from '@chakra-ui/react';
 import { FaUserCircle, FaUserPlus } from 'react-icons/fa';
-import UpdateUser from './container/UpdateUser';
+import UpdateUser from './user-container/UpdateUser';
 
 const GET_USER = gql`
   query UserData($userID: String!) {

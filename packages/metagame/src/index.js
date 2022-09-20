@@ -28,6 +28,7 @@ import CookbookGoals from './routes/CookbookGoals';
 import MetaKitchen from './routes/YourKitchen';
 import RecipeDetail from './routes/recipes/RecipeDetail';
 import Recipes from './routes/recipes/Recipes';
+import EditRecipe from './routes/recipes/EditRecipe';
 
 // TODO: add recipe page with recipeID
 
@@ -93,6 +94,7 @@ root.render(
                   <Route path="recipes" element={<Recipes />}>
                     <Route index element={<ShowRecipes />} />
                     <Route path=":recipeID" element={<RecipeDetail />} />
+                    <Route path=":recipeID/edit" element={<EditRecipe />} />
                   </Route>
                   <Route path="kitchen" element={<MetaKitchen />} />
                   <Route path="goals" element={<CookbookGoals />} />

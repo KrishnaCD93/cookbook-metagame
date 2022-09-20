@@ -4,8 +4,8 @@ import { gql, useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import useApolloMutations from '../hooks/useApolloMutations';
 import { FaComment } from 'react-icons/fa';
-import CreateRecipe from '../components/CreateRecipe';
 import ShowCookbookTokens from '../components/ShowCookbookTokens';
+import CreateRecipeButton from '../components/CreateRecipeButton';
 
 // TODO: test uploads and mutation refetch
 
@@ -201,8 +201,7 @@ const MetaKitchen = () => {
       </>
       }
       <Container>
-        <Button m={4} p={4} onClick={onOpen}>Create Recipe</Button>
-        <CreateRecipe isOpen={isOpen} onClose={onClose} />
+        <CreateRecipeButton />
         {(userID !== '0x0') && <>
         <HStack>
           <Divider />
