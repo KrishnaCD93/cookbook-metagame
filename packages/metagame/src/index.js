@@ -52,7 +52,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors',

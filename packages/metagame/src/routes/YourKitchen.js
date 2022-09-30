@@ -73,7 +73,6 @@ const MetaKitchen = () => {
   const [, , , , uploadExternalRecipe, uploadChefsMeta] = useApolloMutations();
   const [getUserKitchen, { data: cookbookData, loading: cookbookLoading, error: cookbookError, refetch }] = useLazyQuery(GET_USER_COOKBOOK, 
     { variables: { userID: `${userID}` }});
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: externalIsOpen, onOpen: externalOnOpen, onClose: externalOnClose } = useDisclosure();
   const [showItems, setShowItems] = useState(null);
 

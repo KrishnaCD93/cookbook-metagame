@@ -8,7 +8,7 @@ import { FaExternalLinkAlt, FaSignature } from 'react-icons/fa';
 import { cld } from '../../App';
 import CreateRecipe from '../../components/CreateRecipe';
 import { Link } from 'react-router-dom';
-import { Recipe } from './RecipeDetail';
+import Recipe from '../../components/ViewRecipe';
 
 export const GET_RECIPE_WITH_DATA = gql`
   query RecipeWithData($recipeID: ID!) {

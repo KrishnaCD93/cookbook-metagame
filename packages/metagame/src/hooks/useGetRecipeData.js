@@ -1,28 +1,41 @@
 import { useLazyQuery } from "@apollo/client";
 import { cld } from "../App";
 import { GET_RECIPE_WITH_DATA } from "../routes/recipes/ShowRecipes";
+import logo from '../assets/logo.png';
+import { useEffect, useState } from "react";
 
-const useGetRecipeData = () => {
+const useGetRecipeData = (recipeID) => {
   const [getRecipeWithData, { data, error, loading }] = useLazyQuery(GET_RECIPE_WITH_DATA);
-  
-  const getRecipe = async ({ recipeID }) => {
-    await getRecipeWithData(
-      { variables: { recipeID: `${recipeID}` } }
-    );
-    if (data) {
-      const recipeData = data.recipeWithData.recipe;
-      const ingredients = data.recipeWithData.ingredients;
-      const steps = data.recipeWithData.steps;
-      const tasteProfile = data.recipeWithData.tasteProfile;
-      const image = cld.image(recipeData.imageCid)
+  const [recipeData, setRecipeData] = useState(null);
+  const [ingredients, setIngredients] = useState([]);
+  const [steps, setSteps] = useState([]);
+  const [tasteProfile, setTasteProfile] = useState(null);
+  const [image, setImage] = useState(null);
 
-      const recipe = { recipeData, ingredients, steps, tasteProfile, image };
-      
-      return recipe;
+  useEffect(() => {
+    console.log(recipeID)
+    const getRecipeData = async () => {
+      await getRecipeWithData(
+        { variables: { recipeID: `${recipeID}` } }
+      );
     }
-  }
+    getRecipeData();
+    if (data) {
+      console.log('data', data);
+      setRecipeData(data.recipeWithData.recipe);
+      setIngredients(data.recipeWithData.ingredients);
+      setSteps(data.recipeWithData.steps);
+      setTasteProfile(data.recipeWithData.tasteProfile);
+      if (data.recipeWithData.recipe.imageCid) {
+        const img = cld.image(data.recipeWithData.recipe.imageCid);
+        setImage(img);
+      } else if (!data.recipeWithData.recipe.imageCid) {
+        setImage(logo);
+      }
+    }
+  }, [getRecipeWithData, data, recipeID]);
 
-  return [getRecipe, { error, loading }];
+  return { recipeData, ingredients, steps, tasteProfile, image, loading, error };
 }
 
 export default useGetRecipeData;

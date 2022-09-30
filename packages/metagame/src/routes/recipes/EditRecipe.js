@@ -1,10 +1,9 @@
 import { gql, useMutation } from '@apollo/client';
-import { Box, Button, Spinner } from '@chakra-ui/react';
+import { Box, Button, Spinner, Text } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import { useAccount, useSignMessage } from 'wagmi';
 import useGetRecipeData from '../../hooks/useGetRecipeData';
-import { GET_RECIPE_WITH_DATA } from './ShowRecipes';
 
 const UPDATE_RECIPE = gql`
   mutation Mutation($updateRecipeID: ID!, $userID: String!, $signatureMessage: String!, $name: String, $imageCid: String, $description: String, $ingredientIDs: [ID], $stepIDs: [ID], $tasteProfileID: ID, $qualityTags: String, $equipment: String) {
@@ -25,22 +24,14 @@ const DELETE_RECIPE = gql`
     }
   }
 `
+
 const EditRecipe = () => {
   const { recipeID } = useParams();
   const [updateRecipe] = useMutation(UPDATE_RECIPE);
   const [deleteRecipe] = useMutation(DELETE_RECIPE);
-  const [getRecipe, { error, loading }] = useGetRecipeData();
+  const { recipeData, ingredients, steps, tasteProfile, loading, error } = useGetRecipeData(recipeID);
   const { isConnected, address: accountInfo } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const [recipe, setRecipe] = useState(null);
-
-  useEffect(() => {
-    const getRecipeData = async () => {
-      const recipeData = await getRecipe({ recipeID });
-      setRecipe(recipeData);
-    }
-    getRecipeData();
-  }, [recipeID]);
 
   if (error) console.log('recipe error', error);
 
@@ -62,12 +53,12 @@ const EditRecipe = () => {
     }
   }
 
-  if (recipe) {
+  if (recipeData) {
   return (  
     <Box>
       Edit Recipe
-      {recipeID}
-      <Box>{recipe.recipeData.name}</Box>
+      <Text>{recipeID}</Text>
+      <Box>{recipeData.name}</Box>
       <Button onClick={handleDelete}>Delete Recipe</Button>
     </Box>
   );
