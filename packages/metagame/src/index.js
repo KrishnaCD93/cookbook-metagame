@@ -21,6 +21,9 @@ import { publicProvider } from 'wagmi/providers/public'
 
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+
+import { NhostClient, NhostReactProvider } from '@nhost/react'
+
 import ShowRecipes from './routes/recipes/ShowRecipes';
 import Home from './routes/Home';
 import About from './routes/About';
@@ -52,7 +55,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors',
@@ -76,6 +79,11 @@ const apolloClient = new ApolloClient({
   link: authLink.concat(link),
 });
 
+const nhost = new NhostClient({
+  subdomain: process.env.REACT_APP_NHOST_SUBDOMAIN,
+  region: process.env.REACT_APP_NHOST_REGION
+})
+
 const container = document.getElementById('root');
 const root = ReactDOM.createRoot(container);
 
@@ -84,33 +92,35 @@ root.render(
     <ColorModeScript />
     <ApolloProvider client={apolloClient}>
       <ChakraProvider theme={theme}>
-        <WagmiConfig client={wagmiClient}>
-          <RainbowKitProvider chains={chains}>
-            <HashRouter>
-              <Routes>
-                <Route path="/" element={<App />}>
-                  <Route index element={<Home />} />
-                  <Route path="about" element={<About />} />
-                  <Route path="recipes" element={<Recipes />}>
-                    <Route index element={<ShowRecipes />} />
-                    <Route path=":recipeID" element={<RecipeDetail />} />
-                    <Route path=":recipeID/edit" element={<EditRecipe />} />
+        <NhostReactProvider nhost={nhost}>
+          <WagmiConfig client={wagmiClient}>
+            <RainbowKitProvider chains={chains}>
+              <HashRouter>
+                <Routes>
+                  <Route path="/" element={<App />}>
+                    <Route index element={<Home />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="recipes" element={<Recipes />}>
+                      <Route index element={<ShowRecipes />} />
+                      <Route path=":recipeID" element={<RecipeDetail />} />
+                      <Route path=":recipeID/edit" element={<EditRecipe />} />
+                    </Route>
+                    <Route path="kitchen" element={<MetaKitchen />} />
+                    <Route path="goals" element={<CookbookGoals />} />
+                    <Route
+                      path="*"
+                      element={
+                        <main style={{ padding: "1rem" }}>
+                          <p>There's nothing here yet!</p>
+                        </main>
+                      }
+                    />
                   </Route>
-                  <Route path="kitchen" element={<MetaKitchen />} />
-                  <Route path="goals" element={<CookbookGoals />} />
-                  <Route
-                    path="*"
-                    element={
-                      <main style={{ padding: "1rem" }}>
-                        <p>There's nothing here yet!</p>
-                      </main>
-                    }
-                  />
-                </Route>
-              </Routes>
-            </HashRouter>
-          </RainbowKitProvider>
-        </WagmiConfig>
+                </Routes>
+              </HashRouter>
+            </RainbowKitProvider>
+          </WagmiConfig>
+        </NhostReactProvider>
       </ChakraProvider>
     </ApolloProvider>
   </StrictMode>

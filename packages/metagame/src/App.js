@@ -6,7 +6,7 @@ import Navbar from './components/navbar/Navbar';
 import { Outlet } from 'react-router-dom';
 import { FaDiscord, FaTwitter } from 'react-icons/fa';
 import { SiSubstack } from 'react-icons/si';
-import User from './components/User';
+import User from './components/user-container/User';
 import { Cloudinary } from '@cloudinary/url-gen';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;

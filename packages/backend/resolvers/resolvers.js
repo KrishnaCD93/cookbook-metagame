@@ -154,15 +154,15 @@ const resolvers = {
         user: {}
       };
       try {
-      await mongoClient.connect();
-      cookbook.recipes = await recipeCollection.find({ userID: userID }).toArray();
-      cookbook.ingredients = await ingredientCollection.find({ userID: userID }).toArray();
-      cookbook.steps = await stepCollection.find({ userID: userID }).toArray();
-      cookbook.tasteProfiles = await tasteProfileCollection.find({ userID: userID }).toArray();
-      cookbook.chefsSpecials = await chefsSpecialCollection.find({ userID: userID }).toArray();
-      cookbook.externalRecipes = await externalRecipeCollection.find({ userID: userID }).toArray();
-      cookbook.user = await userCollection.findOne({ userID: userID });
-    } catch (error) {
+        await mongoClient.connect();
+        cookbook.recipes = await recipeCollection.find({ userID: userID }).toArray();
+        cookbook.ingredients = await ingredientCollection.find({ userID: userID }).toArray();
+        cookbook.steps = await stepCollection.find({ userID: userID }).toArray();
+        cookbook.tasteProfiles = await tasteProfileCollection.find({ userID: userID }).toArray();
+        cookbook.chefsSpecials = await chefsSpecialCollection.find({ userID: userID }).toArray();
+        cookbook.externalRecipes = await externalRecipeCollection.find({ userID: userID }).toArray();
+        cookbook.user = await userCollection.findOne({ userID: userID });
+      } catch (error) {
         throw new Error(error);
       } finally {
         await mongoClient.close();
@@ -170,10 +170,16 @@ const resolvers = {
       }
     },
     user: async (_, args, context, info) => {
-      await mongoClient.connect();
-      const user = await userCollection.findOne({ userID: args.userID });
-      await mongoClient.close();
-      return user;
+      let user;
+      try {
+        await mongoClient.connect();
+        user = await userCollection.findOne({ userID: args.userID });
+      } catch (error) {
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
+        return user;
+      }
     }
   },
   Mutation: {
