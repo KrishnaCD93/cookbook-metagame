@@ -1,13 +1,12 @@
 import React from 'react';
-import { Box, Flex, Grid, HStack, IconButton, Text,  VStack } from '@chakra-ui/react';
+import { Box, Flex, Grid, HStack, IconButton, Text, VStack } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Navbar from './components/navbar/Navbar';
 import { Outlet } from 'react-router-dom';
 import { FaDiscord, FaTwitter } from 'react-icons/fa';
 import { SiSubstack } from 'react-icons/si';
-import User from './components/user-container/User';
 import { Cloudinary } from '@cloudinary/url-gen';
+import SignInButton from './components/auth-container/SignInButton';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
@@ -21,10 +20,7 @@ function App() {
   return (
     <Box textAlign="center" fontSize="xl">
       <Navbar>
-        <Box mr={2}>
-          <ConnectButton label='Login With Wallet' />
-        </Box>
-        <User />
+        <SignInButton />
         <ColorModeSwitcher />
       </Navbar>
       <Grid minH="90vh" p={3} spacing={8}>
