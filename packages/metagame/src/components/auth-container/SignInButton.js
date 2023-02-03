@@ -1,4 +1,3 @@
-
 import NHostAuth from './NHostAuth';
 import { useAuthenticationStatus, useSignOut } from '@nhost/react';
 import { Button, Container, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger } from '@chakra-ui/react';
@@ -25,8 +24,8 @@ const SignInButton = () => {
             <Container centerContent>
               {(!isAuthenticated) ? 
               <>
-              <NHostAuth /> 
               <ConnectButton label='Sign In With Wallet' />
+              <NHostAuth /> 
               </> 
               : <Button onClick={() => signOut()}>Sign Out</Button>}
             </Container>

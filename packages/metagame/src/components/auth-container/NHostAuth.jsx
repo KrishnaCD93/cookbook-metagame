@@ -1,4 +1,4 @@
-import { Box, Button, FormControl, Icon, Input, Link, Text, useToast } from '@chakra-ui/react';
+import { Box, Button, Divider, FormControl, HStack, Icon, Input, Link, Text, useToast } from '@chakra-ui/react';
 import { useProviderLink, useSignInEmailPasswordless } from '@nhost/react';
 import { FcGoogle } from 'react-icons/fc'
 
@@ -32,14 +32,24 @@ const NHostAuth = () => {
   }
 
   return (
-    <Box m={2} p={2}>
+    <Box>
+      <HStack>
+        <Divider />
+        <Text>or</Text>
+        <Divider />
+      </HStack>
       <form onSubmit={onSubmit}>
         <FormControl id='email' isDisabled={isLoading || isSuccess}>
           <Input type='email' name='email' placeholder='email' />
-          <Button m={2} type='submit'>📧 Sign In With Email</Button>
+          <Button type='submit'>📧 Sign In With Email</Button>
         </FormControl>
       </form>
-      <Link href={google}><Button><Icon as={FcGoogle} /> Sign In With Google</Button></Link>
+      <HStack>
+        <Divider />
+        <Text>or</Text>
+        <Divider />
+      </HStack>
+      <Link href={google}><Button><Icon as={FcGoogle} pr={1} />Sign In With Google</Button></Link>
     </Box>
   );
 }

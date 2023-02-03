@@ -3,17 +3,7 @@ const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./type-defs/typeDefs');
 const resolvers = require('./resolvers/resolvers');
-const {
-  ApolloServerPluginLandingPageProductionDefault,
-  ApolloServerPluginLandingPageLocalDefault
-} = require('apollo-server-core');
-
-let plugins = [];
-if (process.env.NODE_ENV === 'production') {
-  plugins = [ApolloServerPluginLandingPageProductionDefault({ embed: true, graphRef: 'myGraph@prod' })]
-} else {
-  plugins = [ApolloServerPluginLandingPageLocalDefault({ embed: true })]
-}
+const { json, urlencoded } = require('express');
 
 const server = new ApolloServer({
   typeDefs, 
@@ -23,11 +13,29 @@ const server = new ApolloServer({
   introspection: true,
   cors: false,
   context: ({ req }) => {
-    const signatureBearer = req.headers.authorization || '';
-    const signature = signatureBearer.split(' ')[1];
-    return { signature };
+    const auth = {
+      signature: '',
+      message: '',
+      token: '',
+      type: '',
+    };
+    if (req.headers.authorization) console.log('req.headers.authorization', req.headers.authorization);
+    const bearer = req.headers.authorization || '';
+    authType = bearer.split(' ')[0];
+    if (authType === 'SIGNATURE') {
+      auth.signature = bearer.split(' ')[1];
+      auth.message = bearer.split(' ')[2];
+      auth.type = authType;
+      return { auth };
+    } else if (authType === 'JWT') {
+      auth.token = bearer.split(' ')[1];
+      auth.type = authType;
+      return { auth };
+    } else {
+      auth.type = 'NONE';
+      return { auth };
+    }
   },
-  plugins: plugins
 });
 
 async function startApolloServer(server) {
@@ -37,7 +45,7 @@ async function startApolloServer(server) {
       const whitelist = [
         "https://cookbook.social",
         "https://studio.apollographql.com",
-        "http://localhost:3000"
+        "http://localhost:3000",
       ]
       if (whitelist.indexOf(origin) !== -1) {
         callback(null, true)
@@ -50,8 +58,8 @@ async function startApolloServer(server) {
     credentials: true,
   }
   const app = express();
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ limit: '50mb', extended: true }));
   server.applyMiddleware({ app, path: '/', cors: corsOptions });
 
   app.listen({port: process.env.PORT || 4000});

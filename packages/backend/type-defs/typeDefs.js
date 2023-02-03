@@ -126,7 +126,7 @@ const typeDefs = gql`
     user: User!
     createdAt: String
     completedOn: String
-    signatureMessage: String
+    signature: String
   }
   type RecipeData {
     recipe: Recipe
@@ -167,11 +167,10 @@ const typeDefs = gql`
     addIngredients(
       names: [String]!
       quantities: [String]!
-      nutritions: [Int]
+      nutritions: [[Int]]
       comments: [String]
       imageCids: [String]
       userID: String!
-      signatureMessage: String!
     ): IngredientResponse!
     addSteps(
       stepNames: [String]
@@ -181,10 +180,8 @@ const typeDefs = gql`
       triggerImageCids: [String]
       comments: [String]
       userID: String!
-      signatureMessage: String!
     ): StepResponse!
     addTasteProfile(
-      recipeCid: String
       salt: Int!
       sweet: Int!
       sour: Int!
@@ -192,7 +189,6 @@ const typeDefs = gql`
       spice: Int!
       umami: Int
       userID: String!
-      signatureMessage: String!
     ): TasteProfileResponse!
     addRecipe(
       recipeCid: String
@@ -207,12 +203,12 @@ const typeDefs = gql`
       qualityTags: String
       equipment: String
       userID: String!
-      signatureMessage: String!
+      signature: String!
       createdAt: String
     ): RecipeResponse!
     deleteRecipe(
       id: ID!
-      signatureMessage: String!
+      signature: String!
     ): RecipeResponse!
     updateRecipe(
       id: ID!
@@ -226,47 +222,47 @@ const typeDefs = gql`
       equipment: String
       cookbookToken: String
       userID: String!
-      signatureMessage: String!
+      signature: String!
     ): RecipeResponse!
     addChefsSpecial(
       recipeID: String
       specialtyTags: String
       comments: String
       userID: String!
-      signatureMessage: String!
+      signature: String!
     ): ChefsSpecialResponse!
     deleteChefsSpecial(
       recipeID: String!
-      signatureMessage: String!
+      signature: String!
     ): ChefsSpecialResponse!
     updateChefsSpecial(
       recipeID: String!
       specialtyTags: String
       comments: String
       userID: String!
-      signatureMessage: String!
+      signature: String!
     ): ChefsSpecialResponse!
     addExternalRecipe(
       name: String
       recipeUrl: String
       userID: String!
       notes: String
-      signatureMessage: String
+      signature: String
     ): ExternalRecipeResponse
     addUser(
       userID: String!
-      signatureMessage: String!
+      signature: String!
       name: String
       imageCid: String
       email: String
     ): UserResponse!
     deleteUser(
       userID: String!
-      signatureMessage: String!
+      signature: String!
     ): UserResponse!
     updateUser(
       userID: String!
-      signatureMessage: String!
+      signature: String!
       name: String
       image: String
       email: String
@@ -282,7 +278,7 @@ const typeDefs = gql`
       equipment: String
       userID: String!
       createdAt: String
-      signatureMessage: String!
+      signature: String!
     ): RecipeRequestResponse!
   }
   type NFTUploadResponse {

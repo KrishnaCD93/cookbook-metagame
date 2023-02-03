@@ -23,6 +23,29 @@ const { verifyMessage } = require('ethers/lib/utils');
 // const editionAddress = process.env.THIRDWEB_EDITION_ADDRESS;
 // const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
 
+const authenticate = (props) => {
+  console.log('start auth', props)
+  const { type, signature, message, userID, token } = props;
+  let authenticated = false;
+  if (type === 'SIGNATURE') {
+    const address = verifyMessage(message, signature); 
+    if (address !== userID) {
+      throw new AuthenticationError('Not authorized');
+    } else {
+      authenticated = true;
+    }
+  } else if (type === 'JWT') {
+    if (token === '') {
+      throw new AuthenticationError('Not authorized');
+    } else {
+      authenticated = true;
+    }
+  } else if (type === 'NONE') {
+    throw new AuthenticationError('Not authorized');
+  }
+  return authenticated;
+};
+
 const resolvers = {
   Query: {
     recipes: async () => {
@@ -183,62 +206,24 @@ const resolvers = {
     }
   },
   Mutation: {
-    addCookbookNFT: async (_, args, context, info) => {
-      const { imageUri, userID, name, description, signatureMessage } = args;
-      let nftCid;
-      try {
-        const file = new File([imageUri], `${name}.jpg`, { type: 'image/jpeg' });
-        console.log('file', file);
-        const nftMetadata = {
-          image: file,
-          name: name,
-          description: description,
-          properties: {
-            type: 'recipe',
-            chef: userID,
-            name: name,
-          }
-        }
-        // const client = new NFTStorage({ token: nftStorageToken})
-        // recipeNFT = await client.store(nftMetadata)
-        const metadataWithSupply = {
-          nftMetadata,
-          supply: 1,
-        }
-        const tx = await contract.mintTo(userID, metadataWithSupply);
-        const receipt = await tx.receipt;
-        const tokenId = tx.id;
-        nftCid = await tx.data();
-        console.log('uploaded NFT', nftCid)
-      } catch (error) {
-        console.log('error', error)
-      } finally {
-        return {
-          success: recipeNFT? true : false,
-          message: recipeNFT? 'Image uploaded successfully' : 'Image upload failed',
-          nftCid: contractAddress? contractAddress : null
-        }
-      }
-    },
     addIngredients: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature); 
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { names, quantities, nutritions, comments, imageCids, userID } = args;
-      const newIngredients = [];
-      names.forEach((name, index) => {
-        const ingredient = {};
-        ingredient.name = name;
-        ingredient.quantity = quantities[index];
-        ingredient.userID = userID;
-        if (nutritions && nutritions[index]) ingredient.nutritions = nutritions[index];
-        if (comments && comments[index]) ingredient.comments = comments[index];
-        if (imageCids && imageCids[index]) ingredient.imageCid = imageCids[index];
-        newIngredients.push(ingredient);
-      });
       let addedIngredients;
       try {
         await mongoClient.connect();
+        const newIngredients = [];
+        names.forEach((name, index) => {
+          const ingredient = {};
+          ingredient.name = name;
+          ingredient.quantity = quantities[index];
+          ingredient.userID = userID;
+          if (nutritions && nutritions[index]) ingredient.nutritions = nutritions[index];
+          if (comments && comments[index]) ingredient.comments = comments[index];
+          if (imageCids && imageCids[index]) ingredient.imageCid = imageCids[index];
+          newIngredients.push(ingredient);
+        });
         addedIngredients = await ingredientCollection.insertMany(newIngredients);
+        console.log(addedIngredients);
       } catch (error) {
         throw new Error(error);
       } finally {
@@ -255,24 +240,22 @@ const resolvers = {
       }
     },
     addSteps: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = args;
-      const newSteps = [];
-      actions.forEach((action, index) => {
-        const step = {};
-        step.userID = userID;
-        step.action = action;
-        if (stepNames && stepNames[index]) step.stepName = stepNames[index];
-          else step.stepName = 'Step ' + (index + 1);
-        if (triggers && triggers[index]) step.trigger = triggers[index];
-        if (actionImageCids && actionImageCids[index]) step.actionImageCid = actionImageCids[index];
-        if (triggerImageCids && triggerImageCids[index]) step.triggerImageCid = triggerImageCids[index];
-        if (comments && comments[index]) step.comments = comments[index];
-        newSteps.push(step);
-      });
       let addedSteps;
       try {
+        const newSteps = [];
+        actions.forEach((action, index) => {
+          const step = {};
+          step.userID = userID;
+          step.action = action;
+          if (stepNames && stepNames[index]) step.stepName = stepNames[index];
+            else step.stepName = 'Step ' + (index + 1);
+          if (triggers && triggers[index]) step.trigger = triggers[index];
+          if (actionImageCids && actionImageCids[index]) step.actionImageCid = actionImageCids[index];
+          if (triggerImageCids && triggerImageCids[index]) step.triggerImageCid = triggerImageCids[index];
+          if (comments && comments[index]) step.comments = comments[index];
+          newSteps.push(step);
+        });
         await mongoClient.connect();
         addedSteps = await stepCollection.insertMany(newSteps);
       } catch (error) {
@@ -291,20 +274,18 @@ const resolvers = {
       }
     },
     addTasteProfile: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
       const { salt, sweet, sour, bitter, spice, umami, userID } = args;
-      const newTasteProfile = {
-        salt: salt,
-        sweet: sweet,
-        sour: sour,
-        bitter: bitter,
-        spice: spice,
-        umami: umami,
-        userID: userID,
-      };
       let addedTasteProfile;
       try {
+        const newTasteProfile = {
+          salt: salt,
+          sweet: sweet,
+          sour: sour,
+          bitter: bitter,
+          spice: spice,
+          umami: umami,
+          userID: userID,
+        };
         await mongoClient.connect();
         addedTasteProfile = await tasteProfileCollection.insertOne(newTasteProfile);
       } catch (error) {
@@ -319,24 +300,25 @@ const resolvers = {
       }
     },
     addRecipe: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
-      const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, signature, createdAt } = args;
+      const { type, signature, message, token } = context.auth;
+      const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags } = args;
       let addedRecipe;
-      const newRecipe = {
-        name: name,
-        imageCid: imageCid,
-        description: description,
-        ingredientIDs: ingredientIDs,
-        stepIDs: stepIDs,
-        qualityTags: qualityTags,
-        tasteProfileID: tasteProfileID,
-        equipment: equipment,
-        userID: userID,
-        signature: signature,
-        createdAt: createdAt
-      };
       try {
+        const authenticated = authenticate(type, signature, message, token, userID);
+        if (!authenticated) throw new Error('Authentication failed');
+        const newRecipe = {
+          name: name,
+          imageCid: imageCid,
+          description: description,
+          ingredientIDs: ingredientIDs,
+          stepIDs: stepIDs,
+          tasteProfileID: tasteProfileID,
+          equipment: equipment,
+          userID: userID,
+          signature: signature,
+          createdAt: createdAt,
+          qualityTags: qualityTags
+        };
         await mongoClient.connect();
         addedRecipe = await recipeCollection.insertOne(newRecipe);
       } catch (error) {
@@ -351,84 +333,112 @@ const resolvers = {
       }
     },
     deleteRecipe: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
-      if (recipeCollection.find(recipe => recipe._id === args.id)) {
-        try {
-          await mongoClient.connect();
-          recipeSignature = await recipeCollection.findOne({ id: new ObjectId(args.id) });
-          if (recipeSignature.signature === args.signature) {
-            await recipeCollection.deleteOne({ id: args.recipeID });
-            let newRecipeList = await recipeCollection.find({}).toArray();
-            recipes.push(newRecipeList);
-            deleted = true;
-          } else {
-            deleted = false;
+      const { type, signature, token } = context.auth;
+      const { ingredientIDs, stepIDs, tasteProfileID, recipeID } = args;
+      try {
+        if (type === 'SIGNATURE') {
+          const address = verifyMessage(authMessage, signature); 
+          if (address !== args.userID) {
+            throw new AuthenticationError('Not authorized');
+          } 
+        } else if (type === 'JWT') {
+          if (authMessage.split(' ')[-1] !== token) {
+            throw new AuthenticationError('Not authorized');
           }
-        } catch (error) {
-          deleted = false;
-          throw new Error(error);
-        } finally {
-          await mongoClient.close();
+        } else if (type === 'NONE') {
+          throw new AuthenticationError('Not authorized');
+        }
+        if (recipeCollection.find(recipe => recipe._id === recipeID)) {
+          await mongoClient.connect();
+          await recipeCollection.deleteOne({ id: recipeID });
+          await ingredientCollection.deleteMany({ id: { $in: ingredientIDs } });
+          await stepCollection.deleteMany({ id: { $in: stepIDs } });
+          await tasteProfileCollection.deleteOne({ id: tasteProfileID });
+          let newRecipeList = await recipeCollection.find({}).toArray();
+          recipes.push(newRecipeList);
+          deleted = true;
+        } else {
           return {
-            success: deleted ? true : false,
-            message: deleted ? 'Recipe deleted successfully' : 'Signature does not match',
-            recipeID: ''
+            success: false,
+            message: 'Recipe does not exist',
+            recipeID: args.id
           }
         }
-      } else {
+      } catch (error) {
+        deleted = false;
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
         return {
-          success: false,
-          message: 'Recipe does not exist',
-          recipeID: args.id
+          success: deleted ? true : false,
+          message: deleted ? 'Recipe deleted successfully' : 'Signature does not match',
+          recipeID: ''
         }
       }
     },
     updateRecipe: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
-      let updated = false;
-      let newRecipeList = [];
-      let recipeToUpdate = {}
-      if (recipeCollection.find(recipe => recipe._id === args.id)) {
-        if (args.cookbookAddress) recipeToUpdate.cookbookAddress = args.cookbookAddress;
-        if (args.tokenNumber) recipeToUpdate.tokenNumber = args.tokenNumber;
-        if (args.name) recipeToUpdate.name = args.name;
-        if (args.imageCid) recipeToUpdate.image = args.imageCid;
-        if (args.description) recipeToUpdate.description = args.description;
-        if (args.ingredientIDs) recipeToUpdate.ingredientIDs = args.ingredientIDs;
-        if (args.stepIDs) recipeToUpdate.stepIDs = args.stepIDs;
-        if (args.tasteProfileID) recipeToUpdate.tasteProfileID = args.tasteProfileID;
-        if (args.equipment) recipeToUpdate.equipment = args.equipment;
-        if (args.qualityTags) recipeToUpdate.qualityTags = args.qualityTags;
-        if (args.userID) recipeToUpdate.userID = args.userID;
-        try {
+      const { type, signature, token } = context.auth;
+      try {
+        if (type === 'SIGNATURE') {
+          const address = verifyMessage(authMessage, signature); 
+          if (address !== args.userID) {
+            throw new AuthenticationError('Not authorized');
+          } 
+        } else if (type === 'JWT') {
+          if (authMessage.split(' ')[-1] !== token) {
+            throw new AuthenticationError('Not authorized');
+          }
+        } else if (type === 'NONE') {
+          throw new AuthenticationError('Not authorized');
+        }
+        let updated = false;
+        let newRecipeList = [];
+        let recipeToUpdate = {}
+        if (recipeCollection.find(recipe => recipe._id === args.id)) {
+          if (args.cookbookAddress) recipeToUpdate.cookbookAddress = args.cookbookAddress;
+          if (args.tokenNumber) recipeToUpdate.tokenNumber = args.tokenNumber;
+          if (args.name) recipeToUpdate.name = args.name;
+          if (args.imageCid) recipeToUpdate.image = args.imageCid;
+          if (args.description) recipeToUpdate.description = args.description;
+          if (args.ingredientIDs) recipeToUpdate.ingredientIDs = args.ingredientIDs;
+          if (args.stepIDs) recipeToUpdate.stepIDs = args.stepIDs;
+          if (args.tasteProfileID) recipeToUpdate.tasteProfileID = args.tasteProfileID;
+          if (args.equipment) recipeToUpdate.equipment = args.equipment;
+          if (args.qualityTags) recipeToUpdate.qualityTags = args.qualityTags;
           await mongoClient.connect();
           await recipeCollection.updateOne({ _id: new ObjectId(args.id) }, { $set: recipeToUpdate });
           newRecipeList = await recipeCollection.find({}).toArray();
           updated = true;
-        } catch (error) {
-          updated = false;
-          throw new Error(error);
-        } finally {
-          await mongoClient.close();
+        } else {
           return {
-            success: updated ? true : false,
-            message: updated ? 'Recipe updated successfully' : 'Error updating recipe',
+            success: false,
+            message: 'Recipe does not exist',
             recipes: newRecipeList
           }
         }
-      } else {
+      } catch (error) {
+        updated = false;
+        throw new Error(error);
+      } finally {
+        await mongoClient.close();
         return {
-          success: false,
-          message: 'Recipe does not exist',
+          success: updated ? true : false,
+          message: updated ? 'Recipe updated successfully' : 'Error updating recipe',
           recipes: newRecipeList
         }
       }
     },
     addChefsSpecial: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let chefsSpecial;
       const newSpecial = {
         recipeID: args.recipeID,
@@ -451,6 +461,18 @@ const resolvers = {
       }
     },
     updateChefsSpecial: async (_, args, context, info) => {
+      if (type === 'SIGNATURE') {
+        const address = verifyMessage(authMessage, signature); 
+        if (address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (type === 'JWT') {
+        if (authMessage.split(' ')[-1] !== token) {
+          throw new AuthenticationError('Not authorized');
+        }
+      } else if (type === 'NONE') {
+        throw new AuthenticationError('Not authorized');
+      }
       let updated = false;
       let newChefsSpecialID;
       let chefsSpecialToUpdate = {}
@@ -483,6 +505,16 @@ const resolvers = {
       }
     },
     deleteChefsSpecial: async (_, args, context, info) => {
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let deleted = false;
       let chefsSpecialList = [];
       if (db.collection('chefsSpecial').find(chefsSpecial => chefsSpecial.recipeCid === args.recipeCid)) {
@@ -511,6 +543,16 @@ const resolvers = {
       }
     },
     addExternalRecipe: async (_, args, context, info) => {
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let externalRecipeID;
       const newExternalRecipe = {
         name: args.name,
@@ -533,8 +575,16 @@ const resolvers = {
       }
     },
     addUser: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let addedUser;
       try {
         await mongoClient.connect();
@@ -564,8 +614,16 @@ const resolvers = {
       }
     },
     updateUser: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let userToUpdate = {};
       let updatedUser;
       if (db.collection('users').find(user => user.address === args.address)) {
@@ -596,8 +654,16 @@ const resolvers = {
       }
     },
     addRecipeRequest: async (_, args, context, info) => {
-      const address = verifyMessage(args.signatureMessage, context.signature);
-      if (address !== args.userID) throw new AuthenticationError('Invalid signature');
+      if (context.signature) {
+        const address = verifyMessage(args.authMessage, context.signature); 
+        if (auth.address !== args.userID) {
+          throw new AuthenticationError('Not authorized');
+        } 
+      } else if (context.token && auth.token === '') {
+        throw new AuthenticationError('Not authorized');
+      } else if (context.noAuth) {
+        throw new AuthenticationError('Not authorized');
+      }
       let recipeRequestID;
       const newRecipeRequest = {
         name: args.name,

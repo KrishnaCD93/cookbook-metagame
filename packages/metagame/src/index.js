@@ -32,6 +32,7 @@ import MetaKitchen from './routes/YourKitchen';
 import RecipeDetail from './routes/recipes/RecipeDetail';
 import Recipes from './routes/recipes/Recipes';
 import EditRecipe from './routes/recipes/EditRecipe';
+import { EmbeddedSandbox } from './routes/EmbeddedSandbox';
 
 // TODO: add recipe page with recipeID
 
@@ -55,7 +56,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'https://cookbook-metagame.herokuapp.com/', // 'http://localhost:4000', 
+  uri: 'http://localhost:4000', // 'https://cookbook-metagame.herokuapp.com/', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors',
@@ -65,10 +66,11 @@ const link = new HttpLink({
 
 const authLink = setContext((_, { headers }) => {
   const signature = localStorage.getItem('signature');
+  const loginToken = localStorage.getItem('loginToken');
   return {
     headers: {
       ...headers,
-      authorization: signature ? `Bearer ${signature}` : '',
+      authorization: signature ? `SIGNATURE ${signature}` : loginToken ? `JWT ${loginToken}` : '',
     },
   };
 });
@@ -107,6 +109,7 @@ root.render(
                     </Route>
                     <Route path="kitchen" element={<MetaKitchen />} />
                     <Route path="goals" element={<CookbookGoals />} />
+                    <Route path="sandbox" element={<EmbeddedSandbox />} />
                     <Route
                       path="*"
                       element={

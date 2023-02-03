@@ -12,6 +12,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect } from "react";
 import GetIngredients from "./create-recipe-container/Ingredients";
 import GetSteps from "./create-recipe-container/Steps";
+import { useAccessToken, useAuthenticationStatus, useUserId } from "@nhost/react";
 
 // TODO: Upload recipe NFT
 
@@ -27,36 +28,44 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   const { isConnected, address: accountInfo } = useAccount();
   const { data: signer } = useSigner();
   const { signMessageAsync } = useSignMessage()
+  const { isAuthenticated } = useAuthenticationStatus();
+  const accessToken = useAccessToken();
+  const userId = useUserId();
   
   // Upload the ingredients to the database and return database ID, return null is user's wallet is not connected
-  // @param ingredients: array of ingredients from the form. Includes names, quantities, comments, image IDs, and signature message
-  async function addIngredients(ingredients, signatureMessage) {
-    if (!isConnected) return null;
+  // @param ingredients: array of ingredients from the form. Includes names, quantities, nutritions, comments, and image IDs
+  async function addIngredients(ingredients) {
+    console.log('ingredients', ingredients);
     const names = [];
     const quantities = [];
+    const nutritions = [];
     const comments = [];
     const imageCids = [];
     ingredients.forEach(async (ingredient, index) => {
       if (!ingredient.name) return;
+      console.log('ingredient', ingredient);
       names[index] = ingredient.name;
       quantities[index] = ingredient.quantity;
       comments[index] = ingredient.comments;
+      if (ingredient.nutrition) {
+        nutritions[index] = ingredient.nutrition;
+      }
       if (ingredient.image[0]) {
         imageCids[index] = await uploadRecipeImage(ingredient.image[0]);
       } else if (!ingredient.image[0]) {
         imageCids[index] = ''
       }
     })
-    const ingredientList = { names, quantities, comments, imageCids, userID, signatureMessage };
+    const ingredientList = { names, quantities, nutritions, comments, imageCids, userID };
     const addedIngredients = await uploadIngredients(ingredientList);
     console.log(addedIngredients);
     return addedIngredients;
   }
   
   // Upload the steps to the database and return database ID, return null is user's wallet is not connected
-  // @param steps: array of steps from the form, includes actions, action image ID, triggers, trigger image IDs, and comments
-  async function addSteps(steps, signatureMessage) {
-    console.log(steps);
+  // @param steps: array of steps from the form, includes actions, action image IDs, triggers, trigger image IDs, comments
+  async function addSteps(steps) {
+    console.log('steps', steps);
     const stepNames = [];
     const actions = [];
     const triggers = [];
@@ -65,6 +74,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
     const comments = [];
     steps.forEach(async (step, index) => {
       if (!step.action) return;
+      console.log('step', step);
       stepNames[index] = step.stepName;
       actions[index] = step.action;
       triggers[index] = step.trigger;
@@ -80,7 +90,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         triggerImageCids[index] = ''
       }
     })
-    const stepList = { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID, signatureMessage };
+    const stepList = { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID };
     const addedSteps = await uploadSteps(stepList);
     console.log(addedSteps);
     return addedSteps;
@@ -88,8 +98,8 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   
   // Upload the taste profile to the database and return database ID, return null is user's wallet is not connected
   // @param tasteProfile: taste profile of the recipe. Salt, sweet, sour, bitter, spice, umami.
-  async function addTasteProfile(tasteProfile, signatureMessage) {
-    if (!isConnected) return null;
+  async function addTasteProfile(tasteProfile) {
+    console.log('tasteProfile', tasteProfile);
     const tasteProfileData = {
       salt: tasteProfile.salt,
       sweet: tasteProfile.sweet,
@@ -97,8 +107,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
       bitter: tasteProfile.bitter,
       spice: tasteProfile.spice,
       umami: tasteProfile.umami,
-      userID: userID,
-      signatureMessage: signatureMessage
+      userID
     }
     const addedTasteProfile = await uploadTasteProfile(tasteProfileData);
     console.log(addedTasteProfile);
@@ -106,20 +115,21 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   }
   
   // Upload the recipe to the database and return database ID, return null is user's wallet is not connected
-  // @param recipeData: recipe object from the form. Includes name, description, quality tags, and equipment
-  async function addRecipe(recipeData, ingredientIDs, stepIDs, tasteProfileID, date, signatureMessage) {
+  // @param recipeData: recipe object from the form. Includes name, description, quality tags, equipment, and signature
+  async function addRecipe(recipeData, ingredientIDs, stepIDs, tasteProfileID, date) {
+    console.log('recipeData', recipeData, ingredientIDs, stepIDs, tasteProfileID, date);
     const recipe = {
       name: recipeData.name,
-      imageCid: imageCid,
+      imageCid,
       description: recipeData.description,
-      ingredientIDs: ingredientIDs,
-      stepIDs: stepIDs,
+      ingredientIDs,
+      stepIDs,
       tasteProfileID: tasteProfileID,
-      qualityTags: recipeData.qualityTags,
       equipment: recipeData.equipment,
-      userID: userID,
+      userID,
+      signature: recipeData.signature,
       createdAt: date,
-      signatureMessage: signatureMessage,
+      qualityTags: recipeData.qualityTags,
     }
     const uploadedRecipe = await uploadRecipe(recipe);
     console.log(uploadedRecipe);
@@ -148,35 +158,49 @@ const CreateRecipe = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (accountInfo) {
       setUserID(accountInfo);
+    } else if (userId) {
+      setUserID(userId);
+    } else {
+      setUserID("0x0");
     }
-  } , [accountInfo]);
-  
+  }, [accountInfo, userId]);
+
+  console.log('web3 isConnected', isConnected);
+  console.log('web2 isAuthenticated', isAuthenticated);
+
   // Handle form submission and upload recipe to the database
   const onSubmit = async (data) => {
     setUploading(true)
     console.log(data);
-    if (!isConnected) {
+    if (isConnected === false && isAuthenticated === false) {
       toast({
-        title: "Wallet not connected",
-        description: "Please connect your Ethereum wallet to authenticate your recipe submission.",
+        title: "Account not connected",
+        description: "Please sign in with your email or connect your Ethereum wallet to authenticate your recipe submission.",
         status: "error",
         duration: 9000,
         isClosable: true,
       })
       return;
     }
-    const date = new Date().toISOString();
-    const signatureMessage = `Create recipe ${data.name} on ${date} by ${accountInfo}`;
-    const signData = await signMessageAsync({ message: signatureMessage });
-    localStorage.setItem('signature', signData);
     console.log('userID', userID);
-    console.log('signdata', signData);
+    const date = new Date().toISOString();
+    const sign = {};
+    if (isConnected) {
+      // replace spaces with underscores on data.name for the message
+      const name = data.name.replace(/\s/g, '_');
+      sign.message = `Create_recipe_${name}_on_${date}_by_${accountInfo}`;
+      sign.signature = await signMessageAsync({ message: sign.message });
+      localStorage.setItem('message', sign.message);
+      localStorage.setItem('signature', sign.signature);
+    } else if (isAuthenticated) {
+      localStorage.setItem('token', accessToken);
+    }
     if (data.recipeImage[0]) {
       const imageData = await uploadRecipeImage(data.recipeImage[0]);
       setimageCid(imageData);
     }
     console.log(data.recipeImage[0], imageCid);
-    const uploadedIngredients = await addIngredients(data.ingredients, signatureMessage);
+    const uploadedIngredients = await addIngredients(data.ingredients);
     const ingredientIDs = uploadedIngredients.ingredientIDs;
     if (uploadedIngredients.success) {
       toast({
@@ -191,7 +215,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         duration: 1000,
       })
     }
-    const uploadedSteps = await addSteps(data.steps, signatureMessage);
+    const uploadedSteps = await addSteps(data.steps);
     const stepIDs = uploadedSteps.stepIDs;
     if (uploadedSteps.success) {
       toast({
@@ -206,7 +230,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         duration: 1000,
       })
     }
-    const uploadedTasteProfile = await addTasteProfile(data.tasteProfile, signatureMessage);
+    const uploadedTasteProfile = await addTasteProfile(data.tasteProfile);
     const tasteProfileID = uploadedTasteProfile.tasteProfileID;
     if (uploadedTasteProfile.success) {
       toast({
@@ -221,8 +245,8 @@ const CreateRecipe = ({ isOpen, onClose }) => {
         duration: 1000,
       })
     }
-    const recipeData = { name: data.name, description: data.description, qualityTags: data.qualityTags, equipment: data.equipment };
-    const uploadedRecipe = await addRecipe(recipeData, ingredientIDs, stepIDs, tasteProfileID, date, signatureMessage);
+    const recipeData = { name: data.name, description: data.description, equipment: data.equipment, qualityTags: data.qualityTags, signature: sign.signature };
+    const uploadedRecipe = await addRecipe(recipeData, ingredientIDs, stepIDs, tasteProfileID, date);
     if (uploadedRecipe.success && !mintNFT) {
       console.log('recipeID', uploadedRecipe.recipeID);
       toast({

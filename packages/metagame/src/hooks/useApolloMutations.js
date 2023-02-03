@@ -4,41 +4,41 @@ import { GET_RECIPES } from '../routes/recipes/ShowRecipes';
 import { GET_USER_COOKBOOK } from '../routes/YourKitchen';
 
 const CREATE_INGREDIENTS = gql`
-  mutation Mutation($names: [String]!, $quantities: [String]!, $comments: [String], $imageCids: [String], $userID: String!, $signatureMessage: String!) {
-    addIngredients(names: $names, quantities: $quantities, comments: $comments, imageCids: $imageCids, userID: $userID, signatureMessage: $signatureMessage) {
-      success
-      message
+  mutation AddIngredients($names: [String]!, $quantities: [String]!, $userID: String!, $nutritions: [[Int]], $comments: [String], $imageCids: [String]) {
+    addIngredients(names: $names, quantities: $quantities, userID: $userID, nutritions: $nutritions, comments: $comments, imageCids: $imageCids) {
       ingredientIDs
+      message
+      success
     }
   }
 `;
 
 const CREATE_STEPS = gql`
-  mutation Mutation($actions: [String]!, $userID: String!, $stepNames: [String], $triggers: [String], $actionImageCids: [String], $triggerImageCids: [String], $comments: [String], $signatureMessage: String!) {
-    addSteps(actions: $actions, userID: $userID, stepNames: $stepNames, triggers: $triggers, actionImageCids: $actionImageCids, triggerImageCids: $triggerImageCids, comments: $comments, signatureMessage: $signatureMessage) {
-      success
+  mutation AddSteps($stepNames: [String], $actions: [String]!, $triggers: [String], $actionImageCids: [String], $triggerImageCids: [String], $comments: [String], $userID: String!) {
+    addSteps(stepNames: $stepNames, actions: $actions, triggers: $triggers, actionImageCids: $actionImageCids, triggerImageCids: $triggerImageCids, comments: $comments, userID: $userID) {
       message
       stepIDs
+      success
     }
   }
 `;
 
 const CREATE_TASTE_PROFILE = gql`
-  mutation Mutation($salt: Int!, $sweet: Int!, $sour: Int!, $bitter: Int!, $spice: Int!, $umami: Int, $userID: String!, $signatureMessage: String!) {
-    addTasteProfile(salt: $salt, sweet: $sweet, sour: $sour, bitter: $bitter, spice: $spice, umami: $umami, userID: $userID, signatureMessage: $signatureMessage) {
-      success
+  mutation AddTasteProfile($salt: Int!, $sweet: Int!, $sour: Int!, $bitter: Int!, $spice: Int!, $userID: String!, $umami: Int) {
+    addTasteProfile(salt: $salt, sweet: $sweet, sour: $sour, bitter: $bitter, spice: $spice, userID: $userID, umami: $umami) {
       message
+      success
       tasteProfileID
     }
   }
 `;
 
 const CREATE_RECIPE = gql`
-  mutation Mutation($name: String!, $tasteProfileID: ID!, $userID: String!, $signatureMessage: String!, $imageCid: String, $description: String, $ingredientIDs: [ID], $stepIDs: [ID], $qualityTags: String, $equipment: String, $createdAt: String) {
-    addRecipe(name: $name, tasteProfileID: $tasteProfileID, userID: $userID, signatureMessage: $signatureMessage, imageCid: $imageCid, description: $description, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, qualityTags: $qualityTags, equipment: $equipment, createdAt: $createdAt) {
-      success
+  mutation AddRecipe($recipeCid: String, $cookbookAddress: String, $tokenNumber: Int, $name: String!, $imageCid: String, $description: String, $ingredientIDs: [ID], $stepIDs: [ID], $tasteProfileID: ID!, $qualityTags: String, $equipment: String, $userID: String!, $signature: String!, $createdAt: String) {
+    addRecipe(recipeCid: $recipeCid, cookbookAddress: $cookbookAddress, tokenNumber: $tokenNumber, name: $name, imageCid: $imageCid, description: $description, ingredientIDs: $ingredientIDs, stepIDs: $stepIDs, tasteProfileID: $tasteProfileID, qualityTags: $qualityTags, equipment: $equipment, userID: $userID, signature: $signature, createdAt: $createdAt) {
       message
       recipeID
+      success
     }
   }
 `;
@@ -74,8 +74,8 @@ const PREPARE_RECIPE_NFT = gql`
 `;
 
 const CREATE_RECIPE_REQUEST = gql`
-  mutation Mutation($name: String!, $description: String!, $userID: String!, $imageCid: String, $tasteProfileID: ID!, $nutritionalRequirements: String, $dietaryRequirements: String, $qualityTags: String, $equipment: String, $createdAt: String, $signatureMessage: String!) {
-    addRecipeRequest(name: $name, description: $description, userID: $userID, imageCid: $imageCid, tasteProfileID: $tasteProfileID, nutritionalRequirements: $nutritionalRequirements, dietaryRequirements: $dietaryRequirements, qualityTags: $qualityTags, equipment: $equipment, createdAt: $createdAt, signatureMessage: $signatureMessage) {
+  mutation Mutation($name: String!, $description: String!, $userID: String!, $imageCid: String, $tasteProfileID: ID!, $nutritionalRequirements: String, $dietaryRequirements: String, $qualityTags: String, $equipment: String, $createdAt: String, $signature: String!) {
+    addRecipeRequest(name: $name, description: $description, userID: $userID, imageCid: $imageCid, tasteProfileID: $tasteProfileID, nutritionalRequirements: $nutritionalRequirements, dietaryRequirements: $dietaryRequirements, qualityTags: $qualityTags, equipment: $equipment, createdAt: $createdAt, signature: $signature) {
       success
       message
       recipeRequestID
@@ -84,8 +84,8 @@ const CREATE_RECIPE_REQUEST = gql`
 `;
 
 const CREATE_USER = gql`
-  mutation Mutation($userID: String!, $signatureMessage: String!, $name: String, $imageCid: String, $email: String) {
-    addUser(userID: $userID, signatureMessage: $signatureMessage, name: $name, imageCid: $imageCid, email: $email) {
+  mutation Mutation($userID: String!, $signature: String!, $name: String, $imageCid: String, $email: String) {
+    addUser(userID: $userID, signature: $signature, name: $name, imageCid: $imageCid, email: $email) {
       success
       message
       userID
@@ -114,9 +114,10 @@ const useApolloMutations = () => {
   const [addUser] = useMutation(CREATE_USER)
   
   const uploadIngredients = async (props) => {
-    const { names, quantities, comments, imageCids, userID, signatureMessage } = props;
+    console.log('uploadIngredients props', props);
+    const { names, quantities, nutritions, comments, imageCids, userID } = props;
     const ingredientsData = {};
-    await addIngredients({ variables: { names, quantities, comments, imageCids, userID, signatureMessage } })
+    await addIngredients({ variables: { names, quantities, nutritions, comments, imageCids, userID } })
     .then((data) => {
       console.log('uploadIngredients', data);
       ingredientsData.success = data.data.addIngredients.success;
@@ -132,9 +133,9 @@ const useApolloMutations = () => {
   
   const uploadSteps = async (props) => {
     console.log('uploadSteps props', props);
-    const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID, signatureMessage } = props;
+    const { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } = props;
     const stepsData = {};
-    await addSteps({ variables: { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID, signatureMessage } })
+    await addSteps({ variables: { stepNames, actions, triggers, actionImageCids, triggerImageCids, comments, userID } })
     .then((data) => {
       console.log('uploadSteps', data);
       stepsData.success = data.data.addSteps.success;
@@ -149,7 +150,7 @@ const useApolloMutations = () => {
   }
   
   const uploadTasteProfile = async (props) => {
-    const { salt, sweet, sour, bitter, spice, umami, userID, signatureMessage } = props;
+    const { salt, sweet, sour, bitter, spice, umami, userID } = props;
     console.log('uploadTasteProfile', props);
     const tasteProfileData = {};
     await addTasteProfile({ 
@@ -160,8 +161,7 @@ const useApolloMutations = () => {
         bitter: parseInt(bitter),
         spice: parseInt(spice),
         umami: parseInt(umami),
-        userID,
-        signatureMessage 
+        userID
       } 
     })
     .then((data) => {
@@ -179,11 +179,11 @@ const useApolloMutations = () => {
     
   const uploadRecipe = async (props) => {
     const { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, createdAt, signatureMessage 
+      name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags 
     } = props;
     const recipeData = {};
     await addRecipe({ variables: { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, qualityTags, equipment, userID, createdAt, signatureMessage 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags 
     } })
       .then((data) => {
         console.log('uploadRecipe', data);
@@ -252,9 +252,9 @@ const useApolloMutations = () => {
 
   const uploadRecipeRequest = async (props) => {
     console.log('uploadRecipeRequest', props);
-    const { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signatureMessage } = props;
+    const { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signature } = props;
     const recipeRequestData = {};
-    await addRecipeRequest({ variables: { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signatureMessage } })
+    await addRecipeRequest({ variables: { name, description, imageCid, tasteProfileID, nutritionalRequirements, dietaryRequirements, qualityTags, equipment, userID, createdAt, signature } })
       .then((data) => {
         recipeRequestData.success = data.data.addRecipeRequest.success;
         recipeRequestData.message = data.data.addRecipeRequest.message;
@@ -268,9 +268,9 @@ const useApolloMutations = () => {
   }
 
   const uploadUser = async (props) => {
-    const { userID, name, email, imageCid, signatureMessage } = props;
+    const { userID, name, email, imageCid, signature } = props;
     const userData = {};
-    await addUser({ variables: { userID, name, email, imageCid, signatureMessage } })
+    await addUser({ variables: { userID, name, email, imageCid, signature } })
       .then((data) => {
         userData.success = data.data.addUser.success;
         userData.message = data.data.addUser.message;
