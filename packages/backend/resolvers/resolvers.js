@@ -24,21 +24,20 @@ const { verifyMessage } = require('ethers/lib/utils');
 // const sdk = ThirdwebSDK.fromPrivateKey(privateKey, 'mumbai');
 
 const authenticate = (props) => {
-  console.log('start auth', props)
-  const { type, signature, message, userID, token } = props;
+  const { type, signature, message, token, userID } = props;
   let authenticated = false;
   if (type === 'SIGNATURE') {
     const address = verifyMessage(message, signature); 
-    if (address !== userID) {
-      throw new AuthenticationError('Not authorized');
-    } else {
+    if (address === userID) {
       authenticated = true;
+    } else {
+      throw new AuthenticationError('Not authorized');
     }
   } else if (type === 'JWT') {
-    if (token === '') {
-      throw new AuthenticationError('Not authorized');
-    } else {
+    if (token !== '') {
       authenticated = true;
+    } else {
+      throw new AuthenticationError('Not authorized');
     }
   } else if (type === 'NONE') {
     throw new AuthenticationError('Not authorized');
@@ -223,7 +222,6 @@ const resolvers = {
           newIngredients.push(ingredient);
         });
         addedIngredients = await ingredientCollection.insertMany(newIngredients);
-        console.log(addedIngredients);
       } catch (error) {
         throw new Error(error);
       } finally {
@@ -304,20 +302,20 @@ const resolvers = {
       const { name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags } = args;
       let addedRecipe;
       try {
-        const authenticated = authenticate(type, signature, message, token, userID);
+        const authenticated = authenticate({ type, signature, message, token, userID });
         if (!authenticated) throw new Error('Authentication failed');
         const newRecipe = {
-          name: name,
-          imageCid: imageCid,
-          description: description,
-          ingredientIDs: ingredientIDs,
-          stepIDs: stepIDs,
-          tasteProfileID: tasteProfileID,
-          equipment: equipment,
-          userID: userID,
-          signature: signature,
-          createdAt: createdAt,
-          qualityTags: qualityTags
+          name,
+          imageCid,
+          description,
+          ingredientIDs,
+          stepIDs,
+          tasteProfileID,
+          equipment,
+          userID,
+          signature,
+          createdAt,
+          qualityTags
         };
         await mongoClient.connect();
         addedRecipe = await recipeCollection.insertOne(newRecipe);
@@ -605,7 +603,7 @@ const resolvers = {
         throw new Error(error);
       } finally {
         await mongoClient.close();
-        console.log(addedUser)
+    
         return {
           success: addedUser.acknowledged ? true : false,
           message: addedUser.acknowledged ? 'User added successfully' : 'Error adding user',

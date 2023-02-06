@@ -179,11 +179,11 @@ const useApolloMutations = () => {
     
   const uploadRecipe = async (props) => {
     const { 
-      name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags 
+      name, description, imageCid, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, signature, createdAt, qualityTags 
     } = props;
     const recipeData = {};
     await addRecipe({ variables: { 
-      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, createdAt, qualityTags 
+      name, imageCid, description, ingredientIDs, stepIDs, tasteProfileID, equipment, userID, signature, createdAt, qualityTags 
     } })
       .then((data) => {
         console.log('uploadRecipe', data);

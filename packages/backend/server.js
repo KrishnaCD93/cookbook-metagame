@@ -19,7 +19,6 @@ const server = new ApolloServer({
       token: '',
       type: '',
     };
-    if (req.headers.authorization) console.log('req.headers.authorization', req.headers.authorization);
     const bearer = req.headers.authorization || '';
     authType = bearer.split(' ')[0];
     if (authType === 'SIGNATURE') {

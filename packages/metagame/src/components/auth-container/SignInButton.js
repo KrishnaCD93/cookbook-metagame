@@ -4,7 +4,7 @@ import { Button, Container, Popover, PopoverArrow, PopoverBody, PopoverCloseButt
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 
-const SignInButton = () => {
+const SignInButton = (props) => {
   const { isAuthenticated } = useAuthenticationStatus();
   const { signOut } = useSignOut();
   const { isConnected } = useAccount();
@@ -14,7 +14,7 @@ const SignInButton = () => {
       {isConnected ? <ConnectButton /> : 
       <Popover>
         <PopoverTrigger>
-          <Button mr={2}>{isAuthenticated ? <>Sign Out</> : <>Sign In</>}</Button>
+          <Button w={props.w} mr={2}>{isAuthenticated ? <>Sign Out</> : <>Sign In</>}</Button>
         </PopoverTrigger>
         <PopoverContent>
           <PopoverArrow />

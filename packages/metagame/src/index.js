@@ -56,7 +56,7 @@ const wagmiClient = createClient({
 })
 
 const link = new HttpLink({
-  uri: 'http://localhost:4000', // 'https://cookbook-metagame.herokuapp.com/', 
+  uri: 'https://cookbook-metagame.herokuapp.com/', // 'http://localhost:4000', 
   credentials: 'include',
   fetchOptions: {
     mode: 'cors',
@@ -65,12 +65,13 @@ const link = new HttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
+  const message = localStorage.getItem('message');
   const signature = localStorage.getItem('signature');
   const loginToken = localStorage.getItem('loginToken');
   return {
     headers: {
       ...headers,
-      authorization: signature ? `SIGNATURE ${signature}` : loginToken ? `JWT ${loginToken}` : '',
+      authorization: signature ? `SIGNATURE ${signature} ${message}` : loginToken ? `JWT ${loginToken}` : '',
     },
   };
 });
