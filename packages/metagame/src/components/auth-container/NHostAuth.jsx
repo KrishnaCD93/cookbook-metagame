@@ -6,12 +6,12 @@ const NHostAuth = () => {
   const { google } = useProviderLink()
   const { signInEmailPasswordless, isLoading, isSuccess, isError, error } = useSignInEmailPasswordless()
   const toast = useToast()
-  
+
   const onSubmit = async (e) => {
     e.preventDefault()
     const email = e.target.email.value
     await signInEmailPasswordless(email)
-    
+
     if (isSuccess) {
       toast({
         title: "Email sent",
@@ -26,7 +26,7 @@ const NHostAuth = () => {
   if (isError) {
     return (
       <>
-      <Text>{error}</Text>
+        <Text>{error}</Text>
       </>
     )
   }
@@ -44,12 +44,12 @@ const NHostAuth = () => {
           <Button type='submit'>📧 Sign In With Email</Button>
         </FormControl>
       </form>
-      <HStack>
+      {/* <HStack>
         <Divider />
         <Text>or</Text>
         <Divider />
       </HStack>
-      <Link href={google}><Button><Icon as={FcGoogle} pr={1} />Sign In With Google</Button></Link>
+      <Link href={google}><Button><Icon as={FcGoogle} pr={1} />Sign In With Google</Button></Link> */}
     </Box>
   );
 }
