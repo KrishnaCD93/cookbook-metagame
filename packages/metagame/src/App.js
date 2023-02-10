@@ -7,6 +7,8 @@ import { FaDiscord, FaTwitter } from 'react-icons/fa';
 import { SiSubstack } from 'react-icons/si';
 import { Cloudinary } from '@cloudinary/url-gen';
 import SignInButton from './components/auth-container/SignInButton';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
@@ -17,10 +19,12 @@ export const cld = new Cloudinary({
 })
 
 function App() {
+  const { isConnected } = useAccount();
+
   return (
     <Box textAlign="center" fontSize="xl">
       <Navbar>
-        <SignInButton />
+        {isConnected ? <ConnectButton /> : <SignInButton />}
         <ColorModeSwitcher />
       </Navbar>
       <Grid minH="90vh" p={3} spacing={8}>

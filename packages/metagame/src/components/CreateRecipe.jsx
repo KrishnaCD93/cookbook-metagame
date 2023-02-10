@@ -358,7 +358,7 @@ const CreateRecipe = ({ isOpen, onClose }) => {
                   <GetMintNFT setMintNFT={setMintNFT} />
                 </FormLabel> */}
               </FormControl>
-              {(!accountInfo || !accessToken) ? <SignInButton w='100%' /> : 
+              {(!accountInfo && !accessToken) ? <SignInButton w='100%' /> : 
               <Button mt={4} isLoading={isSubmitting} type='submit' w='100%'>
                 Create Recipe
               </Button>}
