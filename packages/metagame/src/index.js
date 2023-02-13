@@ -9,18 +9,12 @@ import * as serviceWorker from './serviceWorker';
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 
-import {
-  WagmiConfig,
-  createClient,
-  chain,
-  configureChains,
-} from 'wagmi'
-
-import { alchemyProvider } from 'wagmi/providers/alchemy'
-import { publicProvider } from 'wagmi/providers/public'
-
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { configureChains, createClient, WagmiConfig } from 'wagmi';
+import { mainnet, polygon, optimism, arbitrum } from 'wagmi/chains';
+import { alchemyProvider } from 'wagmi/providers/alchemy';
+import { publicProvider } from 'wagmi/providers/public';
 
 import { NhostClient, NhostReactProvider } from '@nhost/react'
 
@@ -36,23 +30,23 @@ import { EmbeddedSandbox } from './routes/EmbeddedSandbox';
 
 // TODO: add recipe page with recipeID
 
-const { chains, provider, webSocketProvider } = configureChains(
-  [chain.polygon], 
+const { chains, provider } = configureChains(
+  [mainnet, polygon, optimism, arbitrum],
   [
-  alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
-  publicProvider(),
+    alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
+    publicProvider()
   ]
 );
+
 const { connectors } = getDefaultWallets({
-  appName: 'My RainbowKit App',
+  appName: 'Cookbook Social',
   chains
 });
-// Set up client
+
 const wagmiClient = createClient({
   autoConnect: true,
   connectors,
-  provider,
-  webSocketProvider,
+  provider
 })
 
 const link = new HttpLink({

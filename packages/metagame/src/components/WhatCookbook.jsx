@@ -8,15 +8,17 @@ const WhatCookbook = (props) => {
         <VStack spacing={4}>
         <HStack>
           <SimpleGrid columns={{sm: 1, md: 2}}>
-            <Box as='flex' justifyContent='center' alignItems='center' margin={'25px'}>
-              <Text fontSize={'4xl'} align='center'>Why Cookbook?</Text>
+            <Box as='flex' margin={'25px'}>
+              <Text fontSize={'4xl'} justifyContent='center' alignItems='center'>Get Cooking</Text>
             </Box>
             <Box>
-              <Text fontSize='md' align={'center'}>
-                Cookbook is a social network for home chefs who want to share recipes 
-                and find their meta. We are building a platform where you can create recipes
-                and compose new meal ideas together with your community. This app is for you if 
-                you like to cook variations of your favorite recipes and talk about your experiences.
+              <Text fontSize='md'>
+                Cookbook is a social network for home chefs who want to share their recipes.<br />
+                We help you get cooking in 3 easy steps:<br />
+                1. Find recipes<br />
+                2. Make dishes<br />
+                3. Create alterations<br />
+                Use your digital cookbook to enable social interactions with your pantry.
               </Text>
             </Box>
           </SimpleGrid>
